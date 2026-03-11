@@ -1,0 +1,35 @@
+[
+  {
+    "id": "ad29961f-e834-40d5-96f8-946f911fcf03",
+    "name": "Test Game Alpha",
+    "rating": 4,
+    "config": {
+      "structure": {
+        "roomCount": 4,
+        "difficulty": "standard",
+        "puzzleDensity": "moderate"
+      },
+      "artStyle": {
+        "id": "cel_shaded",
+        "name": "Cel-Shaded"
+      },
+      "genre": {
+        "id": "scifi",
+        "name": "Sci-Fi"
+      },
+      "story": {
+        "characterName": "Zara",
+        "title": "Test Game Alpha",
+        "description": "A test game",
+        "setting": "Space station"
+      },
+      "theme": {
+        "id": "scifi",
+        "name": "Sci-Fi / Space"
+      }
+    },
+    "buildId": "b89477ea-68e9-4366-b3f7-27b96c8c3bec",
+    "apkSize": "~10 MB",
+    "createdAt": "2026-03-11T12:00:59.361Z"
+  }
+]
