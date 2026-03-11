@@ -6,7 +6,7 @@ BellForge is a one-stop game creation tool that lets anyone build their own Andr
 
 ## Live Demo
 
-**[Try BellForge →](https://billybell991.github.io/BellForge/)**
+**[Try BellForge →](https://billybell991.github.io/bellforge/)**
 
 > The live demo showcases the full wizard UI. To forge real games (with Gemini AI + APK builds), clone and run locally.
 
@@ -33,7 +33,7 @@ BellForge is a one-stop game creation tool that lets anyone build their own Andr
 ## Quick Start (Local)
 
 ```bash
-git clone https://github.com/billybell991/BellForge.git
+git clone https://github.com/billybell991/bellforge.git
 cd BellForge
 npm run install:all
 npm run dev
