@@ -1,35 +1,44 @@
 [
   {
-    "id": "ad29961f-e834-40d5-96f8-946f911fcf03",
-    "name": "Test Game Alpha",
-    "rating": 4,
+    "id": "9a428791-2d01-4999-ad6a-edbb31ade3d4",
+    "name": "Whispers of the Interstitial",
+    "rating": 0,
     "config": {
-      "structure": {
-        "roomCount": 4,
-        "difficulty": "standard",
-        "puzzleDensity": "moderate"
-      },
-      "artStyle": {
-        "id": "cel_shaded",
-        "name": "Cel-Shaded"
-      },
       "genre": {
-        "id": "scifi",
-        "name": "Sci-Fi"
-      },
-      "story": {
-        "characterName": "Zara",
-        "title": "Test Game Alpha",
-        "description": "A test game",
-        "setting": "Space station"
+        "id": "escape_room",
+        "name": "Escape Room",
+        "icon": "🚪",
+        "description": "Crack clues to escape locked rooms",
+        "tag": "POPULAR",
+        "orientation": "landscape"
       },
       "theme": {
         "id": "scifi",
-        "name": "Sci-Fi / Space"
+        "name": "Sci-Fi / Space",
+        "icon": "🚀",
+        "description": "Futuristic tech and cosmic exploration",
+        "color": "#00e5ff"
+      },
+      "artStyle": {
+        "id": "noir",
+        "name": "Noir / Black & White",
+        "icon": "🎬",
+        "description": "High contrast, dramatic shadows"
+      },
+      "structure": {
+        "roomCount": 9,
+        "difficulty": "standard",
+        "puzzleDensity": "heavy"
+      },
+      "story": {
+        "title": "Whispers of the Interstitial",
+        "characterName": "Kith",
+        "setting": "Perched on the precipice of the Great Bifurcation, your phytolab hangs amidst a tangled web of iridescent data-spines and living conduits, stretching into an endless, pulsating void.",
+        "description": "As Kith, a renowned xeno-botanist, you must navigate your crumbling phytolab, using a bespoke bio-acoustic interface to translate the panicked thoughts of the exotic flora around you. These vegetal whispers reveal not just the immediate structural dangers, but also fragmented, paradoxical truths about the Interstitial, a realm that exists *between* logic, where reality can be rewoven by aligning with its non-Euclidean frequencies."
       }
     },
-    "buildId": "b89477ea-68e9-4366-b3f7-27b96c8c3bec",
+    "buildId": "c2b1f64d-716a-4249-ae56-e5585a57dd72",
     "apkSize": "~10 MB",
-    "createdAt": "2026-03-11T12:00:59.361Z"
+    "createdAt": "2026-03-12T00:26:56.633Z"
   }
 ]
