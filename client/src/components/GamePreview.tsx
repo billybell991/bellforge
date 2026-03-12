@@ -8,9 +8,10 @@ interface GamePreviewProps {
   orientation: Orientation;
   onDeploy: () => void;
   onStartOver: () => void;
+  onReForge?: () => void;
 }
 
-export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeploy, onStartOver }: GamePreviewProps) {
+export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeploy, onStartOver, onReForge }: GamePreviewProps) {
   const [fullscreen, setFullscreen] = useState(false);
   const isLandscape = true; // games always render in 16:9 landscape
 
@@ -57,9 +58,16 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
         <span className="preview-info-item">📁 {apkPath.split('\\').pop()}</span>
       </div>
 
-      <button className="preview-forge-another" onClick={onStartOver}>
-        ⚒️ Forge Another Game
-      </button>
+      <div className="preview-bottom-actions">
+        {onReForge && (
+          <button className="preview-reforge" onClick={onReForge}>
+            🔄 Re-Forge — Tweak &amp; Rebuild
+          </button>
+        )}
+        <button className="preview-forge-another" onClick={onStartOver}>
+          ⚒️ Forge Another Game
+        </button>
+      </div>
     </div>
   );
 }

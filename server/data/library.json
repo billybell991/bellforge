@@ -40,5 +40,47 @@
     "buildId": "c2b1f64d-716a-4249-ae56-e5585a57dd72",
     "apkSize": "~10 MB",
     "createdAt": "2026-03-12T00:26:56.633Z"
+  },
+  {
+    "id": "fb446100-67e6-4254-b6b9-dd02be2c8814",
+    "name": "The Spindlewood's Maw",
+    "rating": 0,
+    "config": {
+      "genre": {
+        "id": "platformer",
+        "name": "Platformer",
+        "icon": "🏃",
+        "description": "Jump, run, and collect through levels",
+        "tag": "",
+        "orientation": "landscape"
+      },
+      "theme": {
+        "id": "horror",
+        "name": "Horror / Supernatural",
+        "icon": "👻",
+        "description": "Dark atmospheres and spine-tingling mysteries",
+        "color": "#ff3d00"
+      },
+      "artStyle": {
+        "id": "watercolor",
+        "name": "Watercolor / Painterly",
+        "icon": "🖌️",
+        "description": "Soft, flowing, artistic brushstrokes"
+      },
+      "structure": {
+        "roomCount": 11,
+        "difficulty": "casual",
+        "puzzleDensity": "moderate"
+      },
+      "story": {
+        "title": "The Spindlewood's Maw",
+        "characterName": "Rivet",
+        "setting": "The Spindlewood is a sprawling, biomechanical horror where every gnarled, rust-eaten 'tree' is a towering automaton of bone and brass, its branches ending in whirring blades and dripping a viscous, oily ichor onto the fungal-choked ground.",
+        "description": "As Rivet, an ex-acrobat now bound by grafts of living metal and grinding gears, you leap and grapple through the Spindlewood’s treacherous canopy, seeking the fabled Apex Cog that promises liberation from your encroaching assimilation. But every step towards freedom feels like a deeper embrace of the forest's hungry mechanics, and the whispered promise of 'rescue' carries the chilling dread that you might simply become a more intricate part of its horrific, eternal design."
+      }
+    },
+    "buildId": "78c13211-0746-46f5-999a-8d4105183367",
+    "apkSize": "12.0 MB",
+    "createdAt": "2026-03-12T09:31:11.868Z"
   }
 ]

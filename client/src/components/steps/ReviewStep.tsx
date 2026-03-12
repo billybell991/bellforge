@@ -57,11 +57,11 @@ export function ReviewStep({ genre, theme, artStyle, structure, story, onEditSte
       const res = await fetch('/api/gemini/story', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ genre: genre?.name, theme: theme?.name }),
+        body: JSON.stringify({ genreHint: genre?.name, themeHint: theme?.name }),
       });
       if (res.ok) {
         const s = await res.json();
-        onStoryChange?.(s);
+        if (s.story) onStoryChange?.(s.story);
       }
     } catch { /* keep existing story */ }
     setRerollingStory(false);

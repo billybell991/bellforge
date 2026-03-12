@@ -53,6 +53,7 @@ interface LibraryEntry {
 }
 
 const LIBRARY_PATH = join(process.cwd(), 'data', 'library.json');
+const PREVIEWS_DIR = join(process.cwd(), 'data', 'previews');
 
 function loadLibrary(): LibraryEntry[] {
   try {
@@ -72,6 +73,19 @@ function saveLibrary(entries: LibraryEntry[]): void {
 }
 
 let library = loadLibrary();
+
+// Ensure previews directory exists
+if (!existsSync(PREVIEWS_DIR)) mkdirSync(PREVIEWS_DIR, { recursive: true });
+
+function savePreviewHtml(buildId: string, html: string): void {
+  writeFileSync(join(PREVIEWS_DIR, `${buildId}.html`), html, 'utf-8');
+}
+
+function loadPreviewHtml(buildId: string): string | null {
+  const p = join(PREVIEWS_DIR, `${buildId}.html`);
+  if (existsSync(p)) return readFileSync(p, 'utf-8');
+  return null;
+}
 
 // ── WebSocket ──
 
@@ -272,12 +286,14 @@ app.post('/api/deploy', async (req, res) => {
 // Serve the in-browser game preview
 app.get('/api/preview/:buildId', (req, res) => {
   const build = builds.get(req.params.buildId);
-  if (!build || !build.previewHtml) {
+  let html = build?.previewHtml || null;
+  if (!html) html = loadPreviewHtml(req.params.buildId);
+  if (!html) {
     res.status(404).json({ error: 'Preview not found' });
     return;
   }
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  res.send(build.previewHtml);
+  res.send(html);
 });
 
 // ── Gemini Creative Endpoints ──
@@ -413,15 +429,17 @@ app.get('/api/library/:id/download', (req, res) => {
   }
 
   const build = builds.get(entry.buildId);
-  if (!build || !build.previewHtml) {
-    res.status(404).json({ error: 'Preview no longer available (server restarted). Re-forge this game to make it downloadable again.' });
+  let html = build?.previewHtml || null;
+  if (!html) html = loadPreviewHtml(entry.buildId);
+  if (!html) {
+    res.status(404).json({ error: 'Preview no longer available. Re-forge this game to make it downloadable again.' });
     return;
   }
 
   const safeName = entry.name.replace(/[^a-zA-Z0-9_-]/g, '_');
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="${safeName}.html"`);
-  res.send(build.previewHtml);
+  res.send(html);
 });
 
 // ── Pipeline Execution ──
@@ -726,6 +744,9 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
   record.progress = 100;
   record.apkPath = apkPath;
   record.previewHtml = previewHtml;
+
+  // Persist preview HTML to disk so it survives server restarts
+  try { savePreviewHtml(buildId, previewHtml); } catch (err) { console.error('Failed to save preview HTML to disk:', err); }
 
   // Auto-save to library so the user never loses a game
   const apkSizeStr = `${(8 + Math.random() * 12).toFixed(1)} MB`;

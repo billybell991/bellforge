@@ -288,6 +288,20 @@ export default function App() {
     setPage('preview');
   }, []);
 
+  const handleReForgeFromLibrary = useCallback((entry: LibraryEntry) => {
+    const c = entry.config;
+    setGenre(c.genre);
+    setTheme(c.theme);
+    setArtStyle(c.artStyle);
+    setStructure(c.structure);
+    setStory(c.story);
+    setBuildActive(false);
+    buildCompletedRef.current = false;
+    setBuildId(null);
+    preNavPageRef.current = null;
+    setPage('wizard');
+  }, []);
+
   const handleStartOver = useCallback(() => {
     disconnectWs();
     setBuildActive(false);
@@ -426,6 +440,7 @@ export default function App() {
             orientation={genre.orientation}
             onDeploy={handleGoToDeploy}
             onStartOver={handleStartOver}
+            onReForge={() => { setBuildActive(false); buildCompletedRef.current = false; setPage('wizard'); }}
           />
         )}
 
@@ -442,6 +457,7 @@ export default function App() {
           <Library
             onBack={handleLibraryBack}
             onViewPreview={handleViewFromLibrary}
+            onReForge={handleReForgeFromLibrary}
           />
         )}
       </div>

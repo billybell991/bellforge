@@ -4,9 +4,10 @@ import type { LibraryEntry } from '../types';
 interface LibraryProps {
   onBack: () => void;
   onViewPreview: (entry: LibraryEntry) => void;
+  onReForge: (entry: LibraryEntry) => void;
 }
 
-export function Library({ onBack, onViewPreview }: LibraryProps) {
+export function Library({ onBack, onViewPreview, onReForge }: LibraryProps) {
   const [entries, setEntries] = useState<LibraryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -136,6 +137,9 @@ export function Library({ onBack, onViewPreview }: LibraryProps) {
               <div className="library-card-actions">
                 <button className="library-action-btn" onClick={() => onViewPreview(entry)} title="Play in browser">
                   🎮 Play
+                </button>
+                <button className="library-action-btn library-action-reforge" onClick={() => onReForge(entry)} title="Load settings into the forge and rebuild with latest improvements">
+                  🔄 Re-Forge
                 </button>
                 <button className="library-action-btn" onClick={() => handleDownload(entry)} title="Download HTML game file">
                   💾 Download

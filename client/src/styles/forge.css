@@ -1093,7 +1093,7 @@ body {
 
 .review-reroll-btn:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
+  cursor: wait;
   transform: none;
 }
 
@@ -1654,6 +1654,31 @@ body {
   opacity: 0.7;
 }
 
+.preview-bottom-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.preview-reforge {
+  background: linear-gradient(135deg, var(--forge-orange), var(--forge-amber));
+  border: none;
+  color: var(--bg-deep);
+  padding: 12px 28px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.preview-reforge:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
 .preview-forge-another {
   background: transparent;
   border: 1px solid var(--border-dim);
@@ -2004,6 +2029,17 @@ body {
   border-color: var(--forge-red) !important;
   color: var(--forge-red) !important;
   background: rgba(239, 68, 68, 0.08) !important;
+}
+
+.library-action-reforge {
+  border-color: var(--forge-orange) !important;
+  color: var(--forge-orange) !important;
+}
+
+.library-action-reforge:hover {
+  background: rgba(255, 170, 0, 0.12) !important;
+  border-color: var(--forge-amber) !important;
+  color: var(--forge-amber) !important;
 }
 
 .library-back-btn {
