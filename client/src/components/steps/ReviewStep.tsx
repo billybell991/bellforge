@@ -28,7 +28,6 @@ const DENSITIES = ['light', 'moderate', 'heavy'] as const;
 export function ReviewStep({ genre, theme, artStyle, structure, story, onEditStep, onForge,
   onGenreChange, onThemeChange, onArtStyleChange, onStructureChange, onStoryChange }: ReviewStepProps) {
   const ready = genre && theme && artStyle && story.title;
-  const [confirmForge, setConfirmForge] = useState(false);
   const [rerollingStory, setRerollingStory] = useState(false);
 
   const rerollGenre = useCallback(() => {
@@ -206,27 +205,13 @@ export function ReviewStep({ genre, theme, artStyle, structure, story, onEditSte
 
       {/* Forge Button */}
       <div className="forge-it-section">
-        {!confirmForge ? (
-          <button
-            className="forge-it-btn"
-            onClick={() => setConfirmForge(true)}
-            disabled={!ready}
-          >
-            ⚒️ FORGE IT
-          </button>
-        ) : (
-          <div className="forge-confirm">
-            <p className="forge-confirm-text">Ready to start building? This will fire up the forge.</p>
-            <div className="forge-confirm-actions">
-              <button className="forge-confirm-yes" onClick={onForge}>
-                🔥 Light the Forge
-              </button>
-              <button className="forge-confirm-no" onClick={() => setConfirmForge(false)}>
-                ← Wait, let me tweak
-              </button>
-            </div>
-          </div>
-        )}
+        <button
+          className="forge-it-btn"
+          onClick={onForge}
+          disabled={!ready}
+        >
+          🔥 Light the Forge
+        </button>
         {!ready && (
           <p style={{ color: 'var(--text-muted)', marginTop: '16px', fontSize: '0.9rem' }}>
             Complete all steps above before forging.

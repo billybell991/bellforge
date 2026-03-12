@@ -142,7 +142,7 @@ ${openingScreen()}
 
 function drawTutorial(){
   ctx.fillStyle='rgba(0,0,0,0.85)';ctx.fillRect(0,0,W,H);
-  drawTB('How to Play',0.5,0.12,24,PALETTE.accent);
+  drawTGlow('How to Play',0.5,0.12,24,PALETTE.accent,12);
   var tips=[
     '\\ud83e\\udde9  Solve a different puzzle in each stage',
     '\\ud83c\\udccf  Memory: Flip cards to find matching pairs',
@@ -153,8 +153,10 @@ function drawTutorial(){
   ];
   for(var i=0;i<tips.length;i++){drawT(tips[i],0.5,0.26+i*0.10,13,PALETTE.text)}
   var pulse2=0.6+Math.sin(animFrame*0.08)*0.2;
+  ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=16;
   ctx.globalAlpha=pulse2;rRect(0.35,0.84,0.30,0.08,18,PALETTE.accent,null);
   ctx.globalAlpha=1;rRect(0.36,0.845,0.28,0.065,16,PALETTE.accent,null);
+  ctx.restore();
   drawTB('GOT IT',0.5,0.878,15,PALETTE.bg);
 }
 
@@ -167,11 +169,11 @@ function drawPuzzleScreen() {
   // Background (dimmed room image)
   var hasImg = drawBgImage(loadedImages['room_' + currentStage]);
   if (!hasImg) {
-    ctx.fillStyle = PALETTE.bg;
-    ctx.fillRect(0, 0, W, H);
+    drawRoomFallbackBg(room);
   }
   ctx.fillStyle = 'rgba(0,0,0,0.60)';
   ctx.fillRect(0, 0, W, H);
+  drawParticles(PALETTE.accent, 1);
 
   var type = getPuzzleType(currentStage);
 
@@ -187,7 +189,7 @@ function drawPuzzleScreen() {
     var startX = 0.5 - gridW / 2;
     var startY = 0.38 - gridH / 2 + 0.08;
 
-    drawTB('\\ud83c\\udccf Memory Match', 0.5, 0.12, 18, PALETTE.accent);
+    drawTGlow('\\ud83c\\udccf Memory Match', 0.5, 0.12, 18, PALETTE.accent, 10);
     drawT('Find all matching pairs', 0.5, 0.18, 11, PALETTE.text + 'aa');
 
     if (memLockout > 0) memLockout--;
@@ -200,10 +202,12 @@ function drawPuzzleScreen() {
       var isFlipped = memFlipped.indexOf(mi) >= 0 || memMatched.has(memCards[mi].id);
 
       if (isFlipped) {
+        ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=14;
         rRect(cx, cy, cardW, cardH, 8, PALETTE.accent + '33', PALETTE.accent);
+        ctx.restore();
         drawTB(memCards[mi].emoji, cx + cardW / 2, cy + cardH / 2, 22, '#fff');
       } else {
-        rRect(cx, cy, cardW, cardH, 8, PALETTE.wall, PALETTE.accent + '66');
+        glowRect(cx, cy, cardW, cardH, 8, PALETTE.wall, PALETTE.accent + '44');
         drawTB('?', cx + cardW / 2, cy + cardH / 2, 18, PALETTE.accent + '44');
       }
     }
@@ -234,7 +238,7 @@ function drawPuzzleScreen() {
     var gsx = 0.5 - gw / 2;
     var gsy = 0.28;
 
-    drawTB('\\ud83d\\udd22 Slide to Order', 0.5, 0.12, 18, PALETTE.accent);
+    drawTGlow('\\ud83d\\udd22 Slide to Order', 0.5, 0.12, 18, PALETTE.accent, 10);
     drawT('Arrange tiles 1-8 in order', 0.5, 0.18, 11, PALETTE.text + 'aa');
 
     for (var ti = 0; ti < 9; ti++) {
@@ -248,14 +252,16 @@ function drawPuzzleScreen() {
       } else {
         var isCorrect = val === ti + 1;
         var tileColor = isCorrect ? PALETTE.accent + '55' : PALETTE.wall;
+        ctx.save();ctx.shadowColor=isCorrect?PALETTE.accent:'transparent';ctx.shadowBlur=isCorrect?12:0;
         rRect(tx, ty, sz, sz, 6, tileColor, PALETTE.accent);
+        ctx.restore();
         drawTB(String(val), tx + sz / 2, ty + sz / 2, 20, isCorrect ? PALETTE.accent : PALETTE.text);
       }
     }
 
   // ─── SEQUENCE PATTERN ───
   } else if (type === 'sequence') {
-    drawTB('\\ud83c\\udfb5 Repeat the Pattern', 0.5, 0.12, 18, PALETTE.accent);
+    drawTGlow('\\ud83c\\udfb5 Repeat the Pattern', 0.5, 0.12, 18, PALETTE.accent, 10);
 
     var btnColors = [PALETTE.accent, '#ff4466', '#44cc88', '#ffaa22'];
     var btnLabels = ['\\u25b2', '\\u25c6', '\\u25cf', '\\u25a0'];
@@ -278,7 +284,9 @@ function drawPuzzleScreen() {
       for (var bi = 0; bi < 4; bi++) {
         var bx = bsx + bi * (btnW + btnGap);
         var lit = (currentShow < seqPattern.length && seqPattern[currentShow] === bi && (seqShowTimer % 40) < 25);
+        ctx.save();if(lit){ctx.shadowColor=btnColors[bi];ctx.shadowBlur=22;}
         rRect(bx, bsy, btnW, btnH, 10, lit ? btnColors[bi] : PALETTE.bg + '44', btnColors[bi] + (lit ? '' : '88'));
+        ctx.restore();
         drawTB(btnLabels[bi], bx + btnW / 2, bsy + btnH / 2, 20, lit ? '#fff' : btnColors[bi] + '88');
       }
     } else if (seqPhase === 'input') {
@@ -329,10 +337,10 @@ function drawPuzzleScreen() {
     solveTimer--;
     if (solveTimer > 0) {
       ctx.globalAlpha = Math.min(1, (60 - solveTimer) / 30);
-      rRect(0.25, 0.38, 0.50, 0.14, 14, PALETTE.bg + 'ee', PALETTE.accent);
+      glowRect(0.25, 0.38, 0.50, 0.14, 14, PALETTE.bg + 'ee', PALETTE.accent);
       var item = ITEMS[currentStage];
       if (item) {
-        drawTB('\\u2728 ' + item.emoji + ' ' + item.name + ' earned!', 0.5, 0.43, 14, PALETTE.accent);
+        drawTGlow('\\u2728 ' + item.emoji + ' ' + item.name + ' earned!', 0.5, 0.43, 14, PALETTE.accent, 10);
       }
       drawT('Tap to continue', 0.5, 0.49, 10, PALETTE.text + '88');
       ctx.globalAlpha = 1;
@@ -342,26 +350,26 @@ function drawPuzzleScreen() {
   // ═══ HUD ═══
   var nameAlpha = Math.min(1, roomNameTimer / 30);
   ctx.globalAlpha = nameAlpha;
-  rRect(0.10, 0.008, 0.80, 0.040, 10, PALETTE.bg + 'dd', null);
-  drawTB('Stage ' + (currentStage + 1) + ': ' + room.name, 0.5, 0.028, 13, PALETTE.accent);
+  glowRect(0.10, 0.008, 0.80, 0.040, 10, PALETTE.bg + 'dd', PALETTE.accent + '40');
+  drawTGlow('Stage ' + (currentStage + 1) + ': ' + room.name, 0.5, 0.028, 13, PALETTE.accent, 8);
   ctx.globalAlpha = 1;
 
   // Moves counter
-  rRect(0.02, 0.008, 0.08, 0.035, 8, PALETTE.bg + 'cc', PALETTE.accent + '66');
+  glowRect(0.02, 0.008, 0.08, 0.035, 8, PALETTE.bg + 'cc', PALETTE.accent + '66');
   drawT('\\ud83d\\udc63 ' + moveCount, 0.06, 0.025, 10, PALETTE.accent);
 
   // Progress
   drawT('Stage ' + (currentStage + 1) + ' / ' + ROOM_COUNT, 0.5, 0.955, 11, PALETTE.text + '77');
 
   // Items collected
-  rRect(0.88, 0.008, 0.10, 0.035, 8, PALETTE.bg + 'cc', PALETTE.accent + '66');
+  glowRect(0.88, 0.008, 0.10, 0.035, 8, PALETTE.bg + 'cc', PALETTE.accent + '66');
   drawT('\\u2728 ' + inventory.length + '/' + ROOM_COUNT, 0.93, 0.025, 10, PALETTE.accent);
 
   // Examine text (shows briefly on solve)
   if (examineText && examineTimer > 0) {
     var ea = Math.min(1, examineTimer / 20);
     ctx.globalAlpha = ea;
-    rRect(0.15, 0.80, 0.70, 0.06, 10, PALETTE.bg + 'f0', PALETTE.accent + '88');
+    glowRect(0.15, 0.80, 0.70, 0.06, 10, PALETTE.bg + 'f0', PALETTE.accent + '88');
     drawT(examineText, 0.5, 0.83, 11, PALETTE.text);
     ctx.globalAlpha = 1;
     examineTimer--;

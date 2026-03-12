@@ -114,7 +114,7 @@ ${openingScreen()}
 
 function drawTutorial(){
   ctx.fillStyle='rgba(0,0,0,0.85)';ctx.fillRect(0,0,W,H);
-  drawTB('How to Play',0.5,0.12,24,PALETTE.accent);
+  drawTGlow('How to Play',0.5,0.12,24,PALETTE.accent,12);
   var tips = narratorMode ? [
     '\\ud83d\\udcdc  Read the story as it unfolds',
     '\\ud83d\\udc46  Tap to advance the text',
@@ -132,8 +132,10 @@ function drawTutorial(){
   ];
   for(var i=0;i<tips.length;i++){drawT(tips[i],0.5,0.26+i*0.10,13,PALETTE.text)}
   var pulse2=0.6+Math.sin(animFrame*0.08)*0.2;
+  ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=16;
   ctx.globalAlpha=pulse2;rRect(0.35,0.84,0.30,0.08,18,PALETTE.accent,null);
   ctx.globalAlpha=1;rRect(0.36,0.845,0.28,0.065,16,PALETTE.accent,null);
+  ctx.restore();
   drawTB('GOT IT',0.5,0.878,15,PALETTE.bg);
 }
 
@@ -146,17 +148,15 @@ function drawScene() {
   // Full-screen background
   var hasImg = drawBgImage(loadedImages['room_' + currentScene]);
   if (!hasImg) {
-    var grd = ctx.createLinearGradient(0, 0, 0, H);
-    grd.addColorStop(0, room.wallColor || PALETTE.wall);
-    grd.addColorStop(0.5, PALETTE.bg);
-    grd.addColorStop(1, room.floorColor || PALETTE.floor);
-    ctx.fillStyle = grd;
-    ctx.fillRect(0, 0, W, H);
+    drawRoomFallbackBg(room);
   }
 
   // Dim overlay for text readability
   ctx.fillStyle = 'rgba(0,0,0,0.45)';
   ctx.fillRect(0, 0, W, H);
+  
+  // Ambient particles
+  drawParticles(PALETTE.accent, -1);
 
   var dlg = getCurrentDialogue();
 
@@ -166,9 +166,13 @@ function drawScene() {
     var pw = W * 0.22, ph = pw * (loadedImages['char'].naturalHeight / loadedImages['char'].naturalWidth);
     var maxPh = H * 0.6; if (ph > maxPh) { pw = pw * (maxPh / ph); ph = maxPh; }
     var pcx = W * 0.03, pcy = H * 0.18 + bob;
-    // Dark backing
-    ctx.save(); ctx.globalAlpha = 0.5; ctx.fillStyle = PALETTE.bg;
-    ctx.beginPath(); ctx.ellipse(pcx + pw / 2, pcy + ph * 0.55, pw * 0.5, ph * 0.45, 0, 0, Math.PI * 2); ctx.fill();
+    // Radial glow behind character
+    ctx.save();
+    var charGlow = ctx.createRadialGradient(pcx + pw / 2, pcy + ph * 0.5, pw * 0.1, pcx + pw / 2, pcy + ph * 0.5, pw * 0.7);
+    charGlow.addColorStop(0, PALETTE.accent + '30');
+    charGlow.addColorStop(1, 'transparent');
+    ctx.fillStyle = charGlow;
+    ctx.fillRect(pcx - pw * 0.2, pcy - ph * 0.1, pw * 1.4, ph * 1.2);
     ctx.restore();
     ctx.drawImage(loadedImages['char'], pcx, pcy, pw, ph);
   }
@@ -177,12 +181,13 @@ function drawScene() {
   if (dlg) {
     if (dlg.speaker === 'choice') {
       // Choice mode
-      rRect(0.15, 0.25, 0.70, 0.50, 14, PALETTE.bg + 'f0', PALETTE.accent + '88');
-      drawTB(dlg.text, 0.5, 0.30, 16, PALETTE.accent);
+      glowRect(0.15, 0.25, 0.70, 0.50, 14, PALETTE.bg + 'f0', PALETTE.accent + '88');
+      drawTGlow(dlg.text, 0.5, 0.30, 16, PALETTE.accent, 8);
       for (var ci = 0; ci < dlg.options.length; ci++) {
         var cy = 0.40 + ci * 0.12;
-        var hover = PALETTE.accent + '33';
-        rRect(0.22, cy, 0.56, 0.08, 10, hover, PALETTE.accent);
+        ctx.save(); ctx.shadowColor = PALETTE.accent; ctx.shadowBlur = 10;
+        rRect(0.22, cy, 0.56, 0.08, 10, PALETTE.accent + '33', PALETTE.accent);
+        ctx.restore();
         drawTB(dlg.options[ci].text, 0.5, cy + 0.04, 14, PALETTE.text);
       }
       choiceActive = true;
@@ -191,14 +196,16 @@ function drawScene() {
       // Dialogue/narration box
       var boxY = 0.70;
       var boxH = 0.22;
-      rRect(0.05, boxY, 0.90, boxH, 12, PALETTE.bg + 'f0', PALETTE.accent + '55');
+      glowRect(0.05, boxY, 0.90, boxH, 12, PALETTE.bg + 'f0', PALETTE.accent + '55');
 
       // Speaker name plate
       if (dlg.speaker !== 'narrator') {
+        ctx.save(); ctx.shadowColor = PALETTE.accent; ctx.shadowBlur = 10;
         rRect(0.08, boxY - 0.025, 0.25, 0.04, 8, PALETTE.accent, null);
+        ctx.restore();
         drawTB(dlg.speaker, 0.205, boxY - 0.005, 11, PALETTE.bg);
       } else {
-        rRect(0.08, boxY - 0.025, 0.18, 0.04, 8, PALETTE.bg + 'cc', PALETTE.accent + '66');
+        glowRect(0.08, boxY - 0.025, 0.18, 0.04, 8, PALETTE.bg + 'cc', PALETTE.accent + '66');
         drawT('\\ud83d\\udcdc Narration', 0.17, boxY - 0.005, 10, PALETTE.accent);
       }
 
@@ -232,8 +239,8 @@ function drawScene() {
   // ═══ HUD ═══
   var nameAlpha = Math.min(1, roomNameTimer / 30);
   ctx.globalAlpha = nameAlpha;
-  rRect(0.10, 0.008, 0.80, 0.040, 10, PALETTE.bg + 'dd', null);
-  drawTB((narratorMode ? 'Passage ' : 'Chapter ') + (currentScene + 1) + ': ' + room.name, 0.5, 0.028, 13, PALETTE.accent);
+  glowRect(0.10, 0.008, 0.80, 0.040, 10, PALETTE.bg + 'dd', PALETTE.accent + '40');
+  drawTGlow((narratorMode ? 'Passage ' : 'Chapter ') + (currentScene + 1) + ': ' + room.name, 0.5, 0.028, 13, PALETTE.accent, 8);
   ctx.globalAlpha = 1;
 
   // Progress indicator
@@ -241,12 +248,14 @@ function drawScene() {
   var progX = 0.35;
   rRect(progX, 0.955, progW, 0.012, 4, PALETTE.bg + '88', PALETTE.accent + '44');
   var fill = (currentScene + (dialogueIndex / Math.max(1, sceneDialogues[currentScene].length))) / ROOM_COUNT;
+  ctx.save(); ctx.shadowColor = PALETTE.accent; ctx.shadowBlur = 8;
   rRect(progX, 0.955, progW * fill, 0.012, 4, PALETTE.accent, null);
+  ctx.restore();
   drawT((currentScene + 1) + ' / ' + ROOM_COUNT, 0.5, 0.985, 9, PALETTE.text + '77');
 
   // Items collected
   if (inventory.length > 0) {
-    rRect(0.02, 0.008, 0.08, 0.035, 8, PALETTE.bg + 'cc', PALETTE.accent + '66');
+    glowRect(0.02, 0.008, 0.08, 0.035, 8, PALETTE.bg + 'cc', PALETTE.accent + '66');
     drawT('\\u2728 ' + inventory.length, 0.06, 0.025, 10, PALETTE.accent);
   }
 }

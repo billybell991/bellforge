@@ -450,7 +450,8 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
 
   const stages = getPipelineStages(config);
   let creativeBrief: CreativeBrief | null = null;
-  let gameImages: GameImages = { titleBg: null, roomBgs: [], character: null, itemImages: [] };
+  let gameImages: GameImages = { titleBg: null, roomBgs: [], character: null, itemImages: [], packIcon: null };
+  let previewHtml: string | null = null;
 
   // Intermediate chunk results (assembled into creativeBrief after all 4 chunks)
   let briefPalette: CreativePalette | null = null;
@@ -634,7 +635,7 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
               });
             },
           );
-          const imgCount = [gameImages.titleBg, gameImages.character, ...gameImages.roomBgs, ...gameImages.itemImages].filter(Boolean).length;
+          const imgCount = [gameImages.titleBg, gameImages.character, gameImages.packIcon, ...gameImages.roomBgs, ...gameImages.itemImages].filter(Boolean).length;
           sendProgress(buildId, {
             type: 'progress',
             stage: 'art_bg',
@@ -692,9 +693,35 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
       }
       await sleep(800);
     } else if (stage.id === 'qa_game') {
-      // Actual QA call happens after preview generation (post-loop)
-      // Just show a placeholder message here — real progress comes later
-      await sleep(500);
+      // Generate the preview HTML first so QA can review it
+      const buildSeed = Date.now() ^ Math.floor(Math.random() * 0x7fffffff);
+      if (!creativeBrief) {
+        creativeBrief = await generateCreativeBrief(gameConfig);
+      }
+      previewHtml = generatePreviewHtml({
+        genre: config.genre as { id: string; name: string },
+        theme: config.theme as { id: string; name: string },
+        artStyle: config.artStyle as { id: string; name: string },
+        structure: config.structure as { roomCount: number; difficulty: string; puzzleDensity: string },
+        story: config.story as { title: string; description: string; characterName: string; setting: string },
+        seed: buildSeed,
+        creative: creativeBrief,
+        images: gameImages,
+        sceneLabel: t.scenes,
+      });
+
+      // Now run the actual QA
+      sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: '🔍 Gemini QA — playtesting the code', percent: stage.percent + 1, detail: 'Stripping images and sending game logic to Gemini for review...', timestamp: Date.now() });
+      const gameQaResult = await qaGameCode(gameConfig, previewHtml, (msg) => {
+        sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: '🔍 QA reviewing game logic...', percent: stage.percent + 3, detail: msg, timestamp: Date.now() });
+      });
+      if (gameQaResult.passed) {
+        sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: '✅ Game QA passed — logic is solid', percent: stage.percent + 4, detail: 'No dead ends, broken puzzles, or unreachable items detected.', timestamp: Date.now() });
+      } else {
+        const issueList = gameQaResult.issues.slice(0, 3).join('; ');
+        sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: `⚠️ Game QA: ${gameQaResult.issues.length} potential issue(s)`, percent: stage.percent + 4, detail: `${issueList}`, timestamp: Date.now() });
+        console.log(`  ⚠️ Game QA issues for ${buildId}:`, gameQaResult.issues);
+      }
     } else if (stage.id === 'complete') {
       await sleep(300);
     } else {
@@ -707,37 +734,23 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
   const safeName = title.replace(/[^a-zA-Z0-9]/g, '_');
   const apkPath = `C:\\Stuff\\BellForge\\output\\${safeName}\\app-debug.apk`;
 
-  // Generate the in-browser preview with a unique seed + Gemini creative content
-  const buildSeed = Date.now() ^ Math.floor(Math.random() * 0x7fffffff);
-
-  // If creative brief failed somehow, generate a fallback now
-  if (!creativeBrief) {
-    creativeBrief = await generateCreativeBrief(gameConfig);
-  }
-
-  const previewHtml = generatePreviewHtml({
-    genre: config.genre as { id: string; name: string },
-    theme: config.theme as { id: string; name: string },
-    artStyle: config.artStyle as { id: string; name: string },
-    structure: config.structure as { roomCount: number; difficulty: string; puzzleDensity: string },
-    story: config.story as { title: string; description: string; characterName: string; setting: string },
-    seed: buildSeed,
-    creative: creativeBrief,
-    images: gameImages,
-    sceneLabel: t.scenes,
-  });
-
-  // ── Post-preview QA: Gemini reviews the assembled game code ──
-  sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: '🔍 Gemini QA — playtesting the code', percent: 82, detail: 'Stripping images and sending game logic to Gemini for review...', timestamp: Date.now() });
-  const gameQaResult = await qaGameCode(gameConfig, previewHtml, (msg) => {
-    sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: '🔍 QA reviewing game logic...', percent: 84, detail: msg, timestamp: Date.now() });
-  });
-  if (gameQaResult.passed) {
-    sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: '✅ Game QA passed — logic is solid', percent: 86, detail: 'No dead ends, broken puzzles, or unreachable items detected.', timestamp: Date.now() });
-  } else {
-    const issueList = gameQaResult.issues.slice(0, 3).join('; ');
-    sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: `⚠️ Game QA: ${gameQaResult.issues.length} potential issue(s)`, percent: 86, detail: `${issueList}`, timestamp: Date.now() });
-    console.log(`  ⚠️ Game QA issues for ${buildId}:`, gameQaResult.issues);
+  // If preview wasn't generated in the qa_game stage (shouldn't happen), generate it now
+  if (!previewHtml) {
+    const buildSeed = Date.now() ^ Math.floor(Math.random() * 0x7fffffff);
+    if (!creativeBrief) {
+      creativeBrief = await generateCreativeBrief(gameConfig);
+    }
+    previewHtml = generatePreviewHtml({
+      genre: config.genre as { id: string; name: string },
+      theme: config.theme as { id: string; name: string },
+      artStyle: config.artStyle as { id: string; name: string },
+      structure: config.structure as { roomCount: number; difficulty: string; puzzleDensity: string },
+      story: config.story as { title: string; description: string; characterName: string; setting: string },
+      seed: buildSeed,
+      creative: creativeBrief,
+      images: gameImages,
+      sceneLabel: t.scenes,
+    });
   }
 
   record.status = 'complete';

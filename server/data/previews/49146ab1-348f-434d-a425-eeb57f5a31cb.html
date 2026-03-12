@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Silence, My Engine — BellForge Preview</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { width:100%; height:100%; overflow:hidden; background:#000; font-family:'Segoe UI',system-ui,sans-serif; }
+canvas { display:block; margin:auto; touch-action:none; cursor:pointer; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+(function(){
+"use strict";
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+
+// ═══════════ GEMINI-DESIGNED GAME DATA ═══════════
+const PALETTE = {"bg":"#0D001A","wall":"#2C1A3F","accent":"#FF00FF","floor":"#0A3B4F","text":"#00FFFF","highlight":"#CC00FF","shadow":"#050010"};
+const ROOMS = [{"name":"The Overture Antechamber","description":"Electric cyan light pulses from cracked bone gears embedded in obsidian walls, casting long, distorted shadows across the shimmering floor.","examineText":"A low hum vibrates through Claviger's bone casing, a familiar, unsettling thrum that seems to emanate from the very air, pulling at fragments of memory.","atmosphere":"Eerie, pulsating, initial","wallColor":"#2C1A3F","floorColor":"#0A3B4F","ceilingColor":"#1A2C3F","furniture":[{"type":"rect","x":0.1,"y":0.15,"w":0.3,"h":0.08,"color":"#FF00FF","label":"Decaying Organ Pedal"},{"type":"circle","x":0.55,"y":0.1,"w":0.2,"h":0.2,"color":"#00FFFF","label":"Broken Calcified Gear"},{"type":"rect","x":0.7,"y":0.3,"w":0.2,"h":0.05,"color":"#FF00FF","label":"Cracked Control Console"}],"hasWindow":false,"windowType":"none","lightingDir":"center"},{"name":"The Ribcage Ascent","description":"Jagged arcs of luminescent bone jut from the walls like a colossal ribcage, glowing with an electric blue aura against the deep violet gloom.","examineText":"Each clatter of Claviger's foot echoes, the structure vibrating faintly as if alive, a whisper of a forgotten pulse within its skeletal architecture.","atmosphere":"Skeletal, climbing, resonant","wallColor":"#3A2A4A","floorColor":"#1A2C3F","ceilingColor":"#2A1A3A","furniture":[{"type":"arch","x":0.1,"y":0.15,"w":0.25,"h":0.15,"color":"#00FFFF","label":"Arching Bone Rib"},{"type":"rect","x":0.4,"y":0.35,"w":0.2,"h":0.07,"color":"#FF00FF","label":"Stacked Vertebrae"},{"type":"triangle","x":0.7,"y":0.55,"w":0.18,"h":0.1,"color":"#00FFFF","label":"Shattered Spine Fragment"},{"type":"rect","x":0.05,"y":0.65,"w":0.3,"h":0.08,"color":"#FF00FF","label":"Plate of Ossified Cartilage"}],"hasWindow":false,"windowType":"none","lightingDir":"right"},{"name":"The Winding Tendril Pass","description":"Glowing tendrils of calcified sinew writhe across the chasm, forming precarious bridges under a hot pink, pulsating energy source.","examineText":"A low, guttural thrum pulses through the fibrous platforms, each step causing a sympathetic tremor, a chilling echo of Claviger's own unsteady gait.","atmosphere":"Organic, pulsating, unsettling","wallColor":"#201A30","floorColor":"#05202A","ceilingColor":"#100A20","furniture":[{"type":"rect","x":0.1,"y":0.15,"w":0.25,"h":0.07,"color":"#FF00FF","label":"Pulsing Sinew Platform"},{"type":"rect","x":0.35,"y":0.3,"w":0.3,"h":0.07,"color":"#00FFFF","label":"Glow-Veined Bridge"},{"type":"circle","x":0.65,"y":0.45,"w":0.15,"h":0.15,"color":"#FF33FF","label":"Flickering Nerve Node"},{"type":"rect","x":0.15,"y":0.55,"w":0.2,"h":0.07,"color":"#00FFFF","label":"Coiled Tendril Perch"},{"type":"rect","x":0.5,"y":0.7,"w":0.3,"h":0.08,"color":"#FF00FF","label":"Writhed Membrane Walkway"}],"hasWindow":false,"windowType":"none","lightingDir":"dim"},{"name":"The Resonance Chasm","description":"An abyss of shimmering void drops beneath suspended, glowing organ pipes of bone, resonating with a deep electric blue hum.","examineText":"Each melody shard that echoes here feels too close, too personal, like a forgotten lullaby trying to tear itself from Claviger's very being.","atmosphere":"Vast, echoing, melodic","wallColor":"#1C1A3F","floorColor":"#051525","ceilingColor":"#0A1A2F","furniture":[{"type":"rect","x":0.1,"y":0.2,"w":0.15,"h":0.3,"color":"#00FFFF","label":"Suspended Organ Pipe"},{"type":"rect","x":0.4,"y":0.15,"w":0.2,"h":0.07,"color":"#FF00FF","label":"Central Resonance Platform"},{"type":"rect","x":0.75,"y":0.2,"w":0.1,"h":0.25,"color":"#0000FF","label":"Whispering Chime Column"},{"type":"rect","x":0.2,"y":0.45,"w":0.1,"h":0.07,"color":"#00FFFF","label":"Lower Perch"},{"type":"rect","x":0.6,"y":0.55,"w":0.15,"h":0.07,"color":"#FF00FF","label":"Echoing Ledge"}],"hasWindow":true,"windowType":"wide","lightingDir":"center"},{"name":"The Grinding Maw","description":"Colossal gears of ossified steel churn menacingly, their hot pink teeth grinding a discordant symphony as electric blue arcs flash in the oppressive dark.","examineText":"The deafening clatter feels strangely synchronised with Claviger's internal mechanisms, a rhythmic pulse that threatens to unravel the automaton's delicate frame.","atmosphere":"Industrial, perilous, deafening","wallColor":"#2F1A3A","floorColor":"#1F0A2A","ceilingColor":"#2A1A30","furniture":[{"type":"circle","x":0.1,"y":0.1,"w":0.3,"h":0.3,"color":"#FF00FF","label":"Massive Grinding Gear"},{"type":"rect","x":0.5,"y":0.25,"w":0.2,"h":0.07,"color":"#00FFFF","label":"Lever Platform"},{"type":"circle","x":0.65,"y":0.4,"w":0.25,"h":0.25,"color":"#FF33FF","label":"Secondary Cogwheel"},{"type":"rect","x":0.15,"y":0.6,"w":0.3,"h":0.08,"color":"#00FFFF","label":"Gear-Tooth Ledge"}],"hasWindow":false,"windowType":"none","lightingDir":"right"},{"name":"The Bone Shard Gallery","description":"A chaotic ballet of sharp, glowing bone shards pierces the air, suspended by unseen forces, casting electric cyan light onto the jagged floor.","examineText":"Every sharp edge reflects a distorted image of Claviger, a collection of broken fragments that mirror the automaton's own fractured sense of self.","atmosphere":"Jagged, dangerous, fragmented","wallColor":"#2C1A3A","floorColor":"#0A3B45","ceilingColor":"#1A2C35","furniture":[{"type":"triangle","x":0.1,"y":0.15,"w":0.15,"h":0.1,"color":"#FF00FF","label":"Upward Bone Spike"},{"type":"rect","x":0.3,"y":0.25,"w":0.25,"h":0.07,"color":"#00FFFF","label":"Fractured Crystalline Platform"},{"type":"triangle","x":0.65,"y":0.4,"w":0.18,"h":0.12,"color":"#FF33FF","label":"Downward Bone Shard"},{"type":"rect","x":0.15,"y":0.55,"w":0.3,"h":0.08,"color":"#00FFFF","label":"Sharp-Edged Ledge"},{"type":"triangle","x":0.5,"y":0.7,"w":0.2,"h":0.1,"color":"#FF00FF","label":"Ground Bone Splinter"}],"hasWindow":false,"windowType":"none","lightingDir":"left"},{"name":"The Phantom Metronome","description":"A massive, glowing pendulum of calcified clockwork swings slowly through the eerie void, its electric blue arc marking the rhythm of the Groaning Organ.","examineText":"The incessant ticking of the metronome resonates with Claviger's own internal clockwork, a relentless march that feels both alien and agonizingly familiar.","atmosphere":"Rhythmic, hypnotic, relentless","wallColor":"#1A1A30","floorColor":"#051A25","ceilingColor":"#0A0A1F","furniture":[{"type":"rect","x":0.05,"y":0.15,"w":0.2,"h":0.07,"color":"#00FFFF","label":"Pulsing Platform"},{"type":"rect","x":0.4,"y":0.3,"w":0.15,"h":0.07,"color":"#FF00FF","label":"Oscillating Perch"},{"type":"arch","x":0.65,"y":0.4,"w":0.25,"h":0.3,"color":"#0000FF","label":"Metronome Arm"},{"type":"rect","x":0.1,"y":0.55,"w":0.25,"h":0.08,"color":"#00FFFF","label":"Rhythmic Ledge"},{"type":"circle","x":0.7,"y":0.1,"w":0.1,"h":0.1,"color":"#FF33FF","label":"Metronome Weight"}],"hasWindow":false,"windowType":"none","lightingDir":"center"},{"name":"The Vibrating Membrane","description":"Translucent, glowing membranes stretch taut across the cavern, humming with a sickly greenish-cyan light and threatening to tear with every vibration.","examineText":"The pulsating surface beneath Claviger's feet feels eerily like flesh, a disturbing echo of the organic life that this mechanical nightmare consumes.","atmosphere":"Visceral, quivering, sickly","wallColor":"#221A33","floorColor":"#072B3C","ceilingColor":"#171A2C","furniture":[{"type":"rect","x":0.1,"y":0.2,"w":0.3,"h":0.05,"color":"#33FFCC","label":"Pulsating Membrane Platform"},{"type":"arch","x":0.5,"y":0.1,"w":0.2,"h":0.2,"color":"#FF00FF","label":"Skeletal Tension Arch"},{"type":"rect","x":0.6,"y":0.4,"w":0.25,"h":0.05,"color":"#33FFCC","label":"Shimmering Skin-Bridge"},{"type":"rect","x":0.15,"y":0.6,"w":0.2,"h":0.05,"color":"#FF00FF","label":"Taut Sinew Ledge"}],"hasWindow":false,"windowType":"none","lightingDir":"dim"},{"name":"The Chorded Veins","description":"A labyrinth of interconnected, glowing veins pulses with electric blue energy, their hot pink arterial nodes throbbing with a sickly, internal light.","examineText":"The network of passages feels profoundly intimate, as if Claviger is navigating the very circulatory system of a colossal, suffering being, or perhaps its own lost body.","atmosphere":"Labyrinthine, pulsating, organic","wallColor":"#2A1F3F","floorColor":"#0F304A","ceilingColor":"#1A102F","furniture":[{"type":"rect","x":0.1,"y":0.15,"w":0.25,"h":0.07,"color":"#0000FF","label":"Luminous Vein Path"},{"type":"circle","x":0.4,"y":0.25,"w":0.15,"h":0.15,"color":"#FF00FF","label":"Thrumming Arterial Node"},{"type":"rect","x":0.6,"y":0.35,"w":0.2,"h":0.07,"color":"#0000FF","label":"Branching Capillary Walk"},{"type":"rect","x":0.15,"y":0.5,"w":0.3,"h":0.08,"color":"#FF00FF","label":"Congealed Blood Clot"},{"type":"rect","x":0.55,"y":0.65,"w":0.25,"h":0.07,"color":"#00FFFF","label":"Intricate Vessel Bridge"}],"hasWindow":false,"windowType":"none","lightingDir":"right"},{"name":"The Echoing Vault","description":"A towering chamber of polished obsidian bone rises into an unseen ceiling, its vast emptiness pierced only by stark cyan light reflecting off distant, ancient carvings.","examineText":"Claviger's every mechanical whir and click echoes endlessly, a lonely sound in this immense prison, emphasizing the terrifying isolation of its existence.","atmosphere":"Vast, isolated, ancient","wallColor":"#1C1A3A","floorColor":"#082B40","ceilingColor":"#0A1020","furniture":[{"type":"rect","x":0.1,"y":0.15,"w":0.15,"h":0.07,"color":"#00FFFF","label":"Isolated Ledge"},{"type":"rect","x":0.35,"y":0.3,"w":0.15,"h":0.07,"color":"#FF00FF","label":"Perforated Bone Column"},{"type":"rect","x":0.6,"y":0.45,"w":0.15,"h":0.07,"color":"#00FFFF","label":"Elevated Platform"},{"type":"rect","x":0.2,"y":0.6,"w":0.15,"h":0.07,"color":"#FF00FF","label":"Whispering Altar"}],"hasWindow":false,"windowType":"none","lightingDir":"dim"},{"name":"The Conductor's Perch","description":"A single, intricate control console glows with intense magenta light on an elevated platform, surrounded by a dizzying array of electric blue levers and bone-etched dials.","examineText":"Touching the console sends a surge through Claviger's frame, a phantom limb reaching out, feeling as if these controls are an extension of its own forgotten will, a part of its lost identity.","atmosphere":"Crucial, climactic, manipulative","wallColor":"#2F1A4A","floorColor":"#0F3B5F","ceilingColor":"#1A1A3F","furniture":[{"type":"rect","x":0.3,"y":0.2,"w":0.4,"h":0.1,"color":"#FF00FF","label":"Main Conductor Console"},{"type":"rect","x":0.1,"y":0.1,"w":0.1,"h":0.05,"color":"#00FFFF","label":"Flickering Lever Bank"},{"type":"circle","x":0.8,"y":0.1,"w":0.08,"h":0.08,"color":"#0000FF","label":"Glowing Dial"},{"type":"rect","x":0.2,"y":0.4,"w":0.15,"h":0.07,"color":"#FF00FF","label":"Access Platform"},{"type":"rect","x":0.65,"y":0.55,"w":0.15,"h":0.07,"color":"#00FFFF","label":"Observation Deck"}],"hasWindow":false,"windowType":"none","lightingDir":"center"},{"name":"The Mechanism's Core","description":"At the heart of the Groaning Organ, a swirling vortex of electric blue and hot pink energy churns, radiating spectral melodies that tear at Claviger's very core.","examineText":"Here, the truth unravels: the spectral melodies are Claviger's own fragmented memories, the items collected, parts of its lost identity, all now weaponized by the Organ to compel its movements.","atmosphere":"Climactic, revelatory, overwhelming","wallColor":"#100A20","floorColor":"#050A10","ceilingColor":"#000000","furniture":[{"type":"circle","x":0.35,"y":0.2,"w":0.3,"h":0.3,"color":"#00FFFF","label":"Pulsing Core Chamber"},{"type":"rect","x":0.1,"y":0.15,"w":0.15,"h":0.07,"color":"#FF00FF","label":"Conduit Pedestal Left"},{"type":"rect","x":0.75,"y":0.15,"w":0.15,"h":0.07,"color":"#FF00FF","label":"Conduit Pedestal Right"},{"type":"triangle","x":0.4,"y":0.5,"w":0.2,"h":0.1,"color":"#00FFFF","label":"Ascendant Energy Spire"},{"type":"rect","x":0.05,"y":0.65,"w":0.2,"h":0.08,"color":"#FF00FF","label":"Peripheral Console"}],"hasWindow":true,"windowType":"round","lightingDir":"center"}];
+const ROOM_COUNT = 12;
+const TITLE = "Silence, My Engine";
+const CHAR_NAME = "Claviger";
+const GAME_VIBE = "Spectral melodies, fractured identity, neon purgatory.";
+const SCENE_LABEL = "levels";
+const START_TEXT = undefined;
+const ITEMS = [{"name":"Resonance Shard","emoji":"🔮","description":"A jagged fragment of crystallized sound, humming with a faint, violet luminescence.","roomIndex":0},{"name":"Vertebra Coil","emoji":"🦴","description":"A segment of polished bone, wrapped in flickering wires that thrum with a sickly green energy.","roomIndex":1},{"name":"Synaptic Filament","emoji":"〰️","description":"A glowing, thin nerve fiber, pulsing with erratic neon-blue light.","roomIndex":2},{"name":"Aetheric Whisper","emoji":"🌬️","description":"A pocket of chilled air, shimmering with the faint, unsettling echoes of a forgotten scream.","roomIndex":3},{"name":"Crystalline Molar","emoji":"🦷","description":"A grotesque, oversized tooth, its enamel replaced by obsidian-dark crystal that catches the synthwave glare.","roomIndex":4},{"name":"Screaming Splinter","emoji":"🗡️","description":"A sliver of calcified dread, vibrating with a barely audible, high-pitched whine.","roomIndex":5},{"name":"Temporal Pendulum","emoji":"🕰️","description":"A spectral weight, subtly swaying with an unseen rhythm, its edges blurring into an iridescent haze.","roomIndex":6},{"name":"Harmonic Viscera","emoji":"🧬","description":"A pulsating fragment of iridescent tissue, resonating with a deep, unsettling hum that distorts perception.","roomIndex":7},{"name":"Kinetic Bloodstream","emoji":"🩸","description":"A vial of viscous, glowing fluid, sloshing with the memory of agonizing pressure.","roomIndex":8},{"name":"Mourning Engram","emoji":"💾","description":"A perfectly preserved echo of a sound, encased in frozen light, waiting to be unleashed.","roomIndex":9},{"name":"Maestro's Baton","emoji":"🎼","description":"A slender rod of polished bone, humming with residual power, its tip glowing with a faint, insistent beat.","roomIndex":10},{"name":"Silence Cog","emoji":"⚙️","description":"The final, crucial gear, carved from pure, solidified despair, radiating an eerie, absolute stillness.","roomIndex":11}];
+const PUZZLES = [{"doorInRoom":3,"leadsToRoom":4,"requiredItem":"Synaptic Filament","lockedMessage":"A cacophony of unseen gears grinds just beyond, its vibrations sealing the passage with an impenetrable sonic wall.","unlockedMessage":"The filament stretches, a shimmering bridge of thought, guiding a delicate hum that quiets the grating sound, and the path to the Maw shudders open."}];
+const HINTS = ["This antechamber hums with a faint energy... perhaps that glimmering Resonance Shard is more significant than it first appears?","This path spirals upwards like a giant ribcage... I wonder if that Vertebra Coil could help with the ascent somehow?","The tendrils here twist and turn like complex thoughts... maybe that delicate Synaptic Filament holds a clue to their direction?","The chasm echoes with an almost imperceptible sound... sometimes, a faint Aetheric Whisper can reveal the deepest secrets.","This place groans and grinds like a colossal maw... perhaps that massive Crystalline Molar is more than just a fossil?","This gallery displays countless fragments... but that particular Screaming Splinter seems to be resonating with a peculiar energy.","There's an odd rhythm in the air, like a metronome that isn't quite there... perhaps that weighty Temporal Pendulum is trying to set the pace?","This vast membrane shimmers with a constant, resonant vibration... I wonder if the strange Harmonic Viscera have anything to do with its song?","These chorded veins pulse with a profound energy... perhaps harnessing the power of the Kinetic Bloodstream could unravel their mystery.","The echoes in this vault carry a sorrowful weight... I can't help but feel that the Mourning Engram is key to understanding what's lost here.","This Conductor's Perch seems to command a grand view... and that elegant Maestro's Baton almost hums with unused potential.","This is the very core of the engine, yet it's eerily quiet... perhaps that unique Silence Cog is the missing piece to get things running, or to keep them from running?"];
+const OPENING = "The Groaning Organ's colossal gears of calcified bone and shrieking steel grind into motion around you, Claviger, casting shifting shadows of electric blue and searing magenta across the void. Every *whirr* of your broken clockwork limbs resonates with the spectral melodies that cling like phantom fog to the glowing synthwave architecture, compelling you deeper. You must silence this discordant symphony, but a horrifying echo suggests its terrible music box is already playing you.";
+const ENDING = "The final discordant note shatters, not from the Groaning Organ's calcified gears, but within the newly whole core of your bone and clockwork essence. Each spectral melody silenced, each glowing fragment collected, wasn't a piece of the Organ, but a lost sliver of your own identity, recomposed into a terrifying, beautiful symphony of self. As the colossal music box falls into an eternal, neon-laced silence, you, Claviger, are no longer a puppet, but the singular, resonant melody of your own being.";
+const SEED = -827540498;
+
+// ═══════════ IMAGEN ARTWORK ═══════════
+const IMG_TITLE = "";
+const IMG_CHAR = "";
+const IMG_PACK = "";
+const IMG_ROOMS = ["","","","","","","","","","","",""];
+const IMG_ITEMS = ["","","","","","","","","","","",""];
+
+
+var loadedImages = {};
+function preloadImg(key, src) {
+  if(!src) return;
+  var img = new Image();
+  img.src = src;
+  loadedImages[key] = img;
+}
+preloadImg('title', IMG_TITLE);
+preloadImg('char', IMG_CHAR);
+preloadImg('pack', IMG_PACK);
+for(var ri=0; ri<IMG_ROOMS.length; ri++) preloadImg('room_'+ri, IMG_ROOMS[ri]);
+for(var ii=0; ii<IMG_ITEMS.length; ii++) preloadImg('item_'+ii, IMG_ITEMS[ii]);
+
+
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const rng = mulberry32(SEED);
+function ri2(max){return Math.floor(rng()*max)}
+function rf(mn,mx){return mn+rng()*(mx-mn)}
+
+
+let W=0,H=0;
+let screen = 'title';
+let animFrame = 0;
+let showTutorial = true;
+let roomNameTimer = 0;
+let openingStart = 0;
+
+
+// ═══════════ PLATFORMER STATE ═══════════
+let currentLevel = 0;
+let transitionAlpha = 0;
+let inventory = [];
+let foundItems = new Set();
+let solvedPuzzles = new Set();
+
+// Player physics
+var player = { x: 0.08, y: 0.75, vx: 0, vy: 0, w: 0.05, h: 0.08, onGround: false, facing: 1, frame: 0 };
+var GRAVITY = 0.0012;
+var JUMP_FORCE = -0.022;
+var MOVE_SPEED = 0.006;
+var moveDir = 0; // -1, 0, 1
+var jumpPressed = false;
+var touchId = null;
+var lastTime = 0;
+
+// Per-level platform data (generated from furniture + procedural)
+var levelPlatforms = [];
+var levelEnemies = [];
+var levelDoors = [];
+
+function buildLevel(idx) {
+  var room = ROOMS[idx];
+  var plats = [];
+  // Ground platform
+  plats.push({ x: 0, y: 0.88, w: 1.0, h: 0.12, color: room.floorColor || PALETTE.floor });
+  // Platforms from furniture data
+  if (room.furniture) {
+    for (var i = 0; i < room.furniture.length; i++) {
+      var f = room.furniture[i];
+      // Convert furniture rects to platforms — clamped to reasonable platformer positions
+      var px = Math.max(0.05, Math.min(0.90, f.x));
+      var py = Math.max(0.30, Math.min(0.78, f.y + f.h)); // platform at bottom of furniture
+      var pw = Math.max(0.08, Math.min(0.25, f.w));
+      plats.push({ x: px, y: py, w: pw, h: 0.025, color: f.color || PALETTE.wall, label: f.label });
+    }
+  }
+  // Procedural floating platforms to fill gaps — guarantee vertical traversal
+  var existingCount = plats.length;
+  if (existingCount < 5) {
+    for (var j = 0; j < 5 - existingCount; j++) {
+      plats.push({
+        x: rf(0.1, 0.7),
+        y: rf(0.35, 0.75),
+        w: rf(0.10, 0.20),
+        h: 0.025,
+        color: PALETTE.wall
+      });
+    }
+  }
+
+  // Sort by y descending so lower platforms are rendered first
+  plats.sort(function(a, b) { return b.y - a.y; });
+
+  // Enemies (one per level on harder difficulties, skip level 0)
+  var enemies = [];
+  if (idx > 0 && idx < ROOM_COUNT) {
+    var ep = plats[Math.min(2, plats.length - 1)]; // Walk on a mid-height platform
+    if (ep && ep.w >= 0.10) {
+      enemies.push({
+        x: ep.x + ep.w * 0.3,
+        y: ep.y - 0.05,
+        w: 0.04, h: 0.05,
+        minX: ep.x + 0.01,
+        maxX: ep.x + ep.w - 0.05,
+        speed: rf(0.001, 0.003),
+        dir: 1
+      });
+    }
+  }
+
+  // Exit door (right side)
+  var exitDoor = idx < ROOM_COUNT - 1 ? { x: 0.92, y: 0.72, w: 0.06, h: 0.16 } : null;
+  // Entry marker (left side)
+  var entryDoor = idx > 0 ? { x: 0.02, y: 0.72, w: 0.06, h: 0.16 } : null;
+
+  return { platforms: plats, enemies: enemies, exitDoor: exitDoor, entryDoor: entryDoor };
+}
+
+// Pre-build all levels
+for (var li = 0; li < ROOM_COUNT; li++) {
+  var level = buildLevel(li);
+  levelPlatforms.push(level.platforms);
+  levelEnemies.push(level.enemies);
+  levelDoors.push({ exit: level.exitDoor, entry: level.entryDoor });
+}
+
+// Item positions — floating above a random platform
+var itemPositions = [];
+for (var ii = 0; ii < ITEMS.length; ii++) {
+  var platIdx = 1 + ri2(Math.max(1, levelPlatforms[ii] ? levelPlatforms[ii].length - 2 : 1));
+  var platRef = levelPlatforms[ii] ? levelPlatforms[ii][Math.min(platIdx, levelPlatforms[ii].length - 1)] : null;
+  if (platRef) {
+    itemPositions.push({ x: platRef.x + platRef.w * 0.5, y: platRef.y - 0.08 });
+  } else {
+    itemPositions.push({ x: rf(0.2, 0.7), y: rf(0.4, 0.7) });
+  }
+}
+
+
+function resize(){
+  var dpr=window.devicePixelRatio||1;
+  var cw=window.innerWidth, ch=window.innerHeight;
+  var targetRatio=16/9;
+  var actualRatio=cw/ch;
+  if(actualRatio > targetRatio){ H=ch; W=Math.floor(ch*targetRatio); }
+  else { W=cw; H=Math.floor(cw/targetRatio); }
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize',resize);resize();
+
+
+function nx(v){return v*W}
+function ny(v){return v*H}
+function fillR(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(nx(x),ny(y),nx(w),ny(h))}
+function drawT(t,x,y,sz,c,al){ctx.fillStyle=c;ctx.font=(sz*H/800)+'px "Segoe UI",system-ui,sans-serif';ctx.textAlign=al||'center';ctx.textBaseline='middle';ctx.fillText(t,nx(x),ny(y))}
+function drawTB(t,x,y,sz,c,al){ctx.fillStyle=c;ctx.font='bold '+(sz*H/800)+'px "Segoe UI",system-ui,sans-serif';ctx.textAlign=al||'center';ctx.textBaseline='middle';ctx.fillText(t,nx(x),ny(y))}
+function rRect(x,y,w,h,r,fl,st){
+  var rx=nx(x),ry=ny(y),rw=nx(w),rh=ny(h),rr=Math.min(r,rw/2,rh/2);
+  ctx.beginPath();ctx.moveTo(rx+rr,ry);ctx.arcTo(rx+rw,ry,rx+rw,ry+rh,rr);ctx.arcTo(rx+rw,ry+rh,rx,ry+rh,rr);ctx.arcTo(rx,ry+rh,rx,ry,rr);ctx.arcTo(rx,ry,rx+rw,ry,rr);ctx.closePath();
+  if(fl){ctx.fillStyle=fl;ctx.fill()}if(st){ctx.strokeStyle=st;ctx.lineWidth=2;ctx.stroke()}
+}
+function wrapT(t,cx,sy,sz,c,mw){
+  ctx.fillStyle=c;var fs=sz*H/800;ctx.font=fs+'px "Segoe UI",system-ui,sans-serif';ctx.textAlign='center';
+  var words=t.split(' '),ln='',y=ny(sy),lh=fs*1.4,m=nx(mw);
+  for(var i=0;i<words.length;i++){var test=ln+(ln?' ':'')+words[i];if(ctx.measureText(test).width>m&&ln){ctx.fillText(ln,nx(cx),y);ln=words[i];y+=lh}else ln=test}
+  if(ln)ctx.fillText(ln,nx(cx),y);
+}
+function drawBgImage(img){
+  if(!img||!img.complete||!img.naturalWidth)return false;
+  var iw=img.naturalWidth, ih=img.naturalHeight;
+  var scale=Math.max(W/iw, H/ih);
+  var sw=iw*scale, sh=ih*scale;
+  var ox=(W-sw)/2, oy=(H-sh)/2;
+  ctx.drawImage(img, ox, oy, sw, sh);
+  return true;
+}
+var cleanedChar=null;
+function getCleanChar(){
+  if(cleanedChar)return cleanedChar;
+  var img=loadedImages['char'];
+  if(!img||!img.complete||!img.naturalWidth)return null;
+  var tc=document.createElement('canvas');
+  tc.width=img.naturalWidth;tc.height=img.naturalHeight;
+  var tctx=tc.getContext('2d');
+  tctx.drawImage(img,0,0);
+  var d=tctx.getImageData(0,0,tc.width,tc.height);
+  var px=d.data;
+  for(var i=0;i<px.length;i+=4){
+    var br=(px[i]+px[i+1]+px[i+2])/3;
+    if(br<25){px[i+3]=0}else if(br<50){px[i+3]=Math.floor((br-25)/25*255)}
+  }
+  tctx.putImageData(d,0,0);
+  cleanedChar=tc;return tc;
+}
+
+
+
+function drawTitle(){
+  var hasImg = drawBgImage(loadedImages['title']);
+  if(!hasImg){
+    var grd=ctx.createLinearGradient(0,0,W,H);
+    grd.addColorStop(0,PALETTE.bg);grd.addColorStop(0.35,PALETTE.wall);grd.addColorStop(0.65,PALETTE.shadow||PALETTE.bg);grd.addColorStop(1,PALETTE.bg);
+    ctx.fillStyle=grd;ctx.fillRect(0,0,W,H);
+  }
+  ctx.fillStyle='rgba(0,0,0,0.50)';ctx.fillRect(0,0,W,H);
+  var vig=ctx.createRadialGradient(W*0.5,H*0.45,W*0.25,W*0.5,H*0.5,W*0.75);
+  vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(0.7,'rgba(0,0,0,0.3)');vig.addColorStop(1,'rgba(0,0,0,0.85)');
+  ctx.fillStyle=vig;ctx.fillRect(0,0,W,H);
+  var topFade=ctx.createLinearGradient(0,0,0,H*0.12);
+  topFade.addColorStop(0,'rgba(0,0,0,0.9)');topFade.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=topFade;ctx.fillRect(0,0,W,H*0.12);
+  var t=animFrame*0.02;
+  ctx.globalAlpha=0.05;
+  for(var i=0;i<4;i++){var y=H*(0.15+i*0.22+Math.sin(t+i*0.9)*0.02);ctx.strokeStyle=PALETTE.accent;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}
+  ctx.globalAlpha=1;
+  var textOffX = 0.5;
+  var charSrc=getCleanChar();
+  if(charSrc){
+    var bob=Math.sin(animFrame*0.03)*6;
+    var cw2=W*0.18, ch2=cw2*(loadedImages['char'].naturalHeight/loadedImages['char'].naturalWidth);
+    var maxCh=H*0.55; if(ch2>maxCh){cw2=cw2*(maxCh/ch2);ch2=maxCh}
+    var cx2=W*0.06, cy2=H*0.22+bob;
+    ctx.save();ctx.globalAlpha=0.3;ctx.fillStyle=PALETTE.bg;
+    ctx.beginPath();ctx.ellipse(cx2+cw2/2,cy2+ch2+10,cw2*0.45,12,0,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+    ctx.drawImage(charSrc, cx2, cy2, cw2, ch2);
+    textOffX = 0.58;
+  }
+  ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=25;
+  drawTB(TITLE,textOffX,0.22,38,PALETTE.accent);ctx.restore();
+  drawTB(TITLE,textOffX,0.22,38,'#fff');
+  drawTB('"'+GAME_VIBE+'"',textOffX,0.36,20,PALETTE.accent);
+  drawT(ROOM_COUNT+' '+SCENE_LABEL+' \u00b7 A '+CHAR_NAME+' Adventure',textOffX,0.46,13,PALETTE.text+'99');
+  var pulse=0.4+Math.sin(animFrame*0.04)*0.3;
+  ctx.globalAlpha=pulse;
+  drawT('tap anywhere to begin',0.5,0.78,14,PALETTE.text);
+  ctx.globalAlpha=1;
+  drawT('How to Play',0.5,0.90,11,PALETTE.accent+'bb');
+  drawT('Built with BellForge',0.5,0.96,9,PALETTE.text+'44');
+}
+
+
+function drawOpening(){
+  var hasImg = drawBgImage(loadedImages['title']);
+  if(!hasImg){ctx.fillStyle=PALETTE.bg;ctx.fillRect(0,0,W,H)}
+  ctx.fillStyle='rgba(0,0,0,0.70)';ctx.fillRect(0,0,W,H);
+  var alpha=Math.min(1,(animFrame-openingStart)/60);
+  ctx.globalAlpha=alpha;
+  drawTB(TITLE,0.5,0.15,24,PALETTE.accent);
+  rRect(0.15,0.28,0.70,0.38,14,PALETTE.bg+'cc',PALETTE.accent+'40');
+  wrapT(OPENING,0.5,0.35,15,PALETTE.text,0.62);
+  drawT('[ tap to continue ]',0.5,0.78,13,PALETTE.text+'88');
+  ctx.globalAlpha=1;
+}
+
+
+function drawTutorial(){
+  ctx.fillStyle='rgba(0,0,0,0.85)';ctx.fillRect(0,0,W,H);
+  drawTB('How to Play',0.5,0.12,24,PALETTE.accent);
+  var tips=[
+    '\u2b05\ufe0f  Tap LEFT side to run left',
+    '\u27a1\ufe0f  Tap RIGHT side to run right',
+    '\u2b06\ufe0f  Tap TOP of screen to jump',
+    '\u2728  Collect glowing items in each level',
+    '\ud83d\udeaa  Reach the exit door to advance',
+    '\ud83d\udc7e  Avoid enemies \u2014 they push you back!'
+  ];
+  for(var i=0;i<tips.length;i++){drawT(tips[i],0.5,0.26+i*0.10,13,PALETTE.text)}
+  var pulse2=0.6+Math.sin(animFrame*0.08)*0.2;
+  ctx.globalAlpha=pulse2;rRect(0.35,0.84,0.30,0.08,18,PALETTE.accent,null);
+  ctx.globalAlpha=1;rRect(0.36,0.845,0.28,0.065,16,PALETTE.accent,null);
+  drawTB('GOT IT',0.5,0.878,15,PALETTE.bg);
+}
+
+
+function drawEnding(){
+  var hasImg = drawBgImage(loadedImages['title']);
+  if(!hasImg){ctx.fillStyle=PALETTE.bg;ctx.fillRect(0,0,W,H)}
+  ctx.fillStyle='rgba(0,0,0,0.65)';ctx.fillRect(0,0,W,H);
+  ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=30;
+  drawTB('\ud83c\udf89 Victory!',0.5,0.18,30,PALETTE.accent);ctx.restore();
+  rRect(0.18,0.30,0.64,0.28,14,PALETTE.bg+'cc',PALETTE.accent+'60');
+  wrapT(ENDING,0.5,0.36,14,PALETTE.text,0.58);
+  drawT('Items collected: '+inventory.length+' / '+ROOM_COUNT,0.5,0.66,13,PALETTE.text+'aa');
+  rRect(0.32,0.74,0.36,0.08,20,PALETTE.accent,null);
+  drawTB('PLAY AGAIN',0.5,0.78,16,PALETTE.bg);
+  drawT('Built with BellForge',0.5,0.94,9,PALETTE.text+'44');
+}
+
+
+// ═══════════ PHYSICS ═══════════
+function updatePhysics() {
+  var dt = 1; // fixed timestep
+  // Horizontal movement
+  player.vx = moveDir * MOVE_SPEED;
+  player.x += player.vx * dt;
+  // Clamp to screen
+  if (player.x < 0.01) player.x = 0.01;
+  if (player.x + player.w > 0.99) player.x = 0.99 - player.w;
+  if (moveDir !== 0) { player.facing = moveDir; player.frame++; }
+
+  // Gravity
+  player.vy += GRAVITY * dt;
+  player.y += player.vy * dt;
+  player.onGround = false;
+
+  // Platform collision
+  var plats = levelPlatforms[currentLevel];
+  for (var i = 0; i < plats.length; i++) {
+    var p = plats[i];
+    // Only collide from above (falling onto platform)
+    if (player.vy >= 0 &&
+        player.x + player.w > p.x + 0.01 && player.x < p.x + p.w - 0.01 &&
+        player.y + player.h >= p.y && player.y + player.h <= p.y + p.h + 0.02) {
+      player.y = p.y - player.h;
+      player.vy = 0;
+      player.onGround = true;
+      break;
+    }
+  }
+
+  // Fall off bottom — respawn
+  if (player.y > 1.1) {
+    player.x = 0.08;
+    player.y = 0.75;
+    player.vy = 0;
+    player.vx = 0;
+  }
+
+  // Jump
+  if (jumpPressed && player.onGround) {
+    player.vy = JUMP_FORCE;
+    player.onGround = false;
+    jumpPressed = false;
+  }
+
+  // Enemy collision
+  var enemies = levelEnemies[currentLevel];
+  for (var ei = 0; ei < enemies.length; ei++) {
+    var en = enemies[ei];
+    // Move enemy
+    en.x += en.speed * en.dir;
+    if (en.x <= en.minX || en.x + en.w >= en.maxX) en.dir *= -1;
+    // Check collision with player
+    if (player.x + player.w > en.x && player.x < en.x + en.w &&
+        player.y + player.h > en.y && player.y < en.y + en.h) {
+      // Push player back
+      player.x += (player.x < en.x ? -0.08 : 0.08);
+      player.vy = JUMP_FORCE * 0.6; // small bounce
+    }
+  }
+
+  // Item pickup
+  if (!foundItems.has(currentLevel)) {
+    var ip = itemPositions[currentLevel];
+    var it = ITEMS[currentLevel];
+    if (it && ip && Math.abs(player.x + player.w/2 - ip.x) < 0.05 && Math.abs(player.y - ip.y) < 0.06) {
+      inventory.push({ name: it.name, emoji: it.emoji });
+      foundItems.add(currentLevel);
+      checkWin();
+    }
+  }
+
+  // Exit door
+  var doors = levelDoors[currentLevel];
+  if (doors.exit && player.x + player.w > doors.exit.x && player.y + player.h > doors.exit.y) {
+    if (currentLevel < ROOM_COUNT - 1) {
+      currentLevel++;
+      player.x = 0.08;
+      player.y = 0.75;
+      player.vy = 0;
+      transitionAlpha = 1;
+      roomNameTimer = 0;
+    }
+  }
+}
+
+// ═══════════ DRAW LEVEL ═══════════
+function drawLevel() {
+  var room = ROOMS[currentLevel];
+
+  // Background
+  var hasImg = drawBgImage(loadedImages['room_' + currentLevel]);
+  if (!hasImg) {
+    // Gradient sky/environment fallback
+    var sky = ctx.createLinearGradient(0, 0, 0, H);
+    sky.addColorStop(0, PALETTE.bg);
+    sky.addColorStop(0.6, PALETTE.wall);
+    sky.addColorStop(1, PALETTE.floor);
+    ctx.fillStyle = sky;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  // Draw platforms
+  var plats = levelPlatforms[currentLevel];
+  for (var i = 0; i < plats.length; i++) {
+    var p = plats[i];
+    // Ground is full width, regular platforms have edges
+    if (p.w >= 0.9) {
+      fillR(p.x, p.y, p.w, p.h, p.color);
+      // Grass/surface line
+      fillR(p.x, p.y, p.w, 0.005, PALETTE.accent + '66');
+    } else {
+      rRect(p.x, p.y, p.w, p.h, 4, p.color, PALETTE.accent + '55');
+      // Highlight on top edge
+      fillR(p.x + 0.005, p.y, p.w - 0.01, 0.004, PALETTE.accent + '44');
+      if (p.label) {
+        ctx.globalAlpha = 0.3;
+        drawT(p.label, p.x + p.w / 2, p.y + 0.04, 7, PALETTE.text);
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
+
+  // Draw exit door
+  var doors = levelDoors[currentLevel];
+  if (doors.exit) {
+    var d = doors.exit;
+    var glow = 0.4 + Math.sin(animFrame * 0.05) * 0.2;
+    ctx.globalAlpha = glow;
+    rRect(d.x - 0.01, d.y - 0.01, d.w + 0.02, d.h + 0.02, 6, PALETTE.accent + '30', null);
+    ctx.globalAlpha = 1;
+    rRect(d.x, d.y, d.w, d.h, 4, PALETTE.accent + '22', PALETTE.accent);
+    drawTB('EXIT', d.x + d.w / 2, d.y + d.h / 2, 10, PALETTE.accent);
+    drawTB('\u25b6', d.x + d.w / 2, d.y + d.h * 0.3, 14, PALETTE.accent);
+  }
+  // Entry marker
+  if (doors.entry) {
+    var de = doors.entry;
+    rRect(de.x, de.y, de.w, de.h, 4, PALETTE.bg + '44', PALETTE.accent + '44');
+    drawT('\u25c0', de.x + de.w / 2, de.y + de.h / 2, 12, PALETTE.accent + '66');
+  }
+
+  // Draw collectible item
+  if (!foundItems.has(currentLevel)) {
+    var ip = itemPositions[currentLevel];
+    var it = ITEMS[currentLevel];
+    if (it && ip) {
+      var bob = Math.sin(animFrame * 0.06) * 0.01;
+      var itemImg = loadedImages['item_' + currentLevel];
+      var sparkle = 0.6 + Math.sin(animFrame * 0.08) * 0.3;
+      // Sparkle ring
+      ctx.save();
+      ctx.globalAlpha = sparkle * 0.4;
+      ctx.strokeStyle = PALETTE.accent;
+      ctx.lineWidth = 2;
+      var sparkR = nx(0.04) + Math.sin(animFrame * 0.05) * 3;
+      ctx.beginPath();
+      ctx.arc(nx(ip.x), ny(ip.y + bob), sparkR, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+      if (itemImg && itemImg.complete && itemImg.naturalWidth) {
+        var isz = nx(0.07);
+        ctx.drawImage(itemImg, nx(ip.x) - isz / 2, ny(ip.y + bob) - isz / 2, isz, isz);
+      } else {
+        drawTB(it.emoji, ip.x, ip.y + bob, 24, '#fff');
+      }
+    }
+  }
+
+  // Draw enemies
+  var enemies = levelEnemies[currentLevel];
+  for (var ei = 0; ei < enemies.length; ei++) {
+    var en = enemies[ei];
+    // Simple enemy: red blob with eyes
+    rRect(en.x, en.y, en.w, en.h, 6, '#cc2244', '#ff4466');
+    // Eyes
+    var eyeY = en.y + en.h * 0.3;
+    var eyeSize = en.w * 0.15;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(nx(en.x + en.w * 0.3), ny(eyeY), nx(eyeSize), 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(nx(en.x + en.w * 0.7), ny(eyeY), nx(eyeSize), 0, Math.PI * 2); ctx.fill();
+    // Pupils (look toward player)
+    var pupDir = player.x < en.x ? -0.3 : 0.3;
+    ctx.fillStyle = '#000';
+    ctx.beginPath(); ctx.arc(nx(en.x + en.w * 0.3 + eyeSize * pupDir), ny(eyeY), nx(eyeSize * 0.5), 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(nx(en.x + en.w * 0.7 + eyeSize * pupDir), ny(eyeY), nx(eyeSize * 0.5), 0, Math.PI * 2); ctx.fill();
+  }
+
+  // Draw player
+  var charImg = loadedImages['char'];
+  if (charImg && charImg.complete && charImg.naturalWidth) {
+    ctx.save();
+    if (player.facing < 0) {
+      ctx.translate(nx(player.x + player.w), 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(charImg, 0, ny(player.y), nx(player.w), ny(player.h));
+    } else {
+      ctx.drawImage(charImg, nx(player.x), ny(player.y), nx(player.w), ny(player.h));
+    }
+    ctx.restore();
+  } else {
+    // Fallback: colored rectangle
+    rRect(player.x, player.y, player.w, player.h, 4, PALETTE.accent, '#fff');
+    drawT(CHAR_NAME[0], player.x + player.w / 2, player.y + player.h / 2, 12, '#fff');
+  }
+
+  // ═══ HUD ═══
+  var nameAlpha = Math.min(1, roomNameTimer / 30);
+  ctx.globalAlpha = nameAlpha;
+  rRect(0.10, 0.008, 0.80, 0.040, 10, PALETTE.bg + 'dd', null);
+  drawTB(room.name, 0.5, 0.028, 14, PALETTE.accent);
+  ctx.globalAlpha = 1;
+
+  // Level counter
+  drawT('Level ' + (currentLevel + 1) + ' / ' + ROOM_COUNT, 0.5, 0.955, 11, PALETTE.text + '77');
+
+  // Items collected
+  var collectStr = '\u2728 ' + inventory.length + ' / ' + ROOM_COUNT;
+  rRect(0.02, 0.008, 0.10, 0.035, 8, PALETTE.bg + 'cc', PALETTE.accent + '66');
+  drawT(collectStr, 0.07, 0.025, 10, PALETTE.accent);
+
+  // Touch controls hint (bottom corners)
+  ctx.globalAlpha = 0.15;
+  drawT('\u25c0', 0.06, 0.82, 24, PALETTE.text);
+  drawT('\u25b6', 0.94, 0.82, 24, PALETTE.text);
+  drawT('JUMP', 0.5, 0.08, 10, PALETTE.text);
+  ctx.globalAlpha = 1;
+}
+
+function resetGame(){
+  screen='title';currentLevel=0;inventory=[];foundItems.clear();solvedPuzzles.clear();
+  player.x=0.08;player.y=0.75;player.vx=0;player.vy=0;moveDir=0;jumpPressed=false;
+}
+
+function checkWin(){
+  if(inventory.length>=ROOM_COUNT&&foundItems.size>=ROOM_COUNT){
+    setTimeout(function(){screen='ending'},800);
+  }
+}
+
+// ═══════════ MAIN LOOP ═══════════
+function frame(){
+  resize();animFrame++;
+  ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+  if(screen==='title') drawTitle();
+  else if(screen==='opening') drawOpening();
+  else if(screen==='ending') drawEnding();
+  else if(screen==='game'){
+    updatePhysics();
+    if(transitionAlpha>0){
+      drawLevel();
+      ctx.fillStyle=PALETTE.bg;ctx.globalAlpha=transitionAlpha;ctx.fillRect(0,0,W,H);ctx.globalAlpha=1;
+      transitionAlpha-=0.04;if(transitionAlpha<=0)transitionAlpha=0;
+    } else {
+      drawLevel();
+    }
+    if(showTutorial) drawTutorial();
+  }
+  if(roomNameTimer<60)roomNameTimer++;
+  requestAnimationFrame(frame);
+}
+
+// ═══════════ INPUT ═══════════
+
+canvas.addEventListener('pointerdown',function(e){
+  var rect=canvas.getBoundingClientRect();
+  var px=(e.clientX-rect.left)/rect.width;
+  var py=(e.clientY-rect.top)/rect.height;
+  if(screen==='title'){
+    if(py>0.86&&py<0.94&&px>0.35&&px<0.65){screen='howto';return}
+    screen='opening';openingStart=animFrame;return;
+  }
+  if(screen==='howto'){screen='title';return}
+  if(screen==='opening'){screen='game';showTutorial=false;roomNameTimer=0;return}
+  if(screen==='ending'){resetGame();return}
+  if(showTutorial){showTutorial=false;return}
+
+  // Game input — touch controls
+  moveDir = 0;
+  if(px < 0.25) { moveDir = -1; }
+  else if(px > 0.75) { moveDir = 1; }
+  if(py < 0.30) { jumpPressed = true; }
+});
+
+// Touch move for continuous movement
+canvas.addEventListener('pointermove', function(e){
+  if(screen !== 'game' || showTutorial) return;
+  var rect = canvas.getBoundingClientRect();
+  var px = (e.clientX - rect.left) / rect.width;
+  moveDir = 0;
+  if(px < 0.25) moveDir = -1;
+  else if(px > 0.75) moveDir = 1;
+});
+
+canvas.addEventListener('pointerup', function(e){
+  moveDir = 0;
+  jumpPressed = false;
+});
+
+canvas.addEventListener('pointerleave', function(e){
+  moveDir = 0;
+  jumpPressed = false;
+});
+
+
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

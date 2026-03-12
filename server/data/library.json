@@ -1,49 +1,7 @@
 [
   {
-    "id": "9a428791-2d01-4999-ad6a-edbb31ade3d4",
-    "name": "Whispers of the Interstitial",
-    "rating": 0,
-    "config": {
-      "genre": {
-        "id": "escape_room",
-        "name": "Escape Room",
-        "icon": "🚪",
-        "description": "Crack clues to escape locked rooms",
-        "tag": "POPULAR",
-        "orientation": "landscape"
-      },
-      "theme": {
-        "id": "scifi",
-        "name": "Sci-Fi / Space",
-        "icon": "🚀",
-        "description": "Futuristic tech and cosmic exploration",
-        "color": "#00e5ff"
-      },
-      "artStyle": {
-        "id": "noir",
-        "name": "Noir / Black & White",
-        "icon": "🎬",
-        "description": "High contrast, dramatic shadows"
-      },
-      "structure": {
-        "roomCount": 9,
-        "difficulty": "standard",
-        "puzzleDensity": "heavy"
-      },
-      "story": {
-        "title": "Whispers of the Interstitial",
-        "characterName": "Kith",
-        "setting": "Perched on the precipice of the Great Bifurcation, your phytolab hangs amidst a tangled web of iridescent data-spines and living conduits, stretching into an endless, pulsating void.",
-        "description": "As Kith, a renowned xeno-botanist, you must navigate your crumbling phytolab, using a bespoke bio-acoustic interface to translate the panicked thoughts of the exotic flora around you. These vegetal whispers reveal not just the immediate structural dangers, but also fragmented, paradoxical truths about the Interstitial, a realm that exists *between* logic, where reality can be rewoven by aligning with its non-Euclidean frequencies."
-      }
-    },
-    "buildId": "c2b1f64d-716a-4249-ae56-e5585a57dd72",
-    "apkSize": "~10 MB",
-    "createdAt": "2026-03-12T00:26:56.633Z"
-  },
-  {
-    "id": "fb446100-67e6-4254-b6b9-dd02be2c8814",
-    "name": "The Spindlewood's Maw",
+    "id": "7918414e-9652-4679-a797-43eed5a88ea0",
+    "name": "Silence, My Engine",
     "rating": 0,
     "config": {
       "genre": {
@@ -62,67 +20,25 @@
         "color": "#ff3d00"
       },
       "artStyle": {
-        "id": "watercolor",
-        "name": "Watercolor / Painterly",
-        "icon": "🖌️",
-        "description": "Soft, flowing, artistic brushstrokes"
+        "id": "neon",
+        "name": "Neon / Synthwave",
+        "icon": "💫",
+        "description": "Glowing lights, retro-futuristic vibes"
       },
       "structure": {
-        "roomCount": 11,
+        "roomCount": 12,
         "difficulty": "casual",
-        "puzzleDensity": "moderate"
+        "puzzleDensity": "light"
       },
       "story": {
-        "title": "The Spindlewood's Maw",
-        "characterName": "Rivet",
-        "setting": "The Spindlewood is a sprawling, biomechanical horror where every gnarled, rust-eaten 'tree' is a towering automaton of bone and brass, its branches ending in whirring blades and dripping a viscous, oily ichor onto the fungal-choked ground.",
-        "description": "As Rivet, an ex-acrobat now bound by grafts of living metal and grinding gears, you leap and grapple through the Spindlewood’s treacherous canopy, seeking the fabled Apex Cog that promises liberation from your encroaching assimilation. But every step towards freedom feels like a deeper embrace of the forest's hungry mechanics, and the whispered promise of 'rescue' carries the chilling dread that you might simply become a more intricate part of its horrific, eternal design."
+        "title": "Silence, My Engine",
+        "characterName": "Claviger",
+        "setting": "The Groaning Organ, a colossal, derelict music box made of calcified bone and shrieking steel, eternally grinds its discordant melody across an infinite, lightless void.",
+        "description": "You control Claviger, an automaton of bone and broken clockwork, whose very existence within the Groaning Organ compels you to navigate its decaying gears and silence the wailing, spectral 'melodies' that claw at the edges of reality. Every precise jump and frantic scramble on your seizing mechanical limbs is an attempt to escape this auditory prison, yet a horrifying realization slowly dawns: the discordant symphony echoes *your* movements, and the terrible music box is merely playing its player."
       }
     },
-    "buildId": "78c13211-0746-46f5-999a-8d4105183367",
-    "apkSize": "12.0 MB",
-    "createdAt": "2026-03-12T09:31:11.868Z"
-  },
-  {
-    "id": "678c2197-318c-47b2-b7e6-a065416f4991",
-    "name": "The Spindlewood's Maw",
-    "rating": 0,
-    "config": {
-      "genre": {
-        "id": "platformer",
-        "name": "Platformer",
-        "icon": "🏃",
-        "description": "Jump, run, and collect through levels",
-        "tag": "",
-        "orientation": "landscape"
-      },
-      "theme": {
-        "id": "horror",
-        "name": "Horror / Supernatural",
-        "icon": "👻",
-        "description": "Dark atmospheres and spine-tingling mysteries",
-        "color": "#ff3d00"
-      },
-      "artStyle": {
-        "id": "watercolor",
-        "name": "Watercolor / Painterly",
-        "icon": "🖌️",
-        "description": "Soft, flowing, artistic brushstrokes"
-      },
-      "structure": {
-        "roomCount": 11,
-        "difficulty": "casual",
-        "puzzleDensity": "moderate"
-      },
-      "story": {
-        "title": "The Spindlewood's Maw",
-        "characterName": "Rivet",
-        "setting": "The Spindlewood is a sprawling, biomechanical horror where every gnarled, rust-eaten 'tree' is a towering automaton of bone and brass, its branches ending in whirring blades and dripping a viscous, oily ichor onto the fungal-choked ground.",
-        "description": "As Rivet, an ex-acrobat now bound by grafts of living metal and grinding gears, you leap and grapple through the Spindlewood’s treacherous canopy, seeking the fabled Apex Cog that promises liberation from your encroaching assimilation. But every step towards freedom feels like a deeper embrace of the forest's hungry mechanics, and the whispered promise of 'rescue' carries the chilling dread that you might simply become a more intricate part of its horrific, eternal design."
-      }
-    },
-    "buildId": "9912b6e0-5975-4fdd-bcd2-61079a5310cb",
-    "apkSize": "17.3 MB",
-    "createdAt": "2026-03-12T09:55:30.422Z"
+    "buildId": "49146ab1-348f-434d-a425-eeb57f5a31cb",
+    "apkSize": "11.0 MB",
+    "createdAt": "2026-03-12T13:56:44.352Z"
   }
 ]

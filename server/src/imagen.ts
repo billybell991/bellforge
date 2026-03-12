@@ -31,36 +31,56 @@ export async function generateImage(
     return null;
   }
 
-  try {
-    const url = `${API_BASE}/models/${IMAGEN_MODEL}:predict?key=${apiKey}`;
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        instances: [{ prompt }],
-        parameters: { sampleCount: 1, aspectRatio },
-      }),
-    });
+  const url = `${API_BASE}/models/${IMAGEN_MODEL}:predict?key=${apiKey}`;
+  const MAX_RETRIES = 3;
 
-    if (!res.ok) {
-      console.error(`[Imagen] HTTP ${res.status}: ${await res.text()}`);
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instances: [{ prompt }],
+          parameters: { sampleCount: 1, aspectRatio },
+        }),
+      });
+
+      if (res.status === 429) {
+        const wait = Math.min(5000, 1000 * Math.pow(2, attempt));
+        console.warn(`[Imagen] Rate limited (429), retry ${attempt + 1}/${MAX_RETRIES} after ${wait}ms`);
+        if (attempt < MAX_RETRIES) {
+          await new Promise(r => setTimeout(r, wait));
+          continue;
+        }
+        console.error('[Imagen] Exhausted retries on 429');
+        return null;
+      }
+
+      if (!res.ok) {
+        console.error(`[Imagen] HTTP ${res.status}: ${await res.text()}`);
+        return null;
+      }
+
+      const data = await res.json() as {
+        predictions?: Array<{ bytesBase64Encoded?: string }>;
+      };
+
+      if (data.predictions?.[0]?.bytesBase64Encoded) {
+        return data.predictions[0].bytesBase64Encoded;
+      }
+
+      console.error('[Imagen] No image data in response');
+      return null;
+    } catch (err) {
+      console.error('[Imagen] Error:', err);
+      if (attempt < MAX_RETRIES) {
+        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));
+        continue;
+      }
       return null;
     }
-
-    const data = await res.json() as {
-      predictions?: Array<{ bytesBase64Encoded?: string }>;
-    };
-
-    if (data.predictions?.[0]?.bytesBase64Encoded) {
-      return data.predictions[0].bytesBase64Encoded;
-    }
-
-    console.error('[Imagen] No image data in response');
-    return null;
-  } catch (err) {
-    console.error('[Imagen] Error:', err);
-    return null;
   }
+  return null;
 }
 
 /**
@@ -88,15 +108,16 @@ export async function generateGameImages(
   roomBgs: Array<string | null>;
   character: string | null;
   itemImages: Array<string | null>;
+  packIcon: string | null;
 }> {
   const artPrompt = buildArtStylePrefix(config.artStyle);
   const themePrompt = buildThemeAtmosphere(config.theme);
   const label = config.sceneLabel || 'room';
   const Label = label.charAt(0).toUpperCase() + label.slice(1);
 
-  // Total steps: title + character + rooms + items
+  // Total steps: title + character + pack icon + rooms + items
   const itemsToGen = config.items.slice(0, 6);
-  const totalSteps = 2 + config.rooms.length + itemsToGen.length;
+  const totalSteps = 3 + config.rooms.length + itemsToGen.length;
   let stepIdx = 0;
 
   const report = (msg: string) => {
@@ -116,11 +137,31 @@ export async function generateGameImages(
   // Character portrait
   report(`Generating ${config.characterName} character art...`);
   const character = await generateImage(
-    `${artPrompt} game character portrait, ${config.characterName}, adventurer in ${config.setting}, full body, facing forward, ${themePrompt}, on a solid dark background, game sprite art, no transparency, ${artPrompt} absolutely no text no words no letters no captions no labels`,
+    `${artPrompt} game character portrait, ${config.characterName}, adventurer in ${config.setting}, full body, facing forward, ${themePrompt}, on a pure solid black #000000 void background, no ground plane, no shadow on ground, game sprite art, ${artPrompt} absolutely no text no words no letters no captions no labels`,
     '3:4',
   );
   stepIdx++;
   report(character ? 'Character art generated!' : 'Character art failed — will use code-drawn fallback');
+
+  // Inventory / pack icon (themed to genre and art style)
+  const packLabels: Record<string, string> = {
+    horror: 'worn leather satchel',
+    fantasy: 'adventurer backpack with buckles',
+    scifi: 'futuristic utility belt pouch',
+    mystery: 'detective briefcase',
+    cozy: 'woven basket',
+    cyberpunk: 'neon-lit tech sling bag',
+    steampunk: 'brass and leather rucksack with gears',
+    postapoc: 'scavenged military duffel bag',
+  };
+  const packLabel = packLabels[config.theme] || 'adventurer backpack';
+  report('Generating inventory icon...');
+  const packIcon = await generateImage(
+    `${artPrompt} game UI icon, single ${packLabel}, centered on pure black #000000 background, simple clean icon, ${artPrompt} absolutely no text no words no letters`,
+    '1:1',
+  );
+  stepIdx++;
+  report(packIcon ? 'Pack icon generated!' : 'Pack icon skipped — will use fallback');
 
   // Scene backgrounds (landscape for gameplay)
   const roomBgs: Array<string | null> = [];
@@ -156,7 +197,7 @@ export async function generateGameImages(
 
   report(`Image generation complete: ${[titleBg, character, ...roomBgs, ...itemImages].filter(Boolean).length} images generated`);
 
-  return { titleBg, roomBgs, character, itemImages };
+  return { titleBg, roomBgs, character, itemImages, packIcon };
 }
 
 function buildArtStylePrefix(artStyle: string): string {

@@ -236,72 +236,88 @@ function drawLevel() {
   // Background
   var hasImg = drawBgImage(loadedImages['room_' + currentLevel]);
   if (!hasImg) {
-    // Gradient sky/environment fallback
-    var sky = ctx.createLinearGradient(0, 0, 0, H);
-    sky.addColorStop(0, PALETTE.bg);
-    sky.addColorStop(0.6, PALETTE.wall);
-    sky.addColorStop(1, PALETTE.floor);
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, W, H);
+    drawRoomFallbackBg(room);
   }
 
-  // Draw platforms
+  // Ambient particles
+  drawParticles(PALETTE.accent+'88', 1);
+
+  // Draw platforms with glow edges
   var plats = levelPlatforms[currentLevel];
   for (var i = 0; i < plats.length; i++) {
     var p = plats[i];
-    // Ground is full width, regular platforms have edges
     if (p.w >= 0.9) {
-      fillR(p.x, p.y, p.w, p.h, p.color);
-      // Grass/surface line
-      fillR(p.x, p.y, p.w, 0.005, PALETTE.accent + '66');
+      // Ground platform — layered with texture
+      var gf=ctx.createLinearGradient(0,ny(p.y),0,ny(p.y+p.h));
+      gf.addColorStop(0,p.color);gf.addColorStop(0.3,PALETTE.floor);gf.addColorStop(1,PALETTE.bg);
+      ctx.fillStyle=gf;ctx.fillRect(nx(p.x),ny(p.y),nx(p.w),ny(p.h));
+      // Glowing top edge
+      ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=8;
+      ctx.strokeStyle=PALETTE.accent+'88';ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(0,ny(p.y));ctx.lineTo(W,ny(p.y));ctx.stroke();ctx.restore();
     } else {
-      rRect(p.x, p.y, p.w, p.h, 4, p.color, PALETTE.accent + '55');
-      // Highlight on top edge
-      fillR(p.x + 0.005, p.y, p.w - 0.01, 0.004, PALETTE.accent + '44');
+      // Floating platform with glow
+      var pg=ctx.createLinearGradient(nx(p.x),ny(p.y),nx(p.x),ny(p.y+p.h));
+      pg.addColorStop(0,PALETTE.accent+'30');pg.addColorStop(0.4,p.color);pg.addColorStop(1,p.color+'88');
+      ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=6;
+      rRect(p.x, p.y, p.w, p.h, 3, null, PALETTE.accent+'66');
+      ctx.restore();
+      ctx.fillStyle=pg;ctx.fillRect(nx(p.x)+1,ny(p.y)+1,nx(p.w)-2,ny(p.h)-2);
       if (p.label) {
-        ctx.globalAlpha = 0.3;
+        ctx.globalAlpha = 0.25;
         drawT(p.label, p.x + p.w / 2, p.y + 0.04, 7, PALETTE.text);
         ctx.globalAlpha = 1;
       }
     }
   }
 
-  // Draw exit door
+  // Exit door as glowing portal
   var doors = levelDoors[currentLevel];
   if (doors.exit) {
     var d = doors.exit;
-    var glow = 0.4 + Math.sin(animFrame * 0.05) * 0.2;
-    ctx.globalAlpha = glow;
-    rRect(d.x - 0.01, d.y - 0.01, d.w + 0.02, d.h + 0.02, 6, PALETTE.accent + '30', null);
-    ctx.globalAlpha = 1;
-    rRect(d.x, d.y, d.w, d.h, 4, PALETTE.accent + '22', PALETTE.accent);
-    drawTB('EXIT', d.x + d.w / 2, d.y + d.h / 2, 10, PALETTE.accent);
-    drawTB('\\u25b6', d.x + d.w / 2, d.y + d.h * 0.3, 14, PALETTE.accent);
+    var glow = 0.5 + Math.sin(animFrame * 0.06) * 0.3;
+    // Portal glow halo
+    ctx.save();
+    var pg=ctx.createRadialGradient(nx(d.x+d.w/2),ny(d.y+d.h/2),0,nx(d.x+d.w/2),ny(d.y+d.h/2),nx(d.w)*1.5);
+    pg.addColorStop(0,PALETTE.accent+'40');pg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.globalAlpha=glow;ctx.fillStyle=pg;ctx.fillRect(nx(d.x-d.w),ny(d.y-d.h*0.3),nx(d.w*3),ny(d.h*1.6));
+    ctx.restore();
+    // Portal frame
+    ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=12*glow;
+    rRect(d.x, d.y, d.w, d.h, 6, PALETTE.accent+'15', PALETTE.accent);
+    ctx.restore();
+    drawTB('\\u25b6', d.x + d.w / 2, d.y + d.h * 0.4, 16, PALETTE.accent);
+    drawT('EXIT', d.x + d.w / 2, d.y + d.h * 0.7, 8, PALETTE.accent);
   }
   // Entry marker
   if (doors.entry) {
     var de = doors.entry;
-    rRect(de.x, de.y, de.w, de.h, 4, PALETTE.bg + '44', PALETTE.accent + '44');
-    drawT('\\u25c0', de.x + de.w / 2, de.y + de.h / 2, 12, PALETTE.accent + '66');
+    ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=4;
+    rRect(de.x, de.y, de.w, de.h, 4, PALETTE.bg + '55', PALETTE.accent + '44');
+    ctx.restore();
+    drawT('\\u25c0', de.x + de.w / 2, de.y + de.h / 2, 12, PALETTE.accent + '55');
   }
 
-  // Draw collectible item
+  // Collectible item with sparkle ring
   if (!foundItems.has(currentLevel)) {
     var ip = itemPositions[currentLevel];
     var it = ITEMS[currentLevel];
     if (it && ip) {
       var bob = Math.sin(animFrame * 0.06) * 0.01;
       var itemImg = loadedImages['item_' + currentLevel];
-      var sparkle = 0.6 + Math.sin(animFrame * 0.08) * 0.3;
-      // Sparkle ring
+      var sparkle = 0.5 + Math.sin(animFrame * 0.08) * 0.3;
+      // Radial glow behind item
       ctx.save();
-      ctx.globalAlpha = sparkle * 0.4;
+      var ig=ctx.createRadialGradient(nx(ip.x),ny(ip.y+bob),0,nx(ip.x),ny(ip.y+bob),nx(0.06));
+      ig.addColorStop(0,PALETTE.accent+'50');ig.addColorStop(1,'rgba(0,0,0,0)');
+      ctx.fillStyle=ig;ctx.fillRect(nx(ip.x-0.06),ny(ip.y+bob-0.06),nx(0.12),ny(0.12));
+      // Sparkle ring
+      ctx.globalAlpha = sparkle * 0.5;
+      ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=8;
       ctx.strokeStyle = PALETTE.accent;
-      ctx.lineWidth = 2;
-      var sparkR = nx(0.04) + Math.sin(animFrame * 0.05) * 3;
-      ctx.beginPath();
-      ctx.arc(nx(ip.x), ny(ip.y + bob), sparkR, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.lineWidth = 1.5;
+      var sparkR = nx(0.035) + Math.sin(animFrame * 0.05) * 3;
+      ctx.beginPath();ctx.arc(nx(ip.x), ny(ip.y + bob), sparkR, 0, Math.PI * 2);ctx.stroke();
       ctx.restore();
       if (itemImg && itemImg.complete && itemImg.naturalWidth) {
         var isz = nx(0.07);
@@ -312,26 +328,31 @@ function drawLevel() {
     }
   }
 
-  // Draw enemies
+  // Enemies with glowing cores
   var enemies = levelEnemies[currentLevel];
   for (var ei = 0; ei < enemies.length; ei++) {
     var en = enemies[ei];
-    // Simple enemy: red blob with eyes
+    // Glow behind enemy
+    ctx.save();
+    var eg=ctx.createRadialGradient(nx(en.x+en.w/2),ny(en.y+en.h/2),0,nx(en.x+en.w/2),ny(en.y+en.h/2),nx(en.w));
+    eg.addColorStop(0,'#ff225560');eg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=eg;ctx.fillRect(nx(en.x-en.w*0.5),ny(en.y-en.h*0.5),nx(en.w*2),ny(en.h*2));
+    ctx.shadowColor='#ff2255';ctx.shadowBlur=8;
     rRect(en.x, en.y, en.w, en.h, 6, '#cc2244', '#ff4466');
-    // Eyes
+    ctx.restore();
+    // Glowing eyes
     var eyeY = en.y + en.h * 0.3;
     var eyeSize = en.w * 0.15;
     ctx.fillStyle = '#fff';
     ctx.beginPath(); ctx.arc(nx(en.x + en.w * 0.3), ny(eyeY), nx(eyeSize), 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(nx(en.x + en.w * 0.7), ny(eyeY), nx(eyeSize), 0, Math.PI * 2); ctx.fill();
-    // Pupils (look toward player)
     var pupDir = player.x < en.x ? -0.3 : 0.3;
     ctx.fillStyle = '#000';
     ctx.beginPath(); ctx.arc(nx(en.x + en.w * 0.3 + eyeSize * pupDir), ny(eyeY), nx(eyeSize * 0.5), 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(nx(en.x + en.w * 0.7 + eyeSize * pupDir), ny(eyeY), nx(eyeSize * 0.5), 0, Math.PI * 2); ctx.fill();
   }
 
-  // Draw player
+  // Player character with glow
   var charImg = loadedImages['char'];
   if (charImg && charImg.complete && charImg.naturalWidth) {
     ctx.save();
@@ -344,32 +365,40 @@ function drawLevel() {
     }
     ctx.restore();
   } else {
-    // Fallback: colored rectangle
-    rRect(player.x, player.y, player.w, player.h, 4, PALETTE.accent, '#fff');
-    drawT(CHAR_NAME[0], player.x + player.w / 2, player.y + player.h / 2, 12, '#fff');
+    // Stylized fallback silhouette with glow
+    ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=10;
+    rRect(player.x, player.y, player.w, player.h, 6, PALETTE.accent+'88', PALETTE.accent);
+    ctx.restore();
+    // Head circle
+    ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=6;
+    ctx.fillStyle=PALETTE.accent;
+    ctx.beginPath();ctx.arc(nx(player.x+player.w/2),ny(player.y-0.015),nx(player.w*0.35),0,Math.PI*2);ctx.fill();
+    ctx.restore();
   }
 
-  // ═══ HUD ═══
+  // ═══ HUD with glow styling ═══
   var nameAlpha = Math.min(1, roomNameTimer / 30);
   ctx.globalAlpha = nameAlpha;
-  rRect(0.10, 0.008, 0.80, 0.040, 10, PALETTE.bg + 'dd', null);
-  drawTB(room.name, 0.5, 0.028, 14, PALETTE.accent);
+  glowRect(0.15, 0.008, 0.70, 0.042, 10, PALETTE.bg, PALETTE.accent+'55');
+  ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=8;
+  drawTB(room.name, 0.5, 0.028, 13, PALETTE.accent);ctx.restore();
+  drawTB(room.name, 0.5, 0.028, 13, '#fff');
   ctx.globalAlpha = 1;
 
   // Level counter
-  drawT('Level ' + (currentLevel + 1) + ' / ' + ROOM_COUNT, 0.5, 0.955, 11, PALETTE.text + '77');
+  drawT('Level ' + (currentLevel + 1) + ' / ' + ROOM_COUNT, 0.5, 0.955, 10, PALETTE.text + '66');
 
-  // Items collected
+  // Items collected with glow
   var collectStr = '\\u2728 ' + inventory.length + ' / ' + ROOM_COUNT;
-  rRect(0.02, 0.008, 0.10, 0.035, 8, PALETTE.bg + 'cc', PALETTE.accent + '66');
-  drawT(collectStr, 0.07, 0.025, 10, PALETTE.accent);
+  glowRect(0.02, 0.008, 0.11, 0.038, 8, PALETTE.bg, PALETTE.accent+'55');
+  drawT(collectStr, 0.075, 0.027, 10, PALETTE.accent);
 
-  // Touch controls hint (bottom corners)
-  ctx.globalAlpha = 0.15;
+  // Touch controls hint (subtle glowing chevrons)
+  ctx.save();ctx.globalAlpha = 0.12;ctx.shadowColor=PALETTE.text;ctx.shadowBlur=4;
   drawT('\\u25c0', 0.06, 0.82, 24, PALETTE.text);
   drawT('\\u25b6', 0.94, 0.82, 24, PALETTE.text);
   drawT('JUMP', 0.5, 0.08, 10, PALETTE.text);
-  ctx.globalAlpha = 1;
+  ctx.restore();
 }
 
 function resetGame(){

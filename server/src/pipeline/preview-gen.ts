@@ -11,6 +11,7 @@ export interface GameImages {
   roomBgs: Array<string | null>;
   character: string | null;
   itemImages: Array<string | null>;
+  packIcon: string | null;
 }
 
 interface PreviewConfig {
@@ -74,6 +75,7 @@ function buildEngineData(config: PreviewConfig): EngineData {
   // Build image data URIs
   const titleBgUri = images.titleBg ? `data:image/png;base64,${images.titleBg}` : '';
   const characterUri = images.character ? `data:image/png;base64,${images.character}` : '';
+  const packIconUri = images.packIcon ? `data:image/png;base64,${images.packIcon}` : '';
   const roomBgUris = images.roomBgs.map(b => b ? `data:image/png;base64,${b}` : '');
   const itemImageUris = images.itemImages.map(b => b ? `data:image/png;base64,${b}` : '');
 
@@ -94,6 +96,7 @@ function buildEngineData(config: PreviewConfig): EngineData {
     seed,
     titleBgUri,
     characterUri,
+    packIconUri,
     roomBgUris: JSON.stringify(roomBgUris),
     itemImageUris: JSON.stringify(itemImageUris),
   };

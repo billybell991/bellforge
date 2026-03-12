@@ -110,7 +110,7 @@ ${openingScreen()}
 
 function drawTutorial(){
   ctx.fillStyle='rgba(0,0,0,0.85)';ctx.fillRect(0,0,W,H);
-  drawTB('How to Play',0.5,0.12,24,PALETTE.accent);
+  drawTGlow('How to Play',0.5,0.12,24,PALETTE.accent,12);
   var tips=[
     '\\ud83d\\udd0d  Find hidden objects in each scene',
     '\\ud83d\\udc46  Tap where you think an object is',
@@ -121,8 +121,10 @@ function drawTutorial(){
   ];
   for(var i=0;i<tips.length;i++){drawT(tips[i],0.5,0.26+i*0.10,13,PALETTE.text)}
   var pulse2=0.6+Math.sin(animFrame*0.08)*0.2;
+  ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=16;
   ctx.globalAlpha=pulse2;rRect(0.35,0.84,0.30,0.08,18,PALETTE.accent,null);
   ctx.globalAlpha=1;rRect(0.36,0.845,0.28,0.065,16,PALETTE.accent,null);
+  ctx.restore();
   drawTB('GOT IT',0.5,0.878,15,PALETTE.bg);
 }
 
@@ -135,17 +137,16 @@ function drawHOScene() {
   // Full-screen room image
   var hasImg = drawBgImage(loadedImages['room_' + currentScene]);
   if (!hasImg) {
-    ctx.fillStyle = PALETTE.bg;
-    ctx.fillRect(0, 0, W, H);
+    drawRoomFallbackBg(room);
     // Fallback: draw furniture as the scene content
-    fillR(0, 0, 1, 0.06, room.ceilingColor || PALETTE.wall);
-    fillR(0, 0.88, 1, 0.12, room.floorColor || PALETTE.floor);
     if (room.furniture) {
       for (var fi = 0; fi < room.furniture.length; fi++) {
         var f = room.furniture[fi];
-        rRect(f.x, f.y, f.w, f.h, 4, f.color || PALETTE.wall, PALETTE.accent + '30');
+        ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=8;
+        glowRect(f.x, f.y, f.w, f.h, 4, f.color || PALETTE.wall, PALETTE.accent + '40');
+        ctx.restore();
         if (f.label) {
-          ctx.globalAlpha = 0.4;
+          ctx.globalAlpha = 0.5;
           drawT(f.label, f.x + f.w / 2, f.y + f.h / 2, 8, PALETTE.text);
           ctx.globalAlpha = 1;
         }
@@ -183,7 +184,7 @@ function drawHOScene() {
   // ═══ Object List (bottom panel) ═══
   var prog = getSceneProgress(currentScene);
   var panelY = 0.88;
-  rRect(0.02, panelY, 0.96, 0.10, 10, PALETTE.bg + 'ee', PALETTE.accent + '44');
+  glowRect(0.02, panelY, 0.96, 0.10, 10, PALETTE.bg + 'ee', PALETTE.accent + '44');
 
   // List objects in a row
   var objSpacing = Math.min(0.14, 0.90 / Math.max(1, objs.length));
@@ -217,16 +218,16 @@ function drawHOScene() {
   // ═══ HUD ═══
   var nameAlpha = Math.min(1, roomNameTimer / 30);
   ctx.globalAlpha = nameAlpha;
-  rRect(0.10, 0.008, 0.80, 0.040, 10, PALETTE.bg + 'dd', null);
-  drawTB(room.name, 0.5, 0.028, 14, PALETTE.accent);
+  glowRect(0.10, 0.008, 0.80, 0.040, 10, PALETTE.bg + 'dd', PALETTE.accent + '40');
+  drawTGlow(room.name, 0.5, 0.028, 14, PALETTE.accent, 8);
   ctx.globalAlpha = 1;
 
   // Found counter
-  rRect(0.02, 0.008, 0.08, 0.035, 8, PALETTE.bg + 'cc', PALETTE.accent + '66');
+  glowRect(0.02, 0.008, 0.08, 0.035, 8, PALETTE.bg + 'cc', PALETTE.accent + '66');
   drawT(prog.found + '/' + prog.total, 0.06, 0.025, 11, PALETTE.accent);
 
   // Hint button
-  rRect(0.92, 0.008, 0.06, 0.035, 8, PALETTE.bg + 'cc', PALETTE.accent + '66');
+  glowRect(0.92, 0.008, 0.06, 0.035, 8, PALETTE.bg + 'cc', PALETTE.accent + '66');
   drawT('\\ud83d\\udca1', 0.95, 0.025, 14, '#fff');
 
   // Scene counter
@@ -260,7 +261,7 @@ function drawHOScene() {
     ctx.globalAlpha = ea;
     var ex = Math.max(0.25, Math.min(0.75, examineX));
     var ey = Math.max(0.15, Math.min(0.78, examineY));
-    rRect(ex - 0.22, ey - 0.04, 0.44, 0.08, 10, PALETTE.bg + 'f0', PALETTE.accent + '88');
+    glowRect(ex - 0.22, ey - 0.04, 0.44, 0.08, 10, PALETTE.bg + 'f0', PALETTE.accent + '88');
     wrapT(examineText, ex, ey - 0.01, 12, PALETTE.text, 0.40);
     ctx.globalAlpha = 1;
     examineTimer--;
@@ -270,8 +271,8 @@ function drawHOScene() {
   if (isSceneComplete(currentScene)) {
     var alpha = Math.min(0.8, (animFrame % 200) < 100 ? 0.8 : 0.5);
     ctx.globalAlpha = alpha;
-    rRect(0.20, 0.35, 0.60, 0.20, 14, PALETTE.bg + 'ee', PALETTE.accent);
-    drawTB('\\u2728 Scene Complete!', 0.5, 0.40, 18, PALETTE.accent);
+    glowRect(0.20, 0.35, 0.60, 0.20, 14, PALETTE.bg + 'ee', PALETTE.accent);
+    drawTGlow('\\u2728 Scene Complete!', 0.5, 0.40, 18, PALETTE.accent, 12);
     if (currentScene < ROOM_COUNT - 1) {
       drawT('Tap to continue to next scene', 0.5, 0.48, 12, PALETTE.text + 'cc');
     } else {
