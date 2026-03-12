@@ -1,0 +1,187 @@
+/**
+ * Imagen 4.0 image generation via Google's predict REST API.
+ * Generates real PNG artwork as base64 strings for embedding in game previews.
+ *
+ * THE WINNING FORMULA (from SpaceSloths):
+ * - Imagen PNGs for backgrounds, characters, objects, items — everything visual
+ * - Code-drawn only for HUD chrome, hit-test overlays, dynamic state indicators
+ * - Every build generates NEW images — no two games look alike
+ */
+
+const IMAGEN_MODEL = 'imagen-4.0-generate-001';
+const API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
+
+export interface GeneratedImage {
+  base64: string;       // PNG data as base64 string
+  mimeType: string;     // always 'image/png'
+  label: string;        // what this image is for (e.g. 'title_bg', 'room_0', 'character')
+}
+
+/**
+ * Generate a single image via Imagen 4.0.
+ * Returns the base64-encoded PNG string, or null on failure.
+ */
+export async function generateImage(
+  prompt: string,
+  aspectRatio: '1:1' | '16:9' | '9:16' | '3:4' | '4:3' = '16:9',
+): Promise<string | null> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    console.error('[Imagen] No API key');
+    return null;
+  }
+
+  try {
+    const url = `${API_BASE}/models/${IMAGEN_MODEL}:predict?key=${apiKey}`;
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        instances: [{ prompt }],
+        parameters: { sampleCount: 1, aspectRatio },
+      }),
+    });
+
+    if (!res.ok) {
+      console.error(`[Imagen] HTTP ${res.status}: ${await res.text()}`);
+      return null;
+    }
+
+    const data = await res.json() as {
+      predictions?: Array<{ bytesBase64Encoded?: string }>;
+    };
+
+    if (data.predictions?.[0]?.bytesBase64Encoded) {
+      return data.predictions[0].bytesBase64Encoded;
+    }
+
+    console.error('[Imagen] No image data in response');
+    return null;
+  } catch (err) {
+    console.error('[Imagen] Error:', err);
+    return null;
+  }
+}
+
+/**
+ * Generate all images needed for a game build.
+ * Calls Imagen for: title background, each room background, character, and key items.
+ * Reports progress via onStatus callback.
+ */
+export async function generateGameImages(
+  config: {
+    title: string;
+    artStyle: string;
+    theme: string;
+    genre: string;
+    setting: string;
+    characterName: string;
+    rooms: Array<{ name: string; description: string; atmosphere: string }>;
+    items: Array<{ name: string; emoji: string; description: string }>;
+    palette: { bg: string; accent: string; wall: string };
+    sceneLabel?: string;  // e.g. "room", "level", "chapter" — defaults to "room"
+  },
+  onStatus?: (msg: string) => void,
+  onProgress?: (msg: string, stepIndex: number, totalSteps: number) => void,
+): Promise<{
+  titleBg: string | null;
+  roomBgs: Array<string | null>;
+  character: string | null;
+  itemImages: Array<string | null>;
+}> {
+  const artPrompt = buildArtStylePrefix(config.artStyle);
+  const themePrompt = buildThemeAtmosphere(config.theme);
+  const label = config.sceneLabel || 'room';
+  const Label = label.charAt(0).toUpperCase() + label.slice(1);
+
+  // Total steps: title + character + rooms + items
+  const itemsToGen = config.items.slice(0, 6);
+  const totalSteps = 2 + config.rooms.length + itemsToGen.length;
+  let stepIdx = 0;
+
+  const report = (msg: string) => {
+    onStatus?.(msg);
+    onProgress?.(msg, stepIdx, totalSteps);
+  };
+
+  // Title screen background (landscape)
+  report('Generating title screen artwork...');
+  const titleBg = await generateImage(
+    `${artPrompt} game main menu background illustration, ${config.setting}, ${themePrompt}, dramatic cinematic composition, landscape orientation, no text no UI no logos no words`,
+    '16:9',
+  );
+  stepIdx++;
+  report(titleBg ? 'Title artwork generated!' : 'Title artwork failed — will use code-drawn fallback');
+
+  // Character portrait
+  report(`Generating ${config.characterName} character art...`);
+  const character = await generateImage(
+    `${artPrompt} game character portrait, ${config.characterName}, adventurer in ${config.setting}, full body, facing forward, transparent-style background solid color, game sprite art, no text`,
+    '3:4',
+  );
+  stepIdx++;
+  report(character ? 'Character art generated!' : 'Character art failed — will use code-drawn fallback');
+
+  // Scene backgrounds (landscape for gameplay)
+  const roomBgs: Array<string | null> = [];
+  for (let i = 0; i < config.rooms.length; i++) {
+    const room = config.rooms[i];
+    report(`Painting ${label} ${i + 1}/${config.rooms.length}: ${room.name}...`);
+    const bg = await generateImage(
+      `${artPrompt} game background scene, interior view of ${room.name}, ${room.description}, ${room.atmosphere} mood, ${themePrompt}, detailed environment art, no text no UI no characters`,
+      '16:9',
+    );
+    roomBgs.push(bg);
+    stepIdx++;
+    report(bg ? `${Label} "${room.name}" artwork done!` : `${Label} "${room.name}" failed — will use code-drawn fallback`);
+  }
+
+  // Key item images (square icons)
+  const itemImages: Array<string | null> = [];
+  // Only generate images for up to 6 items to keep build time reasonable
+  for (let i = 0; i < itemsToGen.length; i++) {
+    const item = itemsToGen[i];
+    report(`Generating item art ${i + 1}/${itemsToGen.length}: ${item.name}...`);
+    const img = await generateImage(
+      `${artPrompt} game item icon, single ${item.name} object, ${item.description}, centered on dark background, collectible game item, clean illustration, no text`,
+      '1:1',
+    );
+    itemImages.push(img);
+    stepIdx++;
+  }
+  // Fill remaining items with null
+  while (itemImages.length < config.items.length) {
+    itemImages.push(null);
+  }
+
+  report(`Image generation complete: ${[titleBg, character, ...roomBgs, ...itemImages].filter(Boolean).length} images generated`);
+
+  return { titleBg, roomBgs, character, itemImages };
+}
+
+function buildArtStylePrefix(artStyle: string): string {
+  const styles: Record<string, string> = {
+    cel_shaded: 'cel-shaded Borderlands style, thick ink outlines, bold colors,',
+    pixel_art: 'pixel art style, retro 16-bit aesthetic, crisp pixels,',
+    watercolor: 'watercolor painting style, soft washes, blended colors, artistic,',
+    noir: 'film noir style, high contrast black and white with selective color,',
+    neon: 'neon cyberpunk style, glowing neon lights, dark backgrounds, vivid electric colors,',
+    hand_drawn: 'hand-drawn sketch style, pencil and ink illustration, charming imperfect lines,',
+    low_poly: 'low-poly 3D style, geometric faceted surfaces, clean modern aesthetic,',
+  };
+  return styles[artStyle] || styles.cel_shaded;
+}
+
+function buildThemeAtmosphere(theme: string): string {
+  const themes: Record<string, string> = {
+    horror: 'dark eerie atmosphere, shadows, cobwebs, dim flickering light',
+    fantasy: 'magical enchanted atmosphere, glowing runes, mystical energy',
+    scifi: 'futuristic sci-fi atmosphere, holographic displays, sleek technology',
+    mystery: 'moody detective atmosphere, warm lamplight, foggy shadows',
+    cozy: 'warm cozy atmosphere, soft golden light, comfortable inviting',
+    cyberpunk: 'neon-lit cyberpunk atmosphere, rain-slicked streets, holographic ads',
+    steampunk: 'Victorian steampunk atmosphere, brass gears, steam pipes, warm amber light',
+    postapoc: 'post-apocalyptic atmosphere, overgrown ruins, muted dusty tones',
+  };
+  return themes[theme] || themes.mystery;
+}

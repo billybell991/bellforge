@@ -1,13 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
-import { useWebSocket } from '../hooks/useWebSocket';
-import type { WSProgressMessage, WSCompleteMessage } from '../types';
+import { useEffect, useRef } from 'react';
 import { BUILD_STAGES } from '../types';
-
-interface BuildProgressProps {
-  buildId: string;
-  onComplete: (apkPath: string, apkSize: string, previewUrl: string) => void;
-  onWsDisconnect?: (fn: () => void) => void;
-}
 
 interface LogEntry {
   name: string;
@@ -15,59 +7,16 @@ interface LogEntry {
   done: boolean;
 }
 
-export function BuildProgress({ buildId, onComplete, onWsDisconnect }: BuildProgressProps) {
-  const { connect, disconnect, lastMessage } = useWebSocket();
-  const [percent, setPercent] = useState(0);
-  const [stageName, setStageName] = useState('Connecting to forge...');
-  const [detail, setDetail] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [log, setLog] = useState<LogEntry[]>([]);
+interface BuildProgressProps {
+  percent: number;
+  stageName: string;
+  detail: string;
+  error: string | null;
+  log: LogEntry[];
+}
+
+export function BuildProgress({ percent, stageName, detail, error, log }: BuildProgressProps) {
   const logEndRef = useRef<HTMLDivElement>(null);
-  const completedRef = useRef(false);
-
-  // Expose disconnect so parent can clean up if user navigates away
-  useEffect(() => {
-    onWsDisconnect?.(disconnect);
-  }, [disconnect, onWsDisconnect]);
-
-  useEffect(() => {
-    connect(buildId);
-  }, [buildId, connect]);
-
-  useEffect(() => {
-    if (!lastMessage) return;
-
-    if (lastMessage.type === 'progress') {
-      const msg = lastMessage as WSProgressMessage;
-      setPercent(msg.percent);
-      setStageName(msg.name);
-      setDetail(msg.detail);
-
-      setLog((prev) => {
-        const updated = prev.map((e) => ({ ...e, done: true }));
-        return [...updated, { name: msg.name, percent: msg.percent, done: false }];
-      });
-    }
-
-    if (lastMessage.type === 'complete' && !completedRef.current) {
-      completedRef.current = true;
-      const msg = lastMessage as WSCompleteMessage;
-      setPercent(100);
-      setStageName('Build Complete!');
-      setDetail('Your game is ready to deploy!');
-      setLog((prev) => prev.map((e) => ({ ...e, done: true })));
-
-      setTimeout(() => {
-        onComplete(msg.apkPath, msg.apkSize, msg.previewUrl);
-      }, 1500);
-    }
-
-    if (lastMessage.type === 'error') {
-      setError(lastMessage.message);
-      setStageName('Build Failed');
-      setDetail(lastMessage.message);
-    }
-  }, [lastMessage, onComplete]);
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' });

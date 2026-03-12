@@ -9,7 +9,11 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import 'dotenv/config';
 import { generatePreviewHtml } from './pipeline/preview-gen.js';
-import { generateStory, generateAutoConfig, isGeminiAvailable } from './gemini.js';
+import type { GameImages } from './pipeline/preview-gen.js';
+import { generateStory, generateAutoConfig, generateCreativeBrief, generateBriefPalette, generateBriefRooms, generateBriefItems, generateBriefHints, isGeminiAvailable } from './gemini.js';
+import { generateGameImages } from './imagen.js';
+import type { GameConfig } from './pipeline/types.js';
+import type { CreativeBrief, CreativePalette, CreativeRoom, CreativeItem, PuzzleConnection } from './gemini.js';
 
 const execFileAsync = promisify(execFile);
 const ADB = 'C:\\Users\\bbell\\AppData\\Local\\Android\\Sdk\\platform-tools\\adb.exe';
@@ -31,6 +35,7 @@ interface BuildRecord {
   progress: number;
   apkPath?: string;
   previewHtml?: string;
+  lastProgress?: Record<string, unknown>;
 }
 
 const builds = new Map<string, BuildRecord>();
@@ -76,13 +81,57 @@ wss.on('connection', (ws, req) => {
   if (buildId) {
     clients.set(buildId, ws);
     ws.on('close', () => clients.delete(buildId));
+
+    // Send last known progress so reconnecting clients catch up
+    const build = builds.get(buildId);
+    if (build?.lastProgress) {
+      ws.send(JSON.stringify(build.lastProgress));
+    }
   }
 });
 
 function sendProgress(buildId: string, data: Record<string, unknown>) {
+  // Always store last progress so reconnecting clients can catch up
+  const build = builds.get(buildId);
+  if (build) {
+    build.lastProgress = data;
+    build.progress = (data.percent as number) || build.progress;
+  }
   const ws = clients.get(buildId);
   if (ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify(data));
+  }
+}
+
+// ── Genre-Aware Terminology ──
+
+interface GenreTerms {
+  scene: string;        // singular: "room", "level", "chapter", etc.
+  scenes: string;       // plural
+  Scene: string;        // capitalized singular
+  Scenes: string;       // capitalized plural
+  furnishing: string;   // "furniture", "elements", "props", "details"
+  furnishings: string;
+  layout: string;       // "layout", "composition", "structure"
+}
+
+function genreTerms(genreId: string): GenreTerms {
+  switch (genreId) {
+    case 'platformer':
+      return { scene: 'level', scenes: 'levels', Scene: 'Level', Scenes: 'Levels', furnishing: 'platform', furnishings: 'platforms & obstacles', layout: 'layout' };
+    case 'visual_novel':
+      return { scene: 'chapter', scenes: 'chapters', Scene: 'Chapter', Scenes: 'Chapters', furnishing: 'element', furnishings: 'elements', layout: 'composition' };
+    case 'puzzle':
+      return { scene: 'stage', scenes: 'stages', Scene: 'Stage', Scenes: 'Stages', furnishing: 'piece', furnishings: 'pieces & mechanisms', layout: 'arrangement' };
+    case 'interactive_fiction':
+      return { scene: 'passage', scenes: 'passages', Scene: 'Passage', Scenes: 'Passages', furnishing: 'detail', furnishings: 'narrative details', layout: 'structure' };
+    case 'hidden_object':
+      return { scene: 'scene', scenes: 'scenes', Scene: 'Scene', Scenes: 'Scenes', furnishing: 'object', furnishings: 'hidden objects', layout: 'arrangement' };
+    case 'escape_room':
+      return { scene: 'room', scenes: 'rooms', Scene: 'Room', Scenes: 'Rooms', furnishing: 'prop', furnishings: 'props & mechanisms', layout: 'layout' };
+    case 'point_click':
+    default:
+      return { scene: 'room', scenes: 'rooms', Scene: 'Room', Scenes: 'Rooms', furnishing: 'object', furnishings: 'objects', layout: 'layout' };
   }
 }
 
@@ -98,31 +147,41 @@ interface PipelineStage {
 
 function getPipelineStages(config: Record<string, unknown>): PipelineStage[] {
   const genre = (config.genre as Record<string, string>)?.name ?? 'game';
+  const genreId = (config.genre as Record<string, string>)?.id ?? 'point_click';
   const artStyle = (config.artStyle as Record<string, string>)?.name ?? 'art';
   const roomCount = ((config.structure as Record<string, number>)?.roomCount ?? 5);
+  const t = genreTerms(genreId);
 
   return [
-    { id: 'init', name: 'Initializing Project', percent: 5, duration: 1200,
+    { id: 'init', name: 'Initializing Project', percent: 3, duration: 1200,
       detail: 'Creating project scaffold with Kotlin/Canvas architecture...' },
-    { id: 'architecture', name: 'Generating Game Architecture', percent: 12, duration: 1800,
+    { id: 'architecture', name: 'Generating Game Architecture', percent: 6, duration: 1800,
       detail: `Setting up ${genre} framework with BaseRoom, GameView, GameState...` },
-    { id: 'rooms', name: `Designing ${roomCount} Room Layouts`, percent: 22, duration: 2500,
-      detail: 'Defining normalized coordinate layouts, hotspot regions, examine spots...' },
-    { id: 'art_bg', name: 'AI Bridge → Generating Backgrounds', percent: 35, duration: 4000,
-      detail: `Sending ${roomCount} background prompts to Gemini in ${artStyle} style...` },
-    { id: 'art_items', name: 'AI Bridge → Creating Item Assets', percent: 48, duration: 3500,
+    { id: 'brief_palette', name: 'Gemini → Designing Palette & Atmosphere', percent: 10, duration: 3000,
+      detail: 'Gemini is designing color palette, lighting, and game atmosphere...' },
+    { id: 'brief_rooms', name: `Gemini → Designing ${t.Scene} Layouts`, percent: 18, duration: 4000,
+      detail: `Gemini is designing ${roomCount} unique ${t.scenes} with ${t.furnishings}...` },
+    { id: 'brief_items', name: 'Gemini → Creating Items & Puzzles', percent: 28, duration: 3000,
+      detail: 'Gemini is crafting thematic items and puzzle connections...' },
+    { id: 'brief_hints', name: 'Gemini → Writing Hints & Details', percent: 35, duration: 2000,
+      detail: 'Gemini is writing context-aware hints and examine text...' },
+    { id: 'rooms', name: `Laying Out ${roomCount} ${t.Scenes}`, percent: 40, duration: 2500,
+      detail: `Defining normalized coordinate layouts, hotspot regions, examine spots...` },
+    { id: 'art_bg', name: `Imagen 4.0 → Painting ${t.Scenes}`, percent: 48, duration: 4000,
+      detail: `Sending ${roomCount} ${t.scene} prompts to Imagen in ${artStyle} style...` },
+    { id: 'art_items', name: 'Imagen 4.0 → Creating Item Assets', percent: 58, duration: 3500,
       detail: 'Generating inventory item sprites, UI icons, and interactive objects...' },
-    { id: 'art_ui', name: 'AI Bridge → Crafting UI Elements', percent: 55, duration: 2500,
+    { id: 'art_ui', name: 'Imagen 4.0 → Crafting UI Elements', percent: 64, duration: 2500,
       detail: 'Creating bag icon, inventory panel, dialog frames, HUD elements...' },
-    { id: 'logic', name: 'Writing Game Logic (Kotlin)', percent: 65, duration: 3000,
-      detail: 'Generating room classes, puzzle logic, state transitions, undo system...' },
-    { id: 'inventory', name: 'Wiring Inventory & Hotspot Systems', percent: 72, duration: 2000,
+    { id: 'logic', name: 'Writing Game Logic (Kotlin)', percent: 72, duration: 3000,
+      detail: `Generating ${t.scene} classes, puzzle logic, state transitions, undo system...` },
+    { id: 'inventory', name: 'Wiring Inventory & Hotspot Systems', percent: 80, duration: 2000,
       detail: 'Connecting floating bag, item slide-out, hotspot hit-testing, syncHotspots...' },
-    { id: 'gradle_setup', name: 'Assembling Android Project', percent: 78, duration: 2000,
+    { id: 'gradle_setup', name: 'Assembling Android Project', percent: 85, duration: 2000,
       detail: 'Generating build.gradle.kts, AndroidManifest.xml, Gradle wrapper...' },
-    { id: 'gradle_build', name: 'Building APK with Gradle', percent: 90, duration: 5000,
+    { id: 'gradle_build', name: 'Building APK with Gradle', percent: 92, duration: 5000,
       detail: 'Running :app:assembleDebug via standalone Gradle 8.1.1...' },
-    { id: 'signing', name: 'Signing APK', percent: 95, duration: 1500,
+    { id: 'signing', name: 'Signing APK', percent: 96, duration: 1500,
       detail: 'Applying debug signature to APK package...' },
     { id: 'complete', name: 'Build Complete!', percent: 100, duration: 500,
       detail: 'Your game is ready to deploy!' },
@@ -219,6 +278,16 @@ app.get('/api/preview/:buildId', (req, res) => {
 
 // ── Gemini Creative Endpoints ──
 
+// Check Gemini availability
+app.get('/api/gemini/status', (_req, res) => {
+  res.json({
+    available: isGeminiAvailable(),
+    hint: isGeminiAvailable()
+      ? 'Gemini is online — all creative content will be AI-generated'
+      : 'Set GEMINI_API_KEY in server/.env to enable AI-generated content (using curated fallbacks)',
+  });
+});
+
 // Generate a story via Gemini (or curated fallback)
 app.post('/api/gemini/story', async (req, res) => {
   const { genreHint, themeHint } = req.body || {};
@@ -230,7 +299,31 @@ app.post('/api/gemini/story', async (req, res) => {
   }
 });
 
-// Generate a full auto-config via Gemini (for "Forge For Me")
+// Generate a full auto-config via Gemini (for "Forge For Me") — streamed via SSE
+app.get('/api/gemini/auto-config/stream', async (_req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+  });
+
+  const sendEvent = (event: string, data: unknown) => {
+    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  };
+
+  try {
+    const config = await generateAutoConfig((step, detail, percent) => {
+      sendEvent('progress', { step, detail, percent });
+    });
+    sendEvent('complete', { config, gemini: isGeminiAvailable() });
+  } catch {
+    sendEvent('error', { message: 'Auto-config generation failed' });
+  } finally {
+    res.end();
+  }
+});
+
+// Non-streaming fallback
 app.post('/api/gemini/auto-config', async (_req, res) => {
   try {
     const config = await generateAutoConfig();
@@ -334,6 +427,29 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
   record.status = 'building';
 
   const stages = getPipelineStages(config);
+  let creativeBrief: CreativeBrief | null = null;
+  let gameImages: GameImages = { titleBg: null, roomBgs: [], character: null, itemImages: [] };
+
+  // Intermediate chunk results (assembled into creativeBrief after all 4 chunks)
+  let briefPalette: CreativePalette | null = null;
+  let briefVibe: string | null = null;
+  let briefOpeningText: string | null = null;
+  let briefEndingText: string | null = null;
+  let briefRooms: CreativeRoom[] | null = null;
+  let briefItems: CreativeItem[] | null = null;
+  let briefPuzzles: PuzzleConnection[] | null = null;
+  let briefHints: string[] | null = null;
+
+  // Cast config to GameConfig for Gemini calls
+  const gameConfig: GameConfig = {
+    genre: config.genre as GameConfig['genre'],
+    theme: config.theme as GameConfig['theme'],
+    artStyle: config.artStyle as GameConfig['artStyle'],
+    structure: config.structure as GameConfig['structure'],
+    story: config.story as GameConfig['story'],
+  };
+
+  const t = genreTerms(gameConfig.genre.id);
 
   for (const stage of stages) {
     sendProgress(buildId, {
@@ -345,16 +461,215 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
       timestamp: Date.now(),
     });
 
-    // Simulate real work — in production, each stage calls real generators
-    await sleep(stage.duration);
+    // ── Pipeline stage handlers ──
+    if (stage.id === 'init') {
+      await sleep(800);
+
+    } else if (stage.id === 'architecture') {
+      await sleep(600);
+
+    } else if (stage.id === 'brief_palette') {
+      // Chunk 1: Palette + vibe + opening/ending text
+      const nextPercent = stages.find(s => s.id === 'brief_rooms')?.percent ?? stage.percent + 8;
+      sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🎨 Choosing color palette & atmosphere', percent: stage.percent + 1, detail: 'Gemini is picking the perfect colors for your game world...', timestamp: Date.now() });
+      const chunk1 = await generateBriefPalette(gameConfig, (msg) => {
+        sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🎨 Designing visual identity', percent: stage.percent + 3, detail: msg, timestamp: Date.now() });
+      });
+      briefPalette = chunk1.palette;
+      briefVibe = chunk1.gameVibe;
+      briefOpeningText = chunk1.openingText;
+      briefEndingText = chunk1.endingText;
+      sendProgress(buildId, { type: 'progress', stage: stage.id, name: `🎨 Palette locked — accent ${briefPalette.accent}`, percent: nextPercent - 1, detail: `Game vibe: "${briefVibe}"`, timestamp: Date.now() });
+
+    } else if (stage.id === 'brief_rooms') {
+      // Chunk 2: Scene layouts with furniture
+      const nextPercent = stages.find(s => s.id === 'brief_items')?.percent ?? stage.percent + 10;
+      const sceneCount = gameConfig.structure.roomCount;
+      sendProgress(buildId, { type: 'progress', stage: stage.id, name: `🏗️ Designing ${sceneCount} unique scenes`, percent: stage.percent + 1, detail: 'Gemini is drafting layouts, furniture placement, and lighting...', timestamp: Date.now() });
+      briefRooms = await generateBriefRooms(gameConfig, briefPalette!, (msg) => {
+        sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🏗️ Gemini is thinking...', percent: stage.percent + 3, detail: msg, timestamp: Date.now() });
+      });
+      // Report each scene individually with smooth progress
+      const perSceneRange = nextPercent - (stage.percent + 4);
+      for (let i = 0; i < briefRooms.length; i++) {
+        const r = briefRooms[i];
+        const pct = stage.percent + 4 + Math.floor((i / briefRooms.length) * perSceneRange);
+        sendProgress(buildId, { type: 'progress', stage: stage.id, name: `🏗️ Scene ${i + 1} of ${briefRooms.length}: ${r.name}`, percent: pct, detail: `${r.description} — ${r.furniture.length} objects, ${r.atmosphere}`, timestamp: Date.now() });
+        await sleep(350);
+      }
+      const totalFurniture = briefRooms.reduce((s, r) => s + r.furniture.length, 0);
+      sendProgress(buildId, { type: 'progress', stage: stage.id, name: `🏗️ All ${briefRooms.length} scenes designed`, percent: nextPercent - 1, detail: `${totalFurniture} furniture pieces placed across ${briefRooms.length} scenes`, timestamp: Date.now() });
+
+    } else if (stage.id === 'brief_items') {
+      // Chunk 3: Items + puzzle connections
+      const nextPercent = stages.find(s => s.id === 'brief_hints')?.percent ?? stage.percent + 7;
+      sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🧩 Crafting items & puzzle gates', percent: stage.percent + 1, detail: 'Gemini is creating collectibles, locked doors, and puzzle requirements...', timestamp: Date.now() });
+      const chunk3 = await generateBriefItems(gameConfig, briefRooms!, (msg) => {
+        sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🧩 Wiring puzzle logic', percent: stage.percent + 3, detail: msg, timestamp: Date.now() });
+      });
+      briefItems = chunk3.items;
+      briefPuzzles = chunk3.puzzles;
+      sendProgress(buildId, { type: 'progress', stage: stage.id, name: `🧩 ${briefItems.length} items, ${briefPuzzles.length} puzzles`, percent: nextPercent - 1, detail: `Items: ${briefItems.map(i => i.emoji + ' ' + i.name).join(', ')}`, timestamp: Date.now() });
+
+    } else if (stage.id === 'brief_hints') {
+      // Chunk 4: Context-aware hints
+      const nextPercent = stages.find(s => s.id === 'rooms')?.percent ?? stage.percent + 5;
+      sendProgress(buildId, { type: 'progress', stage: stage.id, name: '💬 Writing companion hints', percent: stage.percent + 1, detail: 'Gemini is writing gentle nudges for when players get stuck...', timestamp: Date.now() });
+      briefHints = await generateBriefHints(gameConfig, briefRooms!, briefItems!, (msg) => {
+        sendProgress(buildId, { type: 'progress', stage: stage.id, name: '💬 Polishing hint text', percent: stage.percent + 2, detail: msg, timestamp: Date.now() });
+      });
+      // Assemble the full creative brief now that all 4 chunks are done
+      creativeBrief = {
+        palette: briefPalette!,
+        gameVibe: briefVibe!,
+        openingText: briefOpeningText!,
+        endingText: briefEndingText!,
+        rooms: briefRooms!,
+        items: briefItems!,
+        puzzles: briefPuzzles!,
+        hintTexts: briefHints!,
+      };
+      sendProgress(buildId, { type: 'progress', stage: stage.id, name: '✅ Creative brief complete', percent: nextPercent - 1, detail: `${creativeBrief.rooms.length} scenes, ${creativeBrief.items.length} items, ${creativeBrief.puzzles.length} puzzles, ${briefHints.length} hints`, timestamp: Date.now() });
+
+    } else if (stage.id === 'rooms') {
+      // Brief is done — report scene layout details
+      if (creativeBrief) {
+        for (let i = 0; i < creativeBrief.rooms.length; i++) {
+          const r = creativeBrief.rooms[i];
+          sendProgress(buildId, {
+            type: 'progress',
+            stage: 'rooms',
+            name: `Scene ${i + 1} of ${creativeBrief.rooms.length}: ${r.name}`,
+            percent: stage.percent + Math.floor((i / creativeBrief.rooms.length) * 8),
+            detail: `Laying out hotspots & coordinates — ${r.furniture.length} objects, window: ${r.windowType}, lighting: ${r.lightingDir}`,
+            timestamp: Date.now(),
+          });
+          await sleep(400);
+        }
+      } else {
+        await sleep(stage.duration);
+      }
+    } else if (stage.id === 'art_bg') {
+      // Generate real Imagen artwork — covers art_bg + art_items stages (48% → 64%)
+      if (creativeBrief) {
+        const artEndPercent = stages.find(s => s.id === 'art_ui')?.percent ?? 64;
+        const artRange = artEndPercent - stage.percent; // ~16 points spread across all images
+        sendProgress(buildId, {
+          type: 'progress',
+          stage: 'art_bg',
+          name: `Imagen 4.0 → Painting ${t.scenes} & assets`,
+          percent: stage.percent + 1,
+          detail: `Sending prompts to Imagen for title, character, ${t.scenes}, and items...`,
+          timestamp: Date.now(),
+        });
+        try {
+          gameImages = await generateGameImages(
+            {
+              title: gameConfig.story.title,
+              artStyle: gameConfig.artStyle.id,
+              theme: gameConfig.theme.id,
+              genre: gameConfig.genre.id,
+              setting: gameConfig.story.setting,
+              characterName: gameConfig.story.characterName,
+              rooms: creativeBrief.rooms.map((r) => ({
+                name: r.name,
+                description: r.description,
+                atmosphere: r.atmosphere,
+              })),
+              items: creativeBrief.items,
+              palette: creativeBrief.palette,
+              sceneLabel: t.scene,
+            },
+            undefined, // skip legacy onStatus — use onProgress instead
+            (msg, stepIdx, totalSteps) => {
+              const pct = stage.percent + 1 + Math.floor((stepIdx / totalSteps) * (artRange - 2));
+              sendProgress(buildId, {
+                type: 'progress',
+                stage: 'art_bg',
+                name: `🎨 Imagen 4.0 → ${msg}`,
+                percent: pct,
+                detail: `Image ${stepIdx + 1} of ${totalSteps}`,
+                timestamp: Date.now(),
+              });
+            },
+          );
+          const imgCount = [gameImages.titleBg, gameImages.character, ...gameImages.roomBgs, ...gameImages.itemImages].filter(Boolean).length;
+          sendProgress(buildId, {
+            type: 'progress',
+            stage: 'art_bg',
+            name: `🎨 Artwork complete — ${imgCount} images generated`,
+            percent: artEndPercent - 1,
+            detail: `Title: ${gameImages.titleBg ? '✓' : '✗'}, Character: ${gameImages.character ? '✓' : '✗'}, ${t.Scenes}: ${gameImages.roomBgs.filter(Boolean).length}/${gameImages.roomBgs.length}, Items: ${gameImages.itemImages.filter(Boolean).length}`,
+            timestamp: Date.now(),
+          });
+        } catch (err) {
+          console.error('[Pipeline] Image generation error:', err);
+          sendProgress(buildId, {
+            type: 'progress',
+            stage: 'art_bg',
+            name: 'Image generation failed — using code-drawn fallback',
+            percent: artEndPercent - 1,
+            detail: String(err),
+            timestamp: Date.now(),
+          });
+        }
+      } else {
+        await sleep(stage.duration);
+      }
+    } else if (stage.id === 'art_items') {
+      // Art already generated in art_bg stage — just report summary
+      if (creativeBrief) {
+        const itemCount = gameImages.itemImages.filter(Boolean).length;
+        sendProgress(buildId, {
+          type: 'progress',
+          stage: 'art_items',
+          name: `🖼️ ${itemCount} item sprites ready`,
+          percent: stage.percent + 3,
+          detail: creativeBrief.items.map(i => `${i.emoji} ${i.name}`).join(', '),
+          timestamp: Date.now(),
+        });
+        await sleep(500);
+      } else {
+        await sleep(stage.duration);
+      }
+    } else if (stage.id === 'logic') {
+      // Report puzzle wiring
+      if (creativeBrief && creativeBrief.puzzles.length > 0) {
+        const puzzleRange = 6;
+        for (let i = 0; i < creativeBrief.puzzles.length; i++) {
+          const p = creativeBrief.puzzles[i];
+          sendProgress(buildId, {
+            type: 'progress',
+            stage: 'logic',
+            name: `🔗 Puzzle: ${t.Scene} ${p.doorInRoom + 1} → ${t.Scene} ${p.leadsToRoom + 1}`,
+            percent: stage.percent + Math.floor((i / creativeBrief.puzzles.length) * puzzleRange),
+            detail: `Requires: ${p.requiredItem} — "${p.lockedMessage}"`,
+            timestamp: Date.now(),
+          });
+          await sleep(400);
+        }
+      }
+      await sleep(800);
+    } else if (stage.id === 'complete') {
+      await sleep(300);
+    } else {
+      // Remaining stages still simulate briefly
+      await sleep(Math.min(stage.duration, 1500));
+    }
   }
 
   const title = (config.story as Record<string, string>)?.title || 'MyGame';
   const safeName = title.replace(/[^a-zA-Z0-9]/g, '_');
   const apkPath = `C:\\Stuff\\BellForge\\output\\${safeName}\\app-debug.apk`;
 
-  // Generate the in-browser preview with a unique seed
+  // Generate the in-browser preview with a unique seed + Gemini creative content
   const buildSeed = Date.now() ^ Math.floor(Math.random() * 0x7fffffff);
+
+  // If creative brief failed somehow, generate a fallback now
+  if (!creativeBrief) {
+    creativeBrief = await generateCreativeBrief(gameConfig);
+  }
+
   const previewHtml = generatePreviewHtml({
     genre: config.genre as { id: string; name: string },
     theme: config.theme as { id: string; name: string },
@@ -362,6 +677,9 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
     structure: config.structure as { roomCount: number; difficulty: string; puzzleDensity: string },
     story: config.story as { title: string; description: string; characterName: string; setting: string },
     seed: buildSeed,
+    creative: creativeBrief,
+    images: gameImages,
+    sceneLabel: t.scenes,
   });
 
   record.status = 'complete';

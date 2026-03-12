@@ -446,11 +446,54 @@ body {
   to { transform: rotate(360deg); }
 }
 
-.auto-forge-text {
+.auto-forge-percent {
   font-family: 'Orbitron', monospace;
-  font-size: 1.1rem;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--forge-amber);
+  margin-bottom: 12px;
+  text-shadow: 0 0 20px rgba(255, 160, 40, 0.5);
+}
+
+.auto-forge-bar-track {
+  width: min(420px, 80vw);
+  height: 8px;
+  background: var(--border-dim);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.auto-forge-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--forge-amber), #ff6a00, var(--forge-amber));
+  background-size: 200% 100%;
+  animation: bar-shimmer 2s ease-in-out infinite;
+  transition: width 0.5s ease;
+}
+
+@keyframes bar-shimmer {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.auto-forge-step {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.05rem;
   color: var(--cyan);
   letter-spacing: 1px;
+  margin: 0;
+  text-align: center;
+}
+
+.auto-forge-detail {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 8px 0 0 0;
+  text-align: center;
+  max-width: min(480px, 85vw);
 }
 
 /* ── Disabled Deploy Button ── */
@@ -1911,6 +1954,39 @@ body {
   color: var(--forge-amber);
 }
 
+/* Gemini Status Indicator */
+
+.gemini-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 8px 20px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.gemini-online {
+  border-color: rgba(0, 200, 83, 0.3);
+  background: rgba(0, 200, 83, 0.06);
+}
+
+.gemini-offline {
+  border-color: rgba(255, 171, 0, 0.3);
+  background: rgba(255, 171, 0, 0.06);
+}
+
+.gemini-status-dot {
+  font-size: 0.7rem;
+}
+
+.gemini-status-text {
+  color: var(--text-muted);
+}
+
 /* Preview save button */
 
 .preview-btn-save {
@@ -2010,6 +2086,46 @@ body {
 .forge-header-library:hover {
   border-color: var(--forge-amber);
   color: var(--forge-amber);
+}
+
+/* Building-in-progress indicator in header */
+.forge-header-building {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 160, 40, 0.12);
+  border: 1px solid var(--forge-amber);
+  border-radius: 6px;
+  padding: 6px 14px;
+  color: var(--forge-amber);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  animation: header-build-glow 2s ease-in-out infinite;
+}
+
+.forge-header-building:hover {
+  background: rgba(255, 160, 40, 0.22);
+}
+
+.build-pulse {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--forge-amber);
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+
+@keyframes header-build-glow {
+  0%, 100% { box-shadow: 0 0 4px rgba(255, 160, 40, 0.2); }
+  50% { box-shadow: 0 0 12px rgba(255, 160, 40, 0.5); }
 }
 
 /* Adjust content for fixed header */

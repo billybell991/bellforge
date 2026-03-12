@@ -15,7 +15,7 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, buildId
   const [fullscreen, setFullscreen] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
-  const isLandscape = orientation === 'landscape';
+  const isLandscape = true; // games always render in 16:9 landscape
 
   const handleSave = useCallback(async () => {
     if (!buildId || saved) return;

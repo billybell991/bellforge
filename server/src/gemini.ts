@@ -1,15 +1,87 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import type { GameConfig } from './pipeline/types.js';
 
 const apiKey = process.env.GEMINI_API_KEY;
 let model: ReturnType<GoogleGenerativeAI['getGenerativeModel']> | null = null;
 
 if (apiKey) {
   const genAI = new GoogleGenerativeAI(apiKey);
-  model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+  model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 }
 
 export function isGeminiAvailable(): boolean {
   return model !== null;
+}
+
+// ── Creative Brief — Gemini drives ALL creative content ──
+
+export interface RoomFurniture {
+  type: 'rect' | 'circle' | 'arch' | 'triangle';
+  x: number; y: number; w: number; h: number;
+  color: string;
+  label: string;
+}
+
+export interface RoomHotspot {
+  id: string;
+  x: number; y: number; w: number; h: number;
+  type: 'examine' | 'item' | 'door' | 'puzzle';
+  label: string;
+  examineText: string;
+  targetRoom?: number;
+  requiredItem?: string;
+  lockedText?: string;
+}
+
+export interface CreativeRoom {
+  name: string;
+  description: string;
+  examineText: string;
+  atmosphere: string;
+  wallColor: string;
+  floorColor: string;
+  ceilingColor: string;
+  furniture: RoomFurniture[];
+  hotspots: RoomHotspot[];
+  hasWindow: boolean;
+  windowType: 'round' | 'tall' | 'wide' | 'none';
+  lightingDir: 'left' | 'right' | 'center' | 'dim';
+}
+
+export interface CreativeItem {
+  name: string;
+  emoji: string;
+  description: string;
+  roomIndex: number;
+}
+
+export interface CreativePalette {
+  bg: string;
+  wall: string;
+  accent: string;
+  floor: string;
+  text: string;
+  highlight: string;
+  shadow: string;
+}
+
+export interface PuzzleConnection {
+  doorInRoom: number;
+  leadsToRoom: number;
+  requiredItem: string;
+  lockedMessage: string;
+  unlockedMessage: string;
+}
+
+export interface CreativeBrief {
+  rooms: CreativeRoom[];
+  items: CreativeItem[];
+  palette: CreativePalette;
+  puzzles: PuzzleConnection[];
+  gameVibe: string;
+  hintTexts: string[];
+  openingText: string;
+  endingText: string;
 }
 
 // ── Curated fallback bank (Gemini-generated at design time) ──
@@ -41,6 +113,82 @@ function randomPick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
+function randomPicks<T>(arr: T[], n: number): T[] {
+  const shuffled = [...arr].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, n);
+}
+
+// ── Creativity seeds — injected into prompts to guarantee wild variety ──
+
+const WILD_SETTINGS = [
+  'inside a sentient coral reef that breathes and thinks',
+  'aboard a dimension-hopping steam locomotive',
+  'in a city built on the back of a sleeping colossus',
+  'within the folds of a painting that has come to life',
+  'on a ring-shaped space station orbiting a dying star',
+  'in a clockwork forest where trees are machines',
+  'beneath a frozen ocean under glass domes',
+  'inside a massive library where books rewrite reality',
+  'on floating islands connected by root bridges',
+  'in an underground fungal network with bioluminescent caves',
+  'aboard a massive submarine exploring alien seas',
+  'in a snow-globe world that someone keeps shaking',
+  'within the gears of a planet-sized clock',
+  'in a desert made of crushed gemstones',
+  'inside a dream that multiple sleepers share',
+  'on the skeleton of a dead god turned into a city',
+  'in a mirror dimension where everything is backwards',
+  'aboard a flying whale used as a trading vessel',
+  'in a vertical city carved into a canyon wall',
+  'inside a giant music box with living melody creatures',
+  'in a swamp where memories manifest as ghosts',
+  'on a comet hurtling through inhabited nebulae',
+  'in a carnival that exists between seconds of time',
+  'within an enormous hollow tree spanning miles upward',
+  'in a volcanic glass palace above a magma sea',
+  'inside a collapsed star where physics is wrong',
+  'on a network of bridges spanning an endless abyss',
+  'in an upside-down mountain range floating in mist',
+  'within the digestive system of a cosmic space whale',
+  'in a city of perpetual twilight lit by captive stars',
+];
+
+const WILD_CHARACTERS = [
+  'a retired circus acrobat with mechanical limbs',
+  'a sentient cloud of ink that possesses mannequins',
+  'an amnesiac cartographer who draws maps of places that shouldn\'t exist',
+  'a deaf alchemist who communicates through color-changing potions',
+  'a child raised by automatons who doesn\'t know humans exist',
+  'a failed wizard whose spells always do the opposite',
+  'a ghost who doesn\'t know they\'re dead yet',
+  'a time-displaced samurai in a world of lasers',
+  'a retired villain trying to do one good deed',
+  'a librarian who can read emotions like books',
+  'a street musician whose songs literally change weather',
+  'an elderly astronaut on one final impossible mission',
+  'a shapeshifter stuck in a form that isn\'t their own',
+  'a botanist who can hear what plants are thinking',
+  'a detective who can only solve crimes while sleepwalking',
+  'a blacksmith who forges weapons from solidified emotions',
+  'a courier who delivers packages between dimensions',
+  'a painter whose portraits trap people inside them',
+  'a chef whose dishes grant temporary superpowers',
+  'a lighthouse keeper on a lighthouse that walks',
+];
+
+const WILD_TWISTS = [
+  'but nothing is what it seems — the biggest ally is the real threat',
+  'and the solution requires thinking in a direction that doesn\'t exist',
+  'where the "rescue" might actually be the worse outcome',
+  'and the player slowly realizes they ARE the mystery',
+  'but every solved puzzle changes the rules of the next one',
+  'where time flows differently in each room',
+  'and the environment has opinions about being explored',
+  'but the items collected are actually parts of the player\'s lost identity',
+  'where helping one faction inevitably betrays another',
+  'and the ending depends on which items you DIDN\'T pick up',
+];
+
 // ── Genres/Themes/ArtStyles/Structure for auto-config ──
 
 const GENRE_IDS = ['point_click', 'puzzle', 'visual_novel', 'platformer', 'hidden_object', 'escape_room', 'interactive_fiction'];
@@ -66,26 +214,46 @@ export interface AutoConfig {
 
 /**
  * Generate a story using Gemini if available, otherwise pick from curated bank.
- * Accepts optional genre/theme context for more relevant results.
+ * Injects random creativity seeds so no two stories are alike.
  */
 export async function generateStory(genreHint?: string, themeHint?: string): Promise<GeneratedStory> {
   if (model) {
     try {
-      const prompt = `You are a creative game designer. Generate a unique, compelling story concept for a ${genreHint || 'point-and-click adventure'} game with a ${themeHint || 'mystery'} theme.
+      // Inject wild randomness so Gemini doesn't settle into patterns
+      const settingSeed = randomPick(WILD_SETTINGS);
+      const charSeed = randomPick(WILD_CHARACTERS);
+      const twistSeed = randomPick(WILD_TWISTS);
+      const avoidNames = randomPicks(STORY_BANK, 5).map(s => s.characterName);
+      const timestamp = Date.now(); // unique per call
 
-Return EXACTLY this JSON format (no markdown, no code fences, just raw JSON):
+      const prompt = `You are a wildly creative game designer who NEVER repeats yourself. Seed: ${timestamp}
+
+CREATIVE DIRECTION — use these as INSPIRATION (not literally):
+- Setting spark: "${settingSeed}"
+- Character spark: "${charSeed}"  
+- Plot twist spark: "${twistSeed}"
+
+Generate a completely original, surprising story for a ${genreHint || 'point-and-click adventure'} game with a ${themeHint || 'mystery'} theme.
+
+MANDATORY RULES:
+- The title must be UNIQUE and unexpected — no generic fantasy/sci-fi clichés
+- The character name must be memorable and unusual — NEVER use: ${avoidNames.join(', ')}, Anya, Kael, Elara, Luna, or any other overused fantasy names
+- The setting must feel specific and lived-in, not generic
+- The description must hint at a surprising twist or unusual mechanic
+- BE WEIRD. BE BOLD. Surprise me. No safe choices.
+
+Return EXACTLY this JSON (no markdown, no code fences, just raw JSON):
 {"title":"2-5 word evocative title","characterName":"single memorable protagonist name","setting":"one vivid sentence describing the location","description":"2-3 sentences about what the player does, the mystery, and the stakes"}`;
 
       const result = await model.generateContent(prompt);
       const text = result.response.text().trim();
-      // Strip markdown fences if present
       const clean = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
       const parsed = JSON.parse(clean);
       if (parsed.title && parsed.characterName && parsed.setting && parsed.description) {
         return parsed as GeneratedStory;
       }
-    } catch {
-      // Fall through to curated bank
+    } catch (err) {
+      console.error('[Gemini Story] Error:', err);
     }
   }
   return randomPick(STORY_BANK);
@@ -93,15 +261,36 @@ Return EXACTLY this JSON format (no markdown, no code fences, just raw JSON):
 
 /**
  * Generate a complete auto-config using Gemini if available, otherwise random from curated.
+ * Fully random genre/theme/art combos + wild Gemini story.
  */
-export async function generateAutoConfig(): Promise<AutoConfig> {
+export async function generateAutoConfig(
+  onProgress?: (step: string, detail: string, percent: number) => void,
+): Promise<AutoConfig> {
+  onProgress?.('🎲 Rolling the dice...', 'Picking a genre for your game', 10);
   const genreId = randomPick(GENRE_IDS);
+  await new Promise(r => setTimeout(r, 400));
+
+  onProgress?.('🎨 Weaving a theme...', `Genre locked: ${genreId.replace(/_/g, ' ')}`, 25);
   const themeId = randomPick(THEME_IDS);
   const artStyleId = randomPick(ART_STYLE_IDS);
+  await new Promise(r => setTimeout(r, 400));
+
+  onProgress?.('🏗️ Designing the structure...', `Theme: ${themeId.replace(/_/g, ' ')} · Art: ${artStyleId.replace(/_/g, ' ')}`, 40);
   const roomCount = 4 + Math.floor(Math.random() * 9); // 4-12
   const difficulty = randomPick([...DIFFICULTIES]);
   const puzzleDensity = randomPick([...DENSITIES]);
-  const story = await generateStory(genreId.replace('_', ' '), themeId);
+  await new Promise(r => setTimeout(r, 300));
+
+  onProgress?.('🤖 Gemini is dreaming up your story...', 'This is the creative part — sit tight', 55);
+  const story = await generateStory(
+    genreId.replace(/_/g, ' '),
+    themeId.replace(/_/g, ' '),
+  );
+
+  onProgress?.('✨ Polishing the details...', `"${story.title}" — starring ${story.characterName}`, 90);
+  await new Promise(r => setTimeout(r, 500));
+
+  onProgress?.('🔥 Configuration complete!', 'Ready to forge', 100);
 
   return {
     genreId,
@@ -109,5 +298,466 @@ export async function generateAutoConfig(): Promise<AutoConfig> {
     artStyleId,
     structure: { roomCount, difficulty, puzzleDensity },
     story,
+  };
+}
+
+// ── Fallback palettes (used when Gemini is unavailable) ──
+
+const FALLBACK_PALETTES: Record<string, CreativePalette> = {
+  horror:    { bg: '#1a0a0a', wall: '#3d1515', accent: '#ff3d00', floor: '#2a1010', text: '#ffccbc', highlight: '#ff6e40', shadow: '#120505' },
+  fantasy:   { bg: '#0f0a1e', wall: '#2a1f5e', accent: '#7c4dff', floor: '#1a1040', text: '#e8daff', highlight: '#b388ff', shadow: '#070510' },
+  scifi:     { bg: '#0a1520', wall: '#153045', accent: '#00e5ff', floor: '#0d1f30', text: '#b2ebf2', highlight: '#18ffff', shadow: '#050d15' },
+  mystery:   { bg: '#1a1508', wall: '#3d3010', accent: '#ffa726', floor: '#2a2510', text: '#ffe0b2', highlight: '#ffcc80', shadow: '#100d05' },
+  cozy:      { bg: '#1a0f15', wall: '#4a2040', accent: '#f48fb1', floor: '#2a1525', text: '#fce4ec', highlight: '#f8bbd0', shadow: '#10080d' },
+  cyberpunk: { bg: '#0f0518', wall: '#2a1040', accent: '#e040fb', floor: '#1a0a25', text: '#f3e5f5', highlight: '#ea80fc', shadow: '#08030d' },
+  steampunk: { bg: '#1a1008', wall: '#4a3020', accent: '#ff8a65', floor: '#2a2010', text: '#ffe0b2', highlight: '#ffab91', shadow: '#0d0805' },
+  postapoc:  { bg: '#15100a', wall: '#3d2a1a', accent: '#8d6e63', floor: '#251a10', text: '#d7ccc8', highlight: '#a1887f', shadow: '#0a0805' },
+};
+
+const FALLBACK_ROOM_POOLS: Record<string, string[]> = {
+  point_click: ['Entrance Hall','Library','Kitchen','Cellar','Attic','Garden','Tower','Vault','Chapel','Observatory'],
+  escape_room: ['The Locked Office','Basement Cell','The Cabin','Lab 42','Vault Room','The Freezer','Control Room','The Archive','Engine Room','Panic Room'],
+  puzzle: ['Starter Grid','Mirror Chamber','Gear Nexus','Crystal Maze','Logic Gate','Color Prism','Gravity Well','Time Lock','Shadow Match','Cascade Room'],
+  visual_novel: ['The Encounter','Rising Tension','Crossroads','Revelation','Turning Point','Dark Hour','Reconciliation','Climax','Aftermath','New Dawn'],
+  platformer: ['Green Meadows','Crystal Caverns','Lava Fortress','Sky Archipelago','Frost Peak','Shadow Factory','Neon Circuit','Jungle Canopy','Storm Citadel','Clockwork Spire'],
+  hidden_object: ['The Study','Victorian Parlor','Old Workshop','Market Square','Train Station','Abandoned Pier','Museum Hall','Garden Shed','Antique Shop','Clock Tower'],
+  interactive_fiction: ['The Threshold','Forked Path','Whispering Hall','Memory Lane','The Crossroads','Echo Chamber','Forgotten Gate','Liminal Space','The Descent','Ascension'],
+};
+
+const FALLBACK_ITEMS = [
+  { name: 'Key', emoji: '🔑' }, { name: 'Gem', emoji: '💎' }, { name: 'Note', emoji: '📜' },
+  { name: 'Coin', emoji: '🪙' }, { name: 'Map', emoji: '🗺️' }, { name: 'Lens', emoji: '🔍' },
+  { name: 'Ring', emoji: '💍' }, { name: 'Skull', emoji: '💀' }, { name: 'Candle', emoji: '🕯️' },
+  { name: 'Feather', emoji: '🪶' }, { name: 'Compass', emoji: '🧭' }, { name: 'Vial', emoji: '🧪' },
+];
+
+const FALLBACK_EXAMINE = [
+  'Dust swirls in the dim light...',
+  'Something feels off about this place.',
+  'The walls whisper forgotten secrets.',
+  'A faint hum emanates from below.',
+  'Shadows dance in the corners.',
+  'The air is thick with anticipation.',
+  'Echoes of the past linger here.',
+  'A chill runs down your spine.',
+  'The floor creaks underfoot.',
+  'An eerie silence fills the room.',
+];
+
+function buildFallbackBrief(config: GameConfig): CreativeBrief {
+  const themeId = config.theme.id;
+  const genreId = config.genre.id;
+  const roomCount = config.structure.roomCount;
+  const pool = FALLBACK_ROOM_POOLS[genreId] || FALLBACK_ROOM_POOLS.point_click;
+  const pal = FALLBACK_PALETTES[themeId] || FALLBACK_PALETTES.mystery;
+
+  const rooms: CreativeRoom[] = [];
+  for (let i = 0; i < roomCount; i++) {
+    const furnitureCount = 3 + Math.floor(Math.random() * 4);
+    const furniture: RoomFurniture[] = [];
+    for (let f = 0; f < furnitureCount; f++) {
+      furniture.push({
+        type: (['rect', 'rect', 'circle', 'arch'] as const)[Math.floor(Math.random() * 4)],
+        x: 0.08 + Math.random() * 0.7,
+        y: 0.15 + Math.random() * 0.5,
+        w: 0.06 + Math.random() * 0.15,
+        h: 0.06 + Math.random() * 0.2,
+        color: pal.wall,
+        label: ['shelf', 'table', 'chair', 'crate', 'cabinet', 'lamp', 'pillar', 'statue'][Math.floor(Math.random() * 8)],
+      });
+    }
+    rooms.push({
+      name: pool[i % pool.length],
+      description: `A ${themeId}-themed area with shadowy corners and hidden details.`,
+      examineText: FALLBACK_EXAMINE[i % FALLBACK_EXAMINE.length],
+      atmosphere: ['Eerie silence', 'Distant echoes', 'Faint humming', 'Creaking wood', 'Dripping water'][i % 5],
+      wallColor: pal.wall,
+      floorColor: pal.floor,
+      ceilingColor: pal.wall,
+      furniture,
+      hotspots: [],
+      hasWindow: i % 3 !== 2,
+      windowType: (['round', 'tall', 'wide'] as const)[i % 3],
+      lightingDir: (['left', 'right', 'center', 'dim'] as const)[i % 4],
+    });
+  }
+
+  const items: CreativeItem[] = [];
+  for (let i = 0; i < roomCount; i++) {
+    const fi = FALLBACK_ITEMS[i % FALLBACK_ITEMS.length];
+    items.push({ name: fi.name, emoji: fi.emoji, description: `You found a ${fi.name.toLowerCase()} in the ${rooms[i].name}.`, roomIndex: i });
+  }
+
+  const puzzles: PuzzleConnection[] = [];
+  if (roomCount > 3) {
+    puzzles.push({
+      doorInRoom: Math.floor(roomCount / 2) - 1,
+      leadsToRoom: Math.floor(roomCount / 2),
+      requiredItem: items[0].name,
+      lockedMessage: `This passage is locked. You need the ${items[0].name}.`,
+      unlockedMessage: `The ${items[0].name} fits perfectly. The way forward opens.`,
+    });
+  }
+
+  const hintTexts: string[] = rooms.map((r, i) =>
+    i === 0 ? `Look around the ${r.name} for something useful...` : `Maybe there's something interesting in the ${r.name}...`
+  );
+
+  return {
+    rooms,
+    items,
+    palette: { ...pal, highlight: pal.accent + 'cc', shadow: pal.bg + 'ee' },
+    puzzles,
+    gameVibe: `A ${config.theme.name} ${config.genre.name} rendered in ${config.artStyle.name} style.`,
+    hintTexts,
+    openingText: `${config.story.characterName} arrives at ${config.story.setting}`,
+    endingText: `${config.story.characterName} has uncovered the truth. The adventure is complete.`,
+  };
+}
+
+function cleanJson(text: string): string {
+  let s = text.trim();
+  // Strip markdown fences anywhere: ```json ... ``` or ``` ... ```
+  s = s.replace(/^\s*```(?:json)?\s*\n?/im, '').replace(/\n?\s*```\s*$/im, '').trim();
+  return s;
+}
+
+/**
+ * Generate the complete creative brief for a game via Gemini.
+ * Uses CHUNKED calls per the Gemini usage rules — never one giant prompt.
+ * Each step is a focused Gemini call that builds on the previous results.
+ */
+
+// Shared context builder for brief chunks
+function briefContext(config: GameConfig): string {
+  const roomCount = config.structure.roomCount;
+  const creativitySeed = `Creativity seed: ${Date.now()}. Wild setting inspiration: "${randomPick(WILD_SETTINGS)}". Plot twist spark: "${randomPick(WILD_TWISTS)}".`;
+  return `Genre: ${config.genre.name}, Theme: ${config.theme.name}, Art Style: ${config.artStyle.name}, Story: "${config.story.title}" — ${config.story.description}, Setting: ${config.story.setting}, Protagonist: ${config.story.characterName}, Rooms: ${roomCount}, Difficulty: ${config.structure.difficulty}. ${creativitySeed}`;
+}
+
+/** CHUNK 1: Palette + Vibe + Opening/Ending */
+export async function generateBriefPalette(
+  config: GameConfig,
+  onStatus?: (msg: string) => void,
+): Promise<{ palette: CreativePalette; gameVibe: string; openingText: string; endingText: string }> {
+  if (!model) {
+    onStatus?.('Gemini unavailable — using curated palette');
+    const fb = buildFallbackBrief(config);
+    return { palette: fb.palette, gameVibe: fb.gameVibe, openingText: fb.openingText, endingText: fb.endingText };
+  }
+
+  const ctx = briefContext(config);
+  onStatus?.('Asking Gemini to design the color palette and creative vision...');
+  try {
+    const p1 = await model.generateContent(`You are a creative director designing a game. ${ctx}
+
+Return ONLY this JSON (no fences, no explanation):
+{"gameVibe":"One evocative sentence — the FEELING of playing this game","palette":{"bg":"#hex dark bg","wall":"#hex mid wall","accent":"#hex vibrant accent","floor":"#hex floor","text":"#hex light text","highlight":"#hex glow/highlight","shadow":"#hex deep shadow"},"openingText":"2-3 sentences. The player just arrived. Set the scene in second person. Make it gripping.","endingText":"2-3 sentences. The player solved it. Wrap up the story satisfyingly in second person."}`);
+    const d1 = JSON.parse(cleanJson(p1.response.text()));
+    onStatus?.(`Palette locked: accent ${d1.palette.accent} · "${d1.gameVibe}"`);
+    return { palette: d1.palette, gameVibe: d1.gameVibe, openingText: d1.openingText, endingText: d1.endingText };
+  } catch (err) {
+    console.error('[Gemini Chunk 1 - Palette] Error:', err);
+    onStatus?.('Palette generation failed — using fallback colors');
+    const fb = buildFallbackBrief(config);
+    return { palette: fb.palette, gameVibe: fb.gameVibe, openingText: fb.openingText, endingText: fb.endingText };
+  }
+}
+
+/** CHUNK 2: Room designs with furniture layouts */
+export async function generateBriefRooms(
+  config: GameConfig,
+  palette: CreativePalette,
+  onStatus?: (msg: string) => void,
+): Promise<CreativeRoom[]> {
+  const roomCount = config.structure.roomCount;
+
+  if (!model) {
+    onStatus?.('Gemini unavailable — using curated rooms');
+    return buildFallbackBrief(config).rooms;
+  }
+
+  const ctx = briefContext(config);
+  onStatus?.(`Designing ${roomCount} unique scenes with furniture layouts...`);
+  try {
+    const p2 = await model.generateContent(`You are a game level designer. ${ctx}
+Accent color: ${palette.accent}. Wall color: ${palette.wall}. Floor color: ${palette.floor}.
+
+Design ${roomCount} unique rooms. Each room must feel DIFFERENT — different furniture, different layouts, different mood.
+
+Return ONLY JSON array (no fences):
+[{"name":"Room Name","description":"What this room looks like (1 vivid sentence)","examineText":"Atmospheric first-person text when examining the room","atmosphere":"2-3 word mood tag","wallColor":"#hex unique to this room","floorColor":"#hex","ceilingColor":"#hex","hasWindow":true,"windowType":"round|tall|wide|none","lightingDir":"left|right|center|dim","furniture":[{"type":"rect|circle|arch|triangle","x":0.1,"y":0.2,"w":0.15,"h":0.25,"color":"#hex","label":"what this is (bookshelf, desk, etc)"}]}]
+
+RULES:
+- Furniture x/y/w/h are normalized 0-1. x+w must be < 0.95, y+h must be < 0.85.
+- Each room needs 3-7 furniture pieces — tables, shelves, paintings, machines, pillars, etc.
+- Vary furniture positions room to room — NOT all the same layout.
+- Wall/floor colors should vary subtly between rooms but stay in theme.
+- Exactly ${roomCount} rooms.`);
+    const d2 = JSON.parse(cleanJson(p2.response.text()));
+    if (Array.isArray(d2) && d2.length === roomCount) {
+      const rooms = d2.map((r: Record<string, unknown>) => ({
+        name: String(r.name || 'Room'),
+        description: String(r.description || ''),
+        examineText: String(r.examineText || ''),
+        atmosphere: String(r.atmosphere || ''),
+        wallColor: String(r.wallColor || palette.wall),
+        floorColor: String(r.floorColor || palette.floor),
+        ceilingColor: String(r.ceilingColor || palette.wall),
+        hasWindow: r.hasWindow !== false,
+        windowType: (r.windowType as CreativeRoom['windowType']) || 'tall',
+        lightingDir: (r.lightingDir as CreativeRoom['lightingDir']) || 'center',
+        hotspots: [],
+        furniture: (r.furniture as RoomFurniture[]) || [],
+      })) as CreativeRoom[];
+      const totalFurniture = rooms.reduce((s, r) => s + r.furniture.length, 0);
+      onStatus?.(`${roomCount} scenes designed — ${totalFurniture} furniture pieces placed`);
+      return rooms;
+    }
+    throw new Error('Wrong room count');
+  } catch (err) {
+    console.error('[Gemini Chunk 2 - Rooms] Error:', err);
+    onStatus?.('Scene design failed — using fallback layouts');
+    return buildFallbackBrief(config).rooms;
+  }
+}
+
+/** CHUNK 3: Items + puzzles */
+export async function generateBriefItems(
+  config: GameConfig,
+  rooms: CreativeRoom[],
+  onStatus?: (msg: string) => void,
+): Promise<{ items: CreativeItem[]; puzzles: PuzzleConnection[] }> {
+  const roomCount = config.structure.roomCount;
+
+  if (!model) {
+    onStatus?.('Gemini unavailable — using curated items');
+    const fb = buildFallbackBrief(config);
+    return { items: fb.items, puzzles: fb.puzzles };
+  }
+
+  onStatus?.('Crafting thematic items and puzzle connections...');
+  try {
+    const roomNames = rooms.map(r => r.name);
+    const p3 = await model.generateContent(`You are a puzzle designer for a ${config.genre.name} game. 
+Rooms (in order): ${roomNames.map((n, i) => `${i}: ${n}`).join(', ')}
+Story: "${config.story.title}" — ${config.story.description}
+Difficulty: ${config.structure.difficulty}, Puzzle Density: ${config.structure.puzzleDensity}
+
+Return ONLY this JSON (no fences):
+{"items":[{"name":"Thematic Item Name","emoji":"single emoji","description":"Flavor text when picked up (1 sentence, atmospheric)","roomIndex":0}],"puzzles":[{"doorInRoom":2,"leadsToRoom":3,"requiredItem":"Item Name","lockedMessage":"Why this door won't open (atmospheric)","unlockedMessage":"What happens when you use the item (atmospheric)"}]}
+
+RULES:
+- Exactly ${roomCount} items, one per room, roomIndex 0 to ${roomCount - 1}.
+- Items must be thematically unique — no generic "Key" or "Gem" unless the theme demands it.
+- ${config.structure.puzzleDensity === 'heavy' ? '2-3' : config.structure.puzzleDensity === 'moderate' ? '1-2' : '0-1'} puzzle connections where a door between rooms requires a specific item to pass.
+- Each puzzle's requiredItem must exactly match an item name from the items array.
+- Locked doors should have atmospheric messages, not generic text.`);
+    const d3 = JSON.parse(cleanJson(p3.response.text()));
+    const items = d3.items;
+    const puzzles = d3.puzzles || [];
+    onStatus?.(`${items.length} items created, ${puzzles.length} puzzle gates wired`);
+    return { items, puzzles };
+  } catch (err) {
+    console.error('[Gemini Chunk 3 - Items] Error:', err);
+    onStatus?.('Item/puzzle design failed — using fallbacks');
+    const fb = buildFallbackBrief(config);
+    return { items: fb.items, puzzles: fb.puzzles };
+  }
+}
+
+/** CHUNK 4: Context-aware hints */
+export async function generateBriefHints(
+  config: GameConfig,
+  rooms: CreativeRoom[],
+  items: CreativeItem[],
+  onStatus?: (msg: string) => void,
+): Promise<string[]> {
+  const roomCount = config.structure.roomCount;
+
+  if (!model) {
+    onStatus?.('Gemini unavailable — using generic hints');
+    return rooms.map(r => `Something catches your eye in the ${r.name}...`);
+  }
+
+  onStatus?.('Writing context-aware hints for every room...');
+  try {
+    const roomNames = rooms.map(r => r.name);
+    const itemNames = items.map(i => i.name);
+    const p4 = await model.generateContent(`You are writing hint text for a game. The player might get stuck in any room.
+Rooms: ${roomNames.join(', ')}
+Items (in room order): ${itemNames.join(', ')}
+Story: "${config.story.title}"
+
+Return ONLY a JSON array of ${roomCount} hint strings (no fences):
+["Hint for room 0 — a gentle nudge like a companion would give, e.g. 'That old desk looks like it hasn't been opened in years...'", ...]
+
+RULES:
+- Each hint should feel like a friend nudging the player, not a walkthrough.
+- Reference specific objects in that room.
+- Never say "go here" or "pick up X" directly — be suggestive.
+- Exactly ${roomCount} strings.`);
+    const d4 = JSON.parse(cleanJson(p4.response.text()));
+    const hintTexts = Array.isArray(d4) && d4.length === roomCount ? d4 : rooms.map(r => `Something catches your eye in the ${r.name}...`);
+    onStatus?.(`${hintTexts.length} companion-style hints written`);
+    return hintTexts;
+  } catch (err) {
+    console.error('[Gemini Chunk 4 - Hints] Error:', err);
+    onStatus?.('Hint generation failed — using generic hints');
+    return rooms.map(r => `Something catches your eye in the ${r.name}...`);
+  }
+}
+
+/** Convenience wrapper that runs all 4 chunks — kept for backward compat */
+export async function generateCreativeBrief(
+  config: GameConfig,
+  onStatus?: (msg: string) => void,
+): Promise<CreativeBrief> {
+  if (!model) {
+    onStatus?.('Gemini unavailable — using curated creative content');
+    return buildFallbackBrief(config);
+  }
+
+  const roomCount = config.structure.roomCount;
+  const creativitySeed = `Creativity seed: ${Date.now()}. Wild setting inspiration: "${randomPick(WILD_SETTINGS)}". Plot twist spark: "${randomPick(WILD_TWISTS)}".`;
+  const ctx = `Genre: ${config.genre.name}, Theme: ${config.theme.name}, Art Style: ${config.artStyle.name}, Story: "${config.story.title}" — ${config.story.description}, Setting: ${config.story.setting}, Protagonist: ${config.story.characterName}, Rooms: ${roomCount}, Difficulty: ${config.structure.difficulty}. ${creativitySeed}`;
+
+  // ─── CHUNK 1: Palette + Vibe + Opening/Ending ───
+  onStatus?.('Gemini → Step 1/4: Designing color palette and creative vision...');
+  let palette: CreativePalette;
+  let gameVibe: string;
+  let openingText: string;
+  let endingText: string;
+  try {
+    const p1 = await model.generateContent(`You are a creative director designing a game. ${ctx}
+
+Return ONLY this JSON (no fences, no explanation):
+{"gameVibe":"One evocative sentence — the FEELING of playing this game","palette":{"bg":"#hex dark bg","wall":"#hex mid wall","accent":"#hex vibrant accent","floor":"#hex floor","text":"#hex light text","highlight":"#hex glow/highlight","shadow":"#hex deep shadow"},"openingText":"2-3 sentences. The player just arrived. Set the scene in second person. Make it gripping.","endingText":"2-3 sentences. The player solved it. Wrap up the story satisfyingly in second person."}`);
+    const d1 = JSON.parse(cleanJson(p1.response.text()));
+    palette = d1.palette;
+    gameVibe = d1.gameVibe;
+    openingText = d1.openingText;
+    endingText = d1.endingText;
+    onStatus?.(`Palette designed: accent ${palette.accent}, vibe: "${gameVibe}"`);
+  } catch (err) {
+    console.error('[Gemini Chunk 1 - Palette] Error:', err);
+    onStatus?.('Palette generation failed — using fallback');
+    const fb = buildFallbackBrief(config);
+    palette = fb.palette; gameVibe = fb.gameVibe; openingText = fb.openingText; endingText = fb.endingText;
+  }
+
+  // ─── CHUNK 2: Room designs with furniture layouts ───
+  onStatus?.('Gemini → Step 2/4: Designing unique room layouts and furniture...');
+  let rooms: CreativeRoom[];
+  try {
+    const p2 = await model.generateContent(`You are a game level designer. ${ctx}
+Accent color: ${palette!.accent}. Wall color: ${palette!.wall}. Floor color: ${palette!.floor}.
+
+Design ${roomCount} unique rooms. Each room must feel DIFFERENT — different furniture, different layouts, different mood.
+
+Return ONLY JSON array (no fences):
+[{"name":"Room Name","description":"What this room looks like (1 vivid sentence)","examineText":"Atmospheric first-person text when examining the room","atmosphere":"2-3 word mood tag","wallColor":"#hex unique to this room","floorColor":"#hex","ceilingColor":"#hex","hasWindow":true,"windowType":"round|tall|wide|none","lightingDir":"left|right|center|dim","furniture":[{"type":"rect|circle|arch|triangle","x":0.1,"y":0.2,"w":0.15,"h":0.25,"color":"#hex","label":"what this is (bookshelf, desk, etc)"}]}]
+
+RULES:
+- Furniture x/y/w/h are normalized 0-1. x+w must be < 0.95, y+h must be < 0.85.
+- Each room needs 3-7 furniture pieces — tables, shelves, paintings, machines, pillars, etc.
+- Vary furniture positions room to room — NOT all the same layout.
+- Wall/floor colors should vary subtly between rooms but stay in theme.
+- Exactly ${roomCount} rooms.`);
+    const d2 = JSON.parse(cleanJson(p2.response.text()));
+    if (Array.isArray(d2) && d2.length === roomCount) {
+      rooms = d2.map((r: Record<string, unknown>) => ({
+        name: String(r.name || 'Room'),
+        description: String(r.description || ''),
+        examineText: String(r.examineText || ''),
+        atmosphere: String(r.atmosphere || ''),
+        wallColor: String(r.wallColor || palette.wall),
+        floorColor: String(r.floorColor || palette.floor),
+        ceilingColor: String(r.ceilingColor || palette.wall),
+        hasWindow: r.hasWindow !== false,
+        windowType: (r.windowType as CreativeRoom['windowType']) || 'tall',
+        lightingDir: (r.lightingDir as CreativeRoom['lightingDir']) || 'center',
+        hotspots: [],
+        furniture: (r.furniture as RoomFurniture[]) || [],
+      })) as CreativeRoom[];
+      onStatus?.(`${roomCount} unique rooms designed with ${rooms.reduce((s, r) => s + r.furniture.length, 0)} total furniture pieces`);
+    } else {
+      throw new Error('Wrong room count');
+    }
+  } catch (err) {
+    console.error('[Gemini Chunk 2 - Rooms] Error:', err);
+    onStatus?.('Room design failed — using fallback');
+    rooms = buildFallbackBrief(config).rooms;
+  }
+
+  // ─── CHUNK 3: Items + puzzles ───
+  onStatus?.('Gemini → Step 3/4: Creating items and puzzle connections...');
+  let items: CreativeItem[];
+  let puzzles: PuzzleConnection[];
+  try {
+    const roomNames = rooms!.map(r => r.name);
+    const p3 = await model.generateContent(`You are a puzzle designer for a ${config.genre.name} game. 
+Rooms (in order): ${roomNames.map((n, i) => `${i}: ${n}`).join(', ')}
+Story: "${config.story.title}" — ${config.story.description}
+Difficulty: ${config.structure.difficulty}, Puzzle Density: ${config.structure.puzzleDensity}
+
+Return ONLY this JSON (no fences):
+{"items":[{"name":"Thematic Item Name","emoji":"single emoji","description":"Flavor text when picked up (1 sentence, atmospheric)","roomIndex":0}],"puzzles":[{"doorInRoom":2,"leadsToRoom":3,"requiredItem":"Item Name","lockedMessage":"Why this door won't open (atmospheric)","unlockedMessage":"What happens when you use the item (atmospheric)"}]}
+
+RULES:
+- Exactly ${roomCount} items, one per room, roomIndex 0 to ${roomCount - 1}.
+- Items must be thematically unique — no generic "Key" or "Gem" unless the theme demands it.
+- ${config.structure.puzzleDensity === 'heavy' ? '2-3' : config.structure.puzzleDensity === 'moderate' ? '1-2' : '0-1'} puzzle connections where a door between rooms requires a specific item to pass.
+- Each puzzle's requiredItem must exactly match an item name from the items array.
+- Locked doors should have atmospheric messages, not generic text.`);
+    const d3 = JSON.parse(cleanJson(p3.response.text()));
+    items = d3.items;
+    puzzles = d3.puzzles || [];
+    onStatus?.(`${items.length} items and ${puzzles.length} puzzle gates designed`);
+  } catch (err) {
+    console.error('[Gemini Chunk 3 - Items] Error:', err);
+    onStatus?.('Item/puzzle design failed — using fallback');
+    const fb = buildFallbackBrief(config);
+    items = fb.items; puzzles = fb.puzzles;
+  }
+
+  // ─── CHUNK 4: Context-aware hints ───
+  onStatus?.('Gemini → Step 4/4: Writing context-aware hints and examine details...');
+  let hintTexts: string[];
+  try {
+    const roomNames = rooms!.map(r => r.name);
+    const itemNames = items!.map(i => i.name);
+    const p4 = await model.generateContent(`You are writing hint text for a game. The player might get stuck in any room.
+Rooms: ${roomNames.join(', ')}
+Items (in room order): ${itemNames.join(', ')}
+Story: "${config.story.title}"
+
+Return ONLY a JSON array of ${roomCount} hint strings (no fences):
+["Hint for room 0 — a gentle nudge like a companion would give, e.g. 'That old desk looks like it hasn't been opened in years...'", ...]
+
+RULES:
+- Each hint should feel like a friend nudging the player, not a walkthrough.
+- Reference specific objects in that room.
+- Never say "go here" or "pick up X" directly — be suggestive.
+- Exactly ${roomCount} strings.`);
+    const d4 = JSON.parse(cleanJson(p4.response.text()));
+    hintTexts = Array.isArray(d4) && d4.length === roomCount ? d4 : rooms!.map(r => `Something catches your eye in the ${r.name}...`);
+    onStatus?.('Hint system designed — contextual nudges for every room');
+  } catch (err) {
+    console.error('[Gemini Chunk 4 - Hints] Error:', err);
+    onStatus?.('Hint generation failed — using generic hints');
+    hintTexts = rooms!.map(r => `Something catches your eye in the ${r.name}...`);
+  }
+
+  onStatus?.('Creative brief complete — all 4 Gemini design passes finished');
+  return {
+    rooms: rooms!,
+    items: items!,
+    palette: palette!,
+    puzzles: puzzles!,
+    gameVibe: gameVibe!,
+    hintTexts: hintTexts!,
+    openingText: openingText!,
+    endingText: endingText!,
   };
 }

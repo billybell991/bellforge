@@ -15,9 +15,14 @@ const FEATURES = [
 
 export function Landing({ onStart, onAutoForge, onLibrary }: LandingProps) {
   const [taglineVisible, setTaglineVisible] = useState(false);
+  const [geminiStatus, setGeminiStatus] = useState<{ available: boolean; hint: string } | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setTaglineVisible(true), 300);
+    fetch('/api/gemini/status')
+      .then((r) => r.json())
+      .then((data) => setGeminiStatus(data))
+      .catch(() => setGeminiStatus({ available: false, hint: 'Server unreachable' }));
     return () => clearTimeout(timer);
   }, []);
 
@@ -28,6 +33,13 @@ export function Landing({ onStart, onAutoForge, onLibrary }: LandingProps) {
       <p className={`landing-tagline ${taglineVisible ? 'visible' : ''}`}>
         Forge Your Game. No Code Required.
       </p>
+
+      {geminiStatus && (
+        <div className={`gemini-status ${geminiStatus.available ? 'gemini-online' : 'gemini-offline'}`}>
+          <span className="gemini-status-dot">{geminiStatus.available ? '🟢' : '🟡'}</span>
+          <span className="gemini-status-text">{geminiStatus.hint}</span>
+        </div>
+      )}
 
       <div className="landing-features">
         {FEATURES.map((f) => (
