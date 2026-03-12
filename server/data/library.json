@@ -1,16 +1,58 @@
 [
   {
-    "id": "7918414e-9652-4679-a797-43eed5a88ea0",
-    "name": "Silence, My Engine",
+    "id": "dc86abae-78b9-4c2d-b0e9-0cfb03672f8c",
+    "name": "Where Glamour Unweaves",
     "rating": 0,
     "config": {
       "genre": {
-        "id": "platformer",
-        "name": "Platformer",
-        "icon": "🏃",
-        "description": "Jump, run, and collect through levels",
-        "tag": "",
+        "id": "point_click",
+        "name": "Point & Click Adventure",
+        "icon": "🎯",
+        "description": "Explore rooms, solve puzzles, uncover stories",
+        "tag": "FLAGSHIP",
         "orientation": "landscape"
+      },
+      "theme": {
+        "id": "fantasy",
+        "name": "Fantasy / Medieval",
+        "icon": "🏰",
+        "description": "Castles, dragons, and magical realms",
+        "color": "#7c4dff"
+      },
+      "artStyle": {
+        "id": "pixel_art",
+        "name": "Pixel Art / Retro",
+        "icon": "👾",
+        "description": "Nostalgic 8-bit and 16-bit aesthetics"
+      },
+      "structure": {
+        "roomCount": 3,
+        "difficulty": "standard",
+        "puzzleDensity": "heavy"
+      },
+      "story": {
+        "title": "Where Glamour Unweaves",
+        "characterName": "Skirr",
+        "setting": "The Aether-Geode, a titanic crystal cavern humming with forgotten lament, where the petrified heart of a failed star-god pulses with chaotic energies, causing gravity to shiver and colours to bleed into echoing light.",
+        "description": "You are Skirr, a sentient wisp of residual glamour, able to briefly inhabit the brittle, forgotten Relic-Shells scattered across the fractured Aether-Geode. Explore this collapsing reality, piecing together the chaotic echoes of a dying celestial entity, but choose your interactions carefully: some objects are better left undisturbed, for true salvation may lie in restraint rather than acquisition."
+      }
+    },
+    "buildId": "616cc1c4-89bd-4072-882a-b692d3caf579",
+    "apkSize": "18.9 MB",
+    "createdAt": "2026-03-12T20:19:55.373Z"
+  },
+  {
+    "id": "003570b7-d256-4333-bd86-05fe8e52c8a2",
+    "name": "Iron Psalmody",
+    "rating": 0,
+    "config": {
+      "genre": {
+        "id": "puzzle",
+        "name": "Puzzle Game",
+        "icon": "🧩",
+        "description": "Brain teasers and logic challenges",
+        "tag": "",
+        "orientation": "portrait"
       },
       "theme": {
         "id": "horror",
@@ -20,25 +62,25 @@
         "color": "#ff3d00"
       },
       "artStyle": {
-        "id": "neon",
-        "name": "Neon / Synthwave",
-        "icon": "💫",
-        "description": "Glowing lights, retro-futuristic vibes"
+        "id": "watercolor",
+        "name": "Watercolor / Painterly",
+        "icon": "🖌️",
+        "description": "Soft, flowing, artistic brushstrokes"
       },
       "structure": {
-        "roomCount": 12,
-        "difficulty": "casual",
-        "puzzleDensity": "light"
+        "roomCount": 6,
+        "difficulty": "standard",
+        "puzzleDensity": "moderate"
       },
       "story": {
-        "title": "Silence, My Engine",
-        "characterName": "Claviger",
-        "setting": "The Groaning Organ, a colossal, derelict music box made of calcified bone and shrieking steel, eternally grinds its discordant melody across an infinite, lightless void.",
-        "description": "You control Claviger, an automaton of bone and broken clockwork, whose very existence within the Groaning Organ compels you to navigate its decaying gears and silence the wailing, spectral 'melodies' that claw at the edges of reality. Every precise jump and frantic scramble on your seizing mechanical limbs is an attempt to escape this auditory prison, yet a horrifying realization slowly dawns: the discordant symphony echoes *your* movements, and the terrible music box is merely playing its player."
+        "title": "Iron Psalmody",
+        "characterName": "Thistlewick",
+        "setting": "The Iron Thicket groaned, a grotesque forest where trees were gnarled, rust-caked contraptions of bone-white ceramic and oil-slicked brass, constantly whispering a chorus of grinding despair.",
+        "description": "As Thistlewick, a medium sensitive to the suffering of inanimate objects, you must decipher the tortured psychic clamor emanating from the Iron Thicket's infernal \"flora.\" The forest itself is a vast, living mechanism slowly consuming the surrounding reality, and its silent, mechanical \"songs\" hold the key to stopping its relentless, sanity-warping growth. Progress demands abandoning conventional logic, perceiving paradoxical harmonies within the cacophony, and constructing solutions that violate the very laws of physics to quiet the spectral gears."
       }
     },
-    "buildId": "49146ab1-348f-434d-a425-eeb57f5a31cb",
-    "apkSize": "11.0 MB",
-    "createdAt": "2026-03-12T13:56:44.352Z"
+    "buildId": "bd2cf90a-a79d-4fb3-b5a1-4b435a85ea9d",
+    "apkSize": "19.3 MB",
+    "createdAt": "2026-03-12T20:51:24.495Z"
   }
 ]

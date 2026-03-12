@@ -108,6 +108,12 @@ export default function App() {
           setBuildStageName(msg.name);
           setBuildDetail(msg.detail);
           setBuildLog((prev) => {
+            // If the last entry has the same name, update it in place (heartbeat)
+            if (prev.length > 0 && prev[prev.length - 1].name === msg.name) {
+              return prev.map((e, i) =>
+                i === prev.length - 1 ? { ...e, percent: msg.percent } : e
+              );
+            }
             const updated = prev.map((e) => ({ ...e, done: true }));
             return [...updated, { name: msg.name, percent: msg.percent, done: false }];
           });
@@ -458,6 +464,7 @@ export default function App() {
             onBack={handleLibraryBack}
             onViewPreview={handleViewFromLibrary}
             onReForge={handleReForgeFromLibrary}
+            onCountChange={setLibraryCount}
           />
         )}
       </div>

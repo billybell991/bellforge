@@ -167,41 +167,41 @@ function getPipelineStages(config: Record<string, unknown>): PipelineStage[] {
   const t = genreTerms(genreId);
 
   return [
-    { id: 'init', name: 'Lighting the Forge', percent: 3, duration: 1200,
+    { id: 'init', name: '🔥 Lighting the Forge', percent: 3, duration: 1200,
       detail: 'Laying the foundation stones of your game world...' },
-    { id: 'architecture', name: 'Raising the Framework', percent: 6, duration: 1800,
+    { id: 'architecture', name: '🏗️ Raising the Framework', percent: 6, duration: 1800,
       detail: `Bending iron and code into a ${genre} skeleton...` },
-    { id: 'brief_palette', name: 'Mixing the Paints', percent: 10, duration: 3000,
+    { id: 'brief_palette', name: '🎨 Mixing the Paints', percent: 10, duration: 3000,
       detail: 'Choosing pigments by the light of the forge fire...' },
-    { id: 'brief_rooms', name: `Drafting ${roomCount} ${t.Scenes}`, percent: 18, duration: 4000,
+    { id: 'brief_rooms', name: `🎬 Drafting ${roomCount} ${t.Scenes}`, percent: 18, duration: 4000,
       detail: `Mapping uncharted territories — placing ${t.furnishings} in every corner...` },
-    { id: 'brief_items', name: 'Forging Keys & Mysteries', percent: 28, duration: 3000,
+    { id: 'brief_items', name: '🧩 Forging Keys & Mysteries', percent: 28, duration: 3000,
       detail: 'Hammering out collectibles, locked doors, and brain-teasers...' },
-    { id: 'brief_hints', name: 'Inscribing Guiding Whispers', percent: 33, duration: 2000,
+    { id: 'brief_hints', name: '💬 Inscribing Guiding Whispers', percent: 33, duration: 2000,
       detail: 'Writing cryptic nudges for when adventurers lose their way...' },
-    { id: 'qa_brief', name: 'Gemini QA — Inspecting the Blueprint', percent: 37, duration: 3000,
+    { id: 'qa_brief', name: '🔍 Gemini QA — Inspecting the Blueprint', percent: 37, duration: 3000,
       detail: 'Gemini reviews the creative brief for broken puzzles, orphan items, and theme drift...' },
-    { id: 'rooms', name: `Charting ${roomCount} ${t.Scenes}`, percent: 42, duration: 2500,
+    { id: 'rooms', name: `🎬 Charting ${roomCount} ${t.Scenes}`, percent: 42, duration: 2500,
       detail: `Placing hotspots, pathways, and hidden secrets across the map...` },
-    { id: 'art_bg', name: `Painting ${t.Scenes} on Canvas`, percent: 48, duration: 4000,
+    { id: 'art_bg', name: `🖼️ Painting ${t.Scenes} on Canvas`, percent: 48, duration: 4000,
       detail: `Imagen is bringing ${roomCount} ${t.scenes} to life in ${artStyle} style...` },
-    { id: 'art_items', name: 'Sculpting Item Sprites', percent: 58, duration: 3500,
+    { id: 'art_items', name: '✨ Sculpting Item Sprites', percent: 58, duration: 3500,
       detail: 'Breathing detail into every collectible, tool, and artifact...' },
-    { id: 'art_ui', name: 'Gilding the Interface', percent: 64, duration: 2500,
+    { id: 'art_ui', name: '🖼️ Gilding the Interface', percent: 64, duration: 2500,
       detail: 'Etching the HUD, panels, and frames that guide the player...' },
-    { id: 'logic', name: 'Enchanting with Logic', percent: 72, duration: 3000,
+    { id: 'logic', name: '⚡ Enchanting with Logic', percent: 72, duration: 3000,
       detail: `Weaving puzzle gates, state machines, and cause-and-effect into every ${t.scene}...` },
-    { id: 'inventory', name: 'Stitching the Adventurer\'s Pack', percent: 78, duration: 2000,
+    { id: 'inventory', name: '🎒 Stitching the Adventurer\'s Pack', percent: 78, duration: 2000,
       detail: 'Binding the bag, wiring item slots, and attaching hotspot triggers...' },
-    { id: 'qa_game', name: 'Gemini QA — Playtesting the Code', percent: 82, duration: 3000,
+    { id: 'qa_game', name: '🔍 Gemini QA — Playtesting the Code', percent: 82, duration: 3000,
       detail: 'Gemini reviews the assembled game logic for dead ends, broken puzzles, and unreachable items...' },
-    { id: 'gradle_setup', name: 'Assembling the Artifact', percent: 87, duration: 2000,
+    { id: 'gradle_setup', name: '📦 Assembling the Artifact', percent: 87, duration: 2000,
       detail: 'Wrapping the game code into an installable Android package...' },
-    { id: 'gradle_build', name: 'Tempering the Build', percent: 92, duration: 5000,
+    { id: 'gradle_build', name: '🔨 Tempering the Build', percent: 92, duration: 5000,
       detail: 'Compiling, linking, and hardening — the final heat treat...' },
-    { id: 'signing', name: 'Stamping the Forge Mark', percent: 96, duration: 1500,
+    { id: 'signing', name: '🔐 Stamping the Forge Mark', percent: 96, duration: 1500,
       detail: 'Signing the APK with the forge\'s seal of quality...' },
-    { id: 'complete', name: 'Build Complete!', percent: 100, duration: 500,
+    { id: 'complete', name: '🎉 Build Complete!', percent: 100, duration: 500,
       detail: 'Your game is ready to deploy!' },
   ];
 }
@@ -558,8 +558,12 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
       // Gemini QA pass — review the brief for broken puzzles, orphan items, theme drift
       if (creativeBrief) {
         sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🔍 Gemini QA — inspecting the blueprint', percent: stage.percent + 1, detail: 'Checking puzzle chains, item references, theme coherence...', timestamp: Date.now() });
+        let qaStep = 0;
+        const qaLabels = ['🔍 Checking puzzle chains', '🔍 Validating item placement', '🔍 Scanning for theme drift', '🔍 Reviewing story coherence', '🔍 Polishing hints & dialogue'];
         const qaResult = await qaCreativeBrief(gameConfig, creativeBrief, (msg) => {
-          sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🔍 QA reviewing...', percent: stage.percent + 2, detail: msg, timestamp: Date.now() });
+          const label = qaLabels[qaStep % qaLabels.length];
+          qaStep++;
+          sendProgress(buildId, { type: 'progress', stage: stage.id, name: label, percent: stage.percent + 2, detail: msg, timestamp: Date.now() });
         });
         const nextPercent = stages.find(s => s.id === 'rooms')?.percent ?? stage.percent + 5;
         if (qaResult.passed) {
@@ -581,7 +585,7 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
           sendProgress(buildId, {
             type: 'progress',
             stage: 'rooms',
-            name: `Scene ${i + 1} of ${creativeBrief.rooms.length}: ${r.name}`,
+            name: `🎬 Scene ${i + 1} of ${creativeBrief.rooms.length}: ${r.name}`,
             percent: stage.percent + Math.floor((i / creativeBrief.rooms.length) * 8),
             detail: `Laying out hotspots & coordinates — ${r.furniture.length} objects, window: ${r.windowType}, lighting: ${r.lightingDir}`,
             timestamp: Date.now(),
@@ -599,7 +603,7 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
         sendProgress(buildId, {
           type: 'progress',
           stage: 'art_bg',
-          name: `Imagen 4.0 → Painting ${t.scenes} & assets`,
+          name: `🖼️ Imagen 4.0 → Painting ${t.scenes} & assets`,
           percent: stage.percent + 1,
           detail: `Sending prompts to Imagen for title, character, ${t.scenes}, and items...`,
           timestamp: Date.now(),
@@ -623,14 +627,25 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
               sceneLabel: t.scene,
             },
             undefined, // skip legacy onStatus — use onProgress instead
-            (msg, stepIdx, totalSteps) => {
+            (msg, stepIdx, totalSteps, timing) => {
               const pct = stage.percent + 1 + Math.floor((stepIdx / totalSteps) * (artRange - 2));
+              // Build smart detail line with ETA
+              let detail = `Image ${stepIdx + 1} of ${totalSteps}`;
+              if (timing && timing.avgMs > 0) {
+                const etaMin = Math.floor(timing.etaSec / 60);
+                const etaSec = timing.etaSec % 60;
+                const etaStr = etaMin > 0 ? `~${etaMin}m ${etaSec}s remaining` : `~${etaSec}s remaining`;
+                const elMin = Math.floor(timing.elapsed / 60);
+                const elSec = timing.elapsed % 60;
+                const elStr = elMin > 0 ? `${elMin}m ${elSec}s` : `${elSec}s`;
+                detail = `Image ${stepIdx + 1} of ${totalSteps} · ${etaStr} · ${elStr} elapsed`;
+              }
               sendProgress(buildId, {
                 type: 'progress',
                 stage: 'art_bg',
                 name: `🎨 Imagen 4.0 → ${msg}`,
                 percent: pct,
-                detail: `Image ${stepIdx + 1} of ${totalSteps}`,
+                detail,
                 timestamp: Date.now(),
               });
             },
@@ -712,8 +727,12 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
 
       // Now run the actual QA
       sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: '🔍 Gemini QA — playtesting the code', percent: stage.percent + 1, detail: 'Stripping images and sending game logic to Gemini for review...', timestamp: Date.now() });
+      let gameQaStep = 0;
+      const gameQaLabels = ['🔍 Tracing puzzle logic paths', '🔍 Testing item gate sequences', '🔍 Checking for dead ends', '🔍 Verifying win conditions', '🔍 Reviewing state machines'];
       const gameQaResult = await qaGameCode(gameConfig, previewHtml, (msg) => {
-        sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: '🔍 QA reviewing game logic...', percent: stage.percent + 3, detail: msg, timestamp: Date.now() });
+        const label = gameQaLabels[gameQaStep % gameQaLabels.length];
+        gameQaStep++;
+        sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: label, percent: stage.percent + 3, detail: msg, timestamp: Date.now() });
       });
       if (gameQaResult.passed) {
         sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: '✅ Game QA passed — logic is solid', percent: stage.percent + 4, detail: 'No dead ends, broken puzzles, or unreachable items detected.', timestamp: Date.now() });

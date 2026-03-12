@@ -142,7 +142,7 @@ ${openingScreen()}
 
 function drawTutorial(){
   ctx.fillStyle='rgba(0,0,0,0.85)';ctx.fillRect(0,0,W,H);
-  drawTGlow('How to Play',0.5,0.12,24,PALETTE.accent,12);
+  drawTGlow('How to Play',0.5,0.10,30,PALETTE.accent,14);
   var tips=[
     '\\ud83e\\udde9  Solve a different puzzle in each stage',
     '\\ud83c\\udccf  Memory: Flip cards to find matching pairs',
@@ -151,13 +151,13 @@ function drawTutorial(){
     '\\u2728  Complete each puzzle to earn an item',
     '\\ud83c\\udfc6  Solve all ' + ROOM_COUNT + ' stages to win!'
   ];
-  for(var i=0;i<tips.length;i++){drawT(tips[i],0.5,0.26+i*0.10,13,PALETTE.text)}
+  for(var i=0;i<tips.length;i++){drawT(tips[i],0.5,0.24+i*0.10,16,PALETTE.text)}
   var pulse2=0.6+Math.sin(animFrame*0.08)*0.2;
   ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=16;
   ctx.globalAlpha=pulse2;rRect(0.35,0.84,0.30,0.08,18,PALETTE.accent,null);
   ctx.globalAlpha=1;rRect(0.36,0.845,0.28,0.065,16,PALETTE.accent,null);
   ctx.restore();
-  drawTB('GOT IT',0.5,0.878,15,PALETTE.bg);
+  drawTB('GOT IT',0.5,0.878,17,PALETTE.bg);
 }
 
 ${endingScreen()}
@@ -192,7 +192,10 @@ function drawPuzzleScreen() {
     drawTGlow('\\ud83c\\udccf Memory Match', 0.5, 0.12, 18, PALETTE.accent, 10);
     drawT('Find all matching pairs', 0.5, 0.18, 11, PALETTE.text + 'aa');
 
-    if (memLockout > 0) memLockout--;
+    if (memLockout > 0) {
+      memLockout--;
+      if (memLockout === 0) { memFlipped = []; }
+    }
 
     for (var mi = 0; mi < memCards.length; mi++) {
       var col = mi % cols;
@@ -207,8 +210,45 @@ function drawPuzzleScreen() {
         ctx.restore();
         drawTB(memCards[mi].emoji, cx + cardW / 2, cy + cardH / 2, 22, '#fff');
       } else {
-        glowRect(cx, cy, cardW, cardH, 8, PALETTE.wall, PALETTE.accent + '44');
-        drawTB('?', cx + cardW / 2, cy + cardH / 2, 18, PALETTE.accent + '44');
+        // Ornate card back with glowing border and central motif
+        var px1=nx(cx),py1=ny(cy),pw=nx(cardW),ph=ny(cardH);
+        var crad=Math.min(pw,ph)*0.08;
+        var boff=Math.min(pw,ph)*0.035;
+        // Base gradient
+        var cbg=ctx.createRadialGradient(px1+pw/2,py1+ph/2,Math.min(pw,ph)*0.1,px1+pw/2,py1+ph/2,Math.min(pw,ph)*0.6);
+        cbg.addColorStop(0,PALETTE.wall);cbg.addColorStop(1,PALETTE.bg);
+        ctx.beginPath();ctx.moveTo(px1+crad,py1);ctx.arcTo(px1+pw,py1,px1+pw,py1+ph,crad);ctx.arcTo(px1+pw,py1+ph,px1,py1+ph,crad);ctx.arcTo(px1,py1+ph,px1,py1,crad);ctx.arcTo(px1,py1,px1+pw,py1,crad);ctx.closePath();
+        ctx.fillStyle=cbg;ctx.fill();
+        // Outer glow border
+        ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=Math.min(pw,ph)*0.05;
+        ctx.strokeStyle=PALETTE.accent;ctx.lineWidth=Math.min(pw,ph)*0.025;ctx.stroke();
+        // Inner border
+        ctx.shadowColor=PALETTE.text;ctx.shadowBlur=Math.min(pw,ph)*0.02;
+        var ir=crad*0.75;
+        ctx.beginPath();ctx.moveTo(px1+boff+ir,py1+boff);ctx.arcTo(px1+pw-boff,py1+boff,px1+pw-boff,py1+ph-boff,ir);ctx.arcTo(px1+pw-boff,py1+ph-boff,px1+boff,py1+ph-boff,ir);ctx.arcTo(px1+boff,py1+ph-boff,px1+boff,py1+boff,ir);ctx.arcTo(px1+boff,py1+boff,px1+pw-boff,py1+boff,ir);ctx.closePath();
+        ctx.strokeStyle=PALETTE.text;ctx.lineWidth=Math.min(pw,ph)*0.01;ctx.stroke();
+        ctx.restore();
+        // Central motif — star pattern
+        var mcx=px1+pw/2,mcy=py1+ph/2,ms=Math.min(pw,ph)*0.2;
+        ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=Math.min(pw,ph)*0.03;
+        ctx.strokeStyle=PALETTE.accent;ctx.lineWidth=Math.min(pw,ph)*0.01;
+        ctx.beginPath();
+        ctx.moveTo(mcx-ms,mcy);ctx.lineTo(mcx+ms,mcy);
+        ctx.moveTo(mcx,mcy-ms);ctx.lineTo(mcx,mcy+ms);
+        ctx.moveTo(mcx-ms*0.7,mcy-ms*0.7);ctx.lineTo(mcx+ms*0.7,mcy+ms*0.7);
+        ctx.moveTo(mcx+ms*0.7,mcy-ms*0.7);ctx.lineTo(mcx-ms*0.7,mcy+ms*0.7);
+        ctx.stroke();
+        // Center gem
+        ctx.fillStyle=PALETTE.text;
+        ctx.beginPath();ctx.arc(mcx,mcy,ms*0.15,0,Math.PI*2);ctx.fill();
+        // Corner arcs
+        var co=Math.min(pw,ph)*0.06,cr2=Math.min(pw,ph)*0.05;
+        ctx.strokeStyle=PALETTE.text;ctx.lineWidth=Math.min(pw,ph)*0.008;
+        ctx.beginPath();ctx.arc(px1+co,py1+co,cr2,Math.PI,Math.PI*1.5);ctx.stroke();
+        ctx.beginPath();ctx.arc(px1+pw-co,py1+co,cr2,Math.PI*1.5,Math.PI*2);ctx.stroke();
+        ctx.beginPath();ctx.arc(px1+co,py1+ph-co,cr2,Math.PI*0.5,Math.PI);ctx.stroke();
+        ctx.beginPath();ctx.arc(px1+pw-co,py1+ph-co,cr2,0,Math.PI*0.5);ctx.stroke();
+        ctx.restore();
       }
     }
 
@@ -224,9 +264,6 @@ function drawPuzzleScreen() {
         }
       } else {
         memLockout = 30; // show both cards briefly then flip back
-      }
-      if (memLockout === 1) {
-        memFlipped = [];
       }
     }
 
@@ -412,6 +449,7 @@ function frame(){
   ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
   if(screen==='title') drawTitle();
   else if(screen==='opening') drawOpening();
+  else if(screen==='howto'){drawTutorial()}
   else if(screen==='ending') drawEnding();
   else if(screen==='game'){
     if(transitionAlpha>0){

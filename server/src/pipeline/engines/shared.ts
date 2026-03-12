@@ -30,6 +30,9 @@ export function htmlHead(title: string): string {
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&display=swap" rel="stylesheet">
 <title>${title} — BellForge Preview</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -64,6 +67,7 @@ const HINTS = ${d.hints};
 const OPENING = ${JSON.stringify(d.openingText)};
 const ENDING = ${JSON.stringify(d.endingText)};
 const SEED = ${d.seed};
+const NEEDS_OPENING = !!(${JSON.stringify(d.openingText)});
 
 // ═══════════ IMAGEN ARTWORK ═══════════
 const IMG_TITLE = ${JSON.stringify(d.titleBgUri)};
@@ -135,6 +139,7 @@ function ny(v){return v*H}
 function fillR(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(nx(x),ny(y),nx(w),ny(h))}
 function drawT(t,x,y,sz,c,al){ctx.fillStyle=c;ctx.font=(sz*H/800)+'px "Segoe UI",system-ui,sans-serif';ctx.textAlign=al||'center';ctx.textBaseline='middle';ctx.fillText(t,nx(x),ny(y))}
 function drawTB(t,x,y,sz,c,al){ctx.fillStyle=c;ctx.font='bold '+(sz*H/800)+'px "Segoe UI",system-ui,sans-serif';ctx.textAlign=al||'center';ctx.textBaseline='middle';ctx.fillText(t,nx(x),ny(y))}
+function drawTTitle(t,x,y,sz,c){ctx.fillStyle=c;ctx.font='900 '+(sz*H/800)+'px Cinzel,"Segoe UI",system-ui,serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.letterSpacing=(sz*H/800*0.12)+'px';ctx.fillText(t.toUpperCase(),nx(x),ny(y));ctx.letterSpacing='0px'}
 function drawTGlow(t,x,y,sz,c,blur){
   ctx.save();ctx.shadowColor=c;ctx.shadowBlur=blur||15;
   drawTB(t,x,y,sz,c);ctx.restore();
@@ -271,7 +276,16 @@ function drawRoomFallbackBg(room){
 
 export function titleScreen(): string {
   return `
+var LAYOUTS=[
+  {n:"Classic",cx:0.06,cy:0.20,cs:0.18,ch:true,tx:0.56,ty:0.18,ts:55,sy:0.34,gy:0.44,cta:0.72,ht:0.86,bar:true,pan:false},
+  {n:"Cinematic",cx:0.41,cy:0.08,cs:0.18,ch:true,tx:0.5,ty:0.68,ts:50,sy:0.76,gy:0.82,cta:0.90,ht:0.95,bar:false,pan:true},
+  {n:"Dramatic",cx:0.76,cy:0.38,cs:0.14,ch:true,tx:0.45,ty:0.14,ts:66,sy:0.27,gy:0.33,cta:0.85,ht:0.92,bar:true,pan:false},
+  {n:"Split",cx:0.70,cy:0.12,cs:0.20,ch:true,tx:0.28,ty:0.30,ts:58,sy:0.40,gy:0.47,cta:0.75,ht:0.82,bar:false,pan:true},
+  {n:"Hero",cx:0,cy:0,cs:0,ch:false,tx:0.5,ty:0.30,ts:70,sy:0.42,gy:0.49,cta:0.75,ht:0.82,bar:true,pan:false}
+];
+var chosenLayout=LAYOUTS[ri2(LAYOUTS.length)];
 function drawTitle(){
+  var L=chosenLayout;
   var hasImg = drawBgImage(loadedImages['title']);
   if(!hasImg) drawFallbackBg();
   // Dark overlay with radial vignette
@@ -291,14 +305,33 @@ function drawTitle(){
   }
   ctx.restore();
 
+  // ── Bottom panel (if layout uses it) ──
+  if(L.pan){
+    ctx.fillStyle='rgba(0,0,0,0.55)';
+    ctx.fillRect(0,H*0.60,W,H*0.40);
+    ctx.strokeStyle=PALETTE.accent+'44';ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(0,H*0.60);ctx.lineTo(W,H*0.60);ctx.stroke();
+  }
+
+  // ── Banner bar behind title ──
+  if(L.bar){
+    ctx.save();ctx.globalAlpha=0.12;
+    ctx.fillStyle=PALETTE.accent;
+    ctx.fillRect(0,ny(L.ty)-H*0.035,W,H*0.07);
+    ctx.restore();
+    ctx.save();ctx.globalAlpha=0.25;ctx.strokeStyle=PALETTE.accent;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(0,ny(L.ty)-H*0.035);ctx.lineTo(W,ny(L.ty)-H*0.035);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,ny(L.ty)+H*0.035);ctx.lineTo(W,ny(L.ty)+H*0.035);ctx.stroke();
+    ctx.restore();
+  }
+
   // ── Character art ──
-  var textOffX = 0.5;
-  var charSrc=getCleanChar();
+  var charSrc=L.ch?getCleanChar():null;
   if(charSrc){
     var bob=Math.sin(animFrame*0.025)*5;
-    var cw2=W*0.18, ch2=cw2*(loadedImages['char'].naturalHeight/loadedImages['char'].naturalWidth);
+    var cw2=W*L.cs, ch2=cw2*(loadedImages['char'].naturalHeight/loadedImages['char'].naturalWidth);
     var maxCh=H*0.55; if(ch2>maxCh){cw2=cw2*(maxCh/ch2);ch2=maxCh}
-    var cx2=W*0.06, cy2=H*0.20+bob;
+    var cx2=W*L.cx, cy2=H*L.cy+bob;
     // Glow behind character
     ctx.save();
     var cGlow=ctx.createRadialGradient(cx2+cw2/2,cy2+ch2*0.5, cw2*0.2, cx2+cw2/2,cy2+ch2*0.5, cw2*0.8);
@@ -309,56 +342,97 @@ function drawTitle(){
     ctx.beginPath();ctx.ellipse(cx2+cw2/2,cy2+ch2+8,cw2*0.4,10,0,0,Math.PI*2);ctx.fill();
     ctx.restore();
     ctx.drawImage(charSrc, cx2, cy2, cw2, ch2);
-    textOffX = 0.56;
   }
 
   // ── Title text with multi-layer glow ──
-  ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=35;
-  drawTB(TITLE,textOffX,0.20,38,PALETTE.accent);
-  ctx.shadowBlur=12;
-  drawTB(TITLE,textOffX,0.20,38,PALETTE.accent);ctx.restore();
-  drawTB(TITLE,textOffX,0.20,38,'#fff');
+  ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=50;
+  drawTTitle(TITLE,L.tx,L.ty,L.ts,PALETTE.accent);
+  ctx.shadowBlur=20;
+  drawTTitle(TITLE,L.tx,L.ty,L.ts,PALETTE.accent);ctx.restore();
+  drawTTitle(TITLE,L.tx,L.ty,L.ts,'#fff');
 
   // Subtitle / game vibe
-  ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=10;
-  drawT('"'+GAME_VIBE+'"',textOffX,0.34,17,PALETTE.accent);ctx.restore();
-  drawT('"'+GAME_VIBE+'"',textOffX,0.34,17,PALETTE.accent);
+  ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=14;
+  drawT('"'+GAME_VIBE+'"',L.tx,L.sy,26,PALETTE.accent);ctx.restore();
+  drawT('"'+GAME_VIBE+'"',L.tx,L.sy,26,PALETTE.accent);
 
-  // Scene count
-  drawT(ROOM_COUNT+' '+SCENE_LABEL+' \\u00b7 A '+CHAR_NAME+' Adventure',textOffX,0.44,12,PALETTE.text+'88');
+  // Character tagline
+  drawT('A '+CHAR_NAME+' Adventure',L.tx,L.gy,18,PALETTE.text+'aa');
 
   // ── Tap to begin (pulsing) ──
   var pulse=0.35+Math.sin(animFrame*0.04)*0.35;
   ctx.globalAlpha=pulse;
-  drawT('tap anywhere to begin',0.5,0.72,14,PALETTE.text);
+  drawT('TAP ANYWHERE TO BEGIN',0.5,L.cta,24,PALETTE.text);
   ctx.globalAlpha=1;
 
   // ── How to Play link ──
   ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=6;
-  drawT('How to Play',0.5,0.86,11,PALETTE.accent+'cc');ctx.restore();
+  drawT('How to Play',0.5,L.ht,18,PALETTE.accent+'cc');ctx.restore();
 
   // ── BellForge credit ──
-  drawT('Built with BellForge',0.5,0.95,8,PALETTE.text+'33');
+  drawT('Built with BellForge',0.5,0.95,9,PALETTE.text+'33');
 }
 `;
 }
 
 export function openingScreen(): string {
   return `
+var scrollY = 0;
+var scrollSpeed = 0.4;
 function drawOpening(){
   var hasImg = drawBgImage(loadedImages['title']);
   if(!hasImg) drawFallbackBg();
-  ctx.fillStyle='rgba(0,0,0,0.65)';ctx.fillRect(0,0,W,H);
-  var alpha=Math.min(1,(animFrame-openingStart)/60);
-  ctx.globalAlpha=alpha;
-  ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=20;
-  drawTB(TITLE,0.5,0.12,22,PALETTE.accent);ctx.restore();
-  drawTB(TITLE,0.5,0.12,22,'#fff');
-  glowRect(0.12,0.24,0.76,0.44,12,PALETTE.bg,PALETTE.accent+'60');
-  wrapT(OPENING,0.5,0.32,14,PALETTE.text,0.68);
-  var p2=0.5+Math.sin(animFrame*0.05)*0.3;
-  ctx.globalAlpha=alpha*p2;
-  drawT('tap to continue',0.5,0.80,13,PALETTE.text+'aa');
+  // Heavy cinematic letterbox + vignette
+  ctx.fillStyle='rgba(0,0,0,0.70)';ctx.fillRect(0,0,W,H);
+  var vig=ctx.createRadialGradient(W*0.5,H*0.5,W*0.1,W*0.5,H*0.5,W*0.7);
+  vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(0,0,0,0.5)');
+  ctx.fillStyle=vig;ctx.fillRect(0,0,W,H);
+
+  // Fade in
+  var fadeIn=Math.min(1,(animFrame-openingStart)/45);
+  ctx.globalAlpha=fadeIn;
+
+  // ── Scrolling text crawl ──
+  var fs=16*H/800;
+  ctx.font=fs+'px "Segoe UI",system-ui,sans-serif';
+  ctx.fillStyle=PALETTE.text;
+  ctx.textAlign='center';
+  var maxW=W*0.65;
+  // Word-wrap into lines
+  var words=OPENING.split(' '),lines=[],ln='';
+  for(var i=0;i<words.length;i++){
+    var test=ln+(ln?' ':'')+words[i];
+    if(ctx.measureText(test).width>maxW&&ln){lines.push(ln);ln=words[i]}else ln=test;
+  }
+  if(ln)lines.push(ln);
+  var lh=fs*1.6;
+  var totalH=lines.length*lh;
+  // Scroll position: start below screen, crawl up
+  scrollY+=scrollSpeed;
+  var baseY=H*0.95 - scrollY;
+  // Clip to central area
+  ctx.save();
+  ctx.beginPath();ctx.rect(W*0.1,H*0.08,W*0.8,H*0.80);ctx.clip();
+  // Gradient fade at top and bottom edges
+  for(var li=0;li<lines.length;li++){
+    var ly=baseY+li*lh;
+    if(ly<H*0.02||ly>H*0.95) continue; // fully offscreen
+    var lineAlpha=1;
+    if(ly<H*0.18) lineAlpha=(ly-H*0.02)/(H*0.16); // fade in at top
+    if(ly>H*0.78) lineAlpha=(H*0.95-ly)/(H*0.17); // fade out at bottom
+    if(lineAlpha<=0) continue;
+    ctx.globalAlpha=fadeIn*Math.max(0,Math.min(1,lineAlpha));
+    ctx.fillStyle=PALETTE.text;
+    ctx.fillText(lines[li],W*0.5,ly);
+  }
+  ctx.restore();
+  // Auto-advance when scroll finishes
+  if(baseY+totalH < H*0.1){
+    screen='game';showTutorial=false;roomNameTimer=0;
+  }
+  // ── Skip prompt ──
+  ctx.globalAlpha=fadeIn*(0.4+Math.sin(animFrame*0.04)*0.25);
+  drawT('tap to skip \u276f',0.88,0.94,12,PALETTE.text+'99','right');
   ctx.globalAlpha=1;
 }
 `;
@@ -415,8 +489,10 @@ canvas.addEventListener('pointerdown',function(e){
   var px=(e.clientX-rect.left)/rect.width;
   var py=(e.clientY-rect.top)/rect.height;
   if(screen==='title'){
-    if(py>0.82&&py<0.90&&px>0.35&&px<0.65){screen='howto';return}
-    screen='opening';openingStart=animFrame;return;
+    var htY=chosenLayout.ht;
+    if(py>htY-0.04&&py<htY+0.04&&px>0.30&&px<0.70){screen='howto';return}
+    if(NEEDS_OPENING){screen='opening';openingStart=animFrame;scrollY=0;return}
+    screen='game';showTutorial=false;roomNameTimer=0;return;
   }
   if(screen==='howto'){screen='title';return}
   if(screen==='opening'){screen='game';showTutorial=false;roomNameTimer=0;return}

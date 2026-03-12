@@ -5,9 +5,10 @@ interface LibraryProps {
   onBack: () => void;
   onViewPreview: (entry: LibraryEntry) => void;
   onReForge: (entry: LibraryEntry) => void;
+  onCountChange?: (count: number) => void;
 }
 
-export function Library({ onBack, onViewPreview, onReForge }: LibraryProps) {
+export function Library({ onBack, onViewPreview, onReForge, onCountChange }: LibraryProps) {
   const [entries, setEntries] = useState<LibraryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -17,7 +18,9 @@ export function Library({ onBack, onViewPreview, onReForge }: LibraryProps) {
     try {
       const res = await fetch('/api/library');
       const data = await res.json();
-      setEntries(data.entries || []);
+      const list = data.entries || [];
+      setEntries(list);
+      onCountChange?.(list.length);
     } catch {
       /* server may be down */
     } finally {
@@ -51,7 +54,11 @@ export function Library({ onBack, onViewPreview, onReForge }: LibraryProps) {
 
   const handleDelete = async (id: string) => {
     await fetch(`/api/library/${id}`, { method: 'DELETE' });
-    setEntries((prev) => prev.filter((e) => e.id !== id));
+    setEntries((prev) => {
+      const next = prev.filter((e) => e.id !== id);
+      onCountChange?.(next.length);
+      return next;
+    });
   };
 
   const handleDownload = (entry: LibraryEntry) => {

@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Moonlit Manor — BellForge Preview</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { width:100%; height:100%; overflow:hidden; background:#000; font-family:'Segoe UI',system-ui,sans-serif; }
+canvas { display:block; margin:auto; touch-action:none; cursor:pointer; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+(function(){
+"use strict";
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+
+// ═══════════ GEMINI-DESIGNED GAME DATA ═══════════
+const PALETTE = {"bg":"#1a0a0a","wall":"#3d1515","accent":"#ff3d00","floor":"#2a1010","text":"#ffccbc","highlight":"#ff3d00cc","shadow":"#1a0a0aee"};
+const ROOMS = [{"name":"Entrance Hall","description":"A horror-themed area with shadowy corners and hidden details.","examineText":"Dust swirls in the dim light...","atmosphere":"Eerie silence","wallColor":"#3d1515","floorColor":"#2a1010","ceilingColor":"#3d1515","furniture":[{"type":"circle","x":0.23160783711460486,"y":0.22708028326524662,"w":0.19877692200723385,"h":0.09612713567630515,"color":"#3d1515","label":"lamp"},{"type":"circle","x":0.502576403335299,"y":0.3792909324018273,"w":0.15306770757978094,"h":0.06271646760308526,"color":"#3d1515","label":"lamp"},{"type":"circle","x":0.6051623776738577,"y":0.45064885328114934,"w":0.06533647506804888,"h":0.22162515562762664,"color":"#3d1515","label":"statue"}],"hasWindow":true,"windowType":"round","lightingDir":"left"},{"name":"Library","description":"A horror-themed area with shadowy corners and hidden details.","examineText":"Something feels off about this place.","atmosphere":"Distant echoes","wallColor":"#3d1515","floorColor":"#2a1010","ceilingColor":"#3d1515","furniture":[{"type":"arch","x":0.6648240868782324,"y":0.5405228256231798,"w":0.1395753047239196,"h":0.17989311811442354,"color":"#3d1515","label":"cabinet"},{"type":"rect","x":0.08428636093544076,"y":0.6054263315245836,"w":0.10706369738094187,"h":0.0902621751804526,"color":"#3d1515","label":"crate"},{"type":"arch","x":0.4882294055020708,"y":0.3695975714245284,"w":0.18520814757969487,"h":0.16503163670065218,"color":"#3d1515","label":"table"},{"type":"arch","x":0.5083698241113681,"y":0.523689107964682,"w":0.17533523624558253,"h":0.12659346062222598,"color":"#3d1515","label":"cabinet"}],"hasWindow":true,"windowType":"tall","lightingDir":"right"},{"name":"Kitchen","description":"A horror-themed area with shadowy corners and hidden details.","examineText":"The walls whisper forgotten secrets.","atmosphere":"Faint humming","wallColor":"#3d1515","floorColor":"#2a1010","ceilingColor":"#3d1515","furniture":[{"type":"rect","x":0.5174317012396412,"y":0.5927881314856444,"w":0.1470342477530327,"h":0.2382966272923459,"color":"#3d1515","label":"statue"},{"type":"rect","x":0.4845980838943389,"y":0.49146089752951594,"w":0.14121846409430938,"h":0.18075881351382858,"color":"#3d1515","label":"shelf"},{"type":"arch","x":0.6742459968157607,"y":0.5551061754790875,"w":0.17994044519120422,"h":0.07219542140785268,"color":"#3d1515","label":"lamp"},{"type":"circle","x":0.5197854035516215,"y":0.5216031751239342,"w":0.07758856777405808,"h":0.16423834670030923,"color":"#3d1515","label":"lamp"}],"hasWindow":false,"windowType":"wide","lightingDir":"center"},{"name":"Cellar","description":"A horror-themed area with shadowy corners and hidden details.","examineText":"A faint hum emanates from below.","atmosphere":"Creaking wood","wallColor":"#3d1515","floorColor":"#2a1010","ceilingColor":"#3d1515","furniture":[{"type":"rect","x":0.6339976645115992,"y":0.5405117037892274,"w":0.08681113113632564,"h":0.19128362318807623,"color":"#3d1515","label":"shelf"},{"type":"rect","x":0.2752917174093801,"y":0.515324309995309,"w":0.10104144087192349,"h":0.2528334962414258,"color":"#3d1515","label":"lamp"},{"type":"rect","x":0.29593489663716555,"y":0.6483100804772611,"w":0.149455392871421,"h":0.11982685490669767,"color":"#3d1515","label":"statue"},{"type":"circle","x":0.5590026187128269,"y":0.41318410390558746,"w":0.07592724677843724,"h":0.20497213703530143,"color":"#3d1515","label":"pillar"},{"type":"circle","x":0.26909703685805964,"y":0.4248003162922377,"w":0.1454481401101582,"h":0.2309733917618498,"color":"#3d1515","label":"statue"},{"type":"circle","x":0.6128693122270547,"y":0.3600685958335659,"w":0.10051070671782454,"h":0.07368628136473053,"color":"#3d1515","label":"crate"}],"hasWindow":true,"windowType":"round","lightingDir":"dim"}];
+const ROOM_COUNT = 4;
+const TITLE = "Moonlit Manor";
+const CHAR_NAME = "Detective Raven";
+const GAME_VIBE = "A Horror / Supernatural Point & Click Adventure rendered in Cel-Shaded / Toonish style.";
+const SCENE_LABEL = "rooms";
+const START_TEXT = undefined;
+const ITEMS = [{"name":"Key","emoji":"🔑","description":"You found a key in the Entrance Hall.","roomIndex":0},{"name":"Gem","emoji":"💎","description":"You found a gem in the Library.","roomIndex":1},{"name":"Note","emoji":"📜","description":"You found a note in the Kitchen.","roomIndex":2},{"name":"Coin","emoji":"🪙","description":"You found a coin in the Cellar.","roomIndex":3}];
+const PUZZLES = [{"doorInRoom":1,"leadsToRoom":2,"requiredItem":"Key","lockedMessage":"This passage is locked. You need the Key.","unlockedMessage":"The Key fits perfectly. The way forward opens."}];
+const HINTS = ["Something catches your eye in the Entrance Hall...","Something catches your eye in the Library...","Something catches your eye in the Kitchen...","Something catches your eye in the Cellar..."];
+const OPENING = "Detective Raven arrives at A crumbling Victorian manor on a fog-shrouded hilltop";
+const ENDING = "Detective Raven has uncovered the truth. The adventure is complete.";
+const SEED = -1288920389;
+
+// ═══════════ IMAGEN ARTWORK ═══════════
+const IMG_TITLE = "";
+const IMG_CHAR = "";
+const IMG_PACK = "";
+const IMG_ROOMS = ["","","",""];
+const IMG_ITEMS = ["","","",""];
+
+
+var loadedImages = {};
+function preloadImg(key, src) {
+  if(!src) return;
+  var img = new Image();
+  img.src = src;
+  loadedImages[key] = img;
+}
+preloadImg('title', IMG_TITLE);
+preloadImg('char', IMG_CHAR);
+preloadImg('pack', IMG_PACK);
+for(var ri=0; ri<IMG_ROOMS.length; ri++) preloadImg('room_'+ri, IMG_ROOMS[ri]);
+for(var ii=0; ii<IMG_ITEMS.length; ii++) preloadImg('item_'+ii, IMG_ITEMS[ii]);
+
+
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;var t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const rng = mulberry32(SEED);
+function ri2(max){return Math.floor(rng()*max)}
+function rf(mn,mx){return mn+rng()*(mx-mn)}
+
+
+let W=0,H=0;
+let screen = 'title';
+let animFrame = 0;
+let showTutorial = true;
+let roomNameTimer = 0;
+let openingStart = 0;
+
+
+// ═══════════ POINT & CLICK STATE ═══════════
+let currentRoom = 0;
+let transitionAlpha = 0;
+let inventory = [];
+let foundItems = new Set();
+let solvedPuzzles = new Set();
+let examineText = '';
+let examineX = 0.5, examineY = 0.7;
+let examineTimer = 0;
+let bagOpen = false;
+let hintVisible = false;
+let hintTimer = 0;
+let menuOpen = false;
+
+const itemPositions = ITEMS.map(function(){return{x:rf(0.15,0.72),y:rf(0.40,0.68)}});
+
+var roomParticles = [];
+for(var r=0;r<ROOM_COUNT;r++){
+  var ps=[];var count=5+ri2(8);
+  for(var i=0;i<count;i++){ps.push({x:rf(0.05,0.95),y:rf(0.05,0.85),size:rf(1,3),speed:rf(0.0003,0.001),phase:rf(0,Math.PI*2)})}
+  roomParticles.push(ps);
+}
+
+
+function resize(){
+  var dpr=window.devicePixelRatio||1;
+  var cw=window.innerWidth, ch=window.innerHeight;
+  var targetRatio=16/9;
+  var actualRatio=cw/ch;
+  if(actualRatio > targetRatio){ H=ch; W=Math.floor(ch*targetRatio); }
+  else { W=cw; H=Math.floor(cw/targetRatio); }
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize',resize);resize();
+
+
+function nx(v){return v*W}
+function ny(v){return v*H}
+function fillR(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(nx(x),ny(y),nx(w),ny(h))}
+function drawT(t,x,y,sz,c,al){ctx.fillStyle=c;ctx.font=(sz*H/800)+'px "Segoe UI",system-ui,sans-serif';ctx.textAlign=al||'center';ctx.textBaseline='middle';ctx.fillText(t,nx(x),ny(y))}
+function drawTB(t,x,y,sz,c,al){ctx.fillStyle=c;ctx.font='bold '+(sz*H/800)+'px "Segoe UI",system-ui,sans-serif';ctx.textAlign=al||'center';ctx.textBaseline='middle';ctx.fillText(t,nx(x),ny(y))}
+function drawTGlow(t,x,y,sz,c,blur){
+  ctx.save();ctx.shadowColor=c;ctx.shadowBlur=blur||15;
+  drawTB(t,x,y,sz,c);ctx.restore();
+  drawTB(t,x,y,sz,'#fff');
+}
+function rRect(x,y,w,h,r,fl,st){
+  var rx=nx(x),ry=ny(y),rw=nx(w),rh=ny(h),rr=Math.min(r,rw/2,rh/2);
+  ctx.beginPath();ctx.moveTo(rx+rr,ry);ctx.arcTo(rx+rw,ry,rx+rw,ry+rh,rr);ctx.arcTo(rx+rw,ry+rh,rx,ry+rh,rr);ctx.arcTo(rx,ry+rh,rx,ry,rr);ctx.arcTo(rx,ry,rx+rw,ry,rr);ctx.closePath();
+  if(fl){ctx.fillStyle=fl;ctx.fill()}if(st){ctx.strokeStyle=st;ctx.lineWidth=2;ctx.stroke()}
+}
+function glowRect(x,y,w,h,r,bgCol,glowCol){
+  rRect(x,y,w,h,r,bgCol+'cc',null);
+  ctx.save();ctx.shadowColor=glowCol;ctx.shadowBlur=12;
+  var rx=nx(x),ry=ny(y),rw=nx(w),rh=ny(h),rr=Math.min(r,rw/2,rh/2);
+  ctx.beginPath();ctx.moveTo(rx+rr,ry);ctx.arcTo(rx+rw,ry,rx+rw,ry+rh,rr);ctx.arcTo(rx+rw,ry+rh,rx,ry+rh,rr);ctx.arcTo(rx,ry+rh,rx,ry,rr);ctx.arcTo(rx,ry,rx+rw,ry,rr);ctx.closePath();
+  ctx.strokeStyle=glowCol;ctx.lineWidth=1.5;ctx.stroke();ctx.restore();
+}
+function wrapT(t,cx,sy,sz,c,mw){
+  ctx.fillStyle=c;var fs=sz*H/800;ctx.font=fs+'px "Segoe UI",system-ui,sans-serif';ctx.textAlign='center';
+  var words=t.split(' '),ln='',y=ny(sy),lh=fs*1.4,m=nx(mw);
+  for(var i=0;i<words.length;i++){var test=ln+(ln?' ':'')+words[i];if(ctx.measureText(test).width>m&&ln){ctx.fillText(ln,nx(cx),y);ln=words[i];y+=lh}else ln=test}
+  if(ln)ctx.fillText(ln,nx(cx),y);
+}
+function drawBgImage(img){
+  if(!img||!img.complete||!img.naturalWidth)return false;
+  var iw=img.naturalWidth, ih=img.naturalHeight;
+  var scale=Math.max(W/iw, H/ih);
+  var sw=iw*scale, sh=ih*scale;
+  var ox=(W-sw)/2, oy=(H-sh)/2;
+  ctx.drawImage(img, ox, oy, sw, sh);
+  return true;
+}
+var cleanedChar=null;
+function getCleanChar(){
+  if(cleanedChar)return cleanedChar;
+  var img=loadedImages['char'];
+  if(!img||!img.complete||!img.naturalWidth)return null;
+  var tc=document.createElement('canvas');
+  tc.width=img.naturalWidth;tc.height=img.naturalHeight;
+  var tctx=tc.getContext('2d');
+  tctx.drawImage(img,0,0);
+  var d=tctx.getImageData(0,0,tc.width,tc.height);
+  var px=d.data;
+  for(var i=0;i<px.length;i+=4){
+    var br=(px[i]+px[i+1]+px[i+2])/3;
+    if(br<30){px[i+3]=0}else if(br<60){px[i+3]=Math.floor((br-30)/30*255)}
+  }
+  tctx.putImageData(d,0,0);
+  cleanedChar=tc;return tc;
+}
+
+// ══ Ambient particle system ══
+var particles=[];
+function initParticles(count){
+  particles=[];
+  for(var i=0;i<count;i++){
+    particles.push({x:Math.random(),y:Math.random(),s:0.5+Math.random()*1.5,sp:0.0002+Math.random()*0.0008,a:0.1+Math.random()*0.4,dx:Math.random()*0.0004-0.0002});
+  }
+}
+initParticles(50);
+function drawParticles(c,dir){
+  var d=dir||1;
+  for(var i=0;i<particles.length;i++){
+    var p=particles[i];
+    p.y+=p.sp*d;p.x+=p.dx;
+    if(d>0&&p.y>1.05){p.y=-0.02;p.x=Math.random()}
+    if(d<0&&p.y<-0.05){p.y=1.02;p.x=Math.random()}
+    if(p.x<-0.02)p.x=1.02;if(p.x>1.02)p.x=-0.02;
+    ctx.globalAlpha=p.a*(0.5+0.5*Math.sin(animFrame*0.03+i));
+    ctx.fillStyle=c;
+    ctx.beginPath();ctx.arc(nx(p.x),ny(p.y),p.s,0,Math.PI*2);ctx.fill();
+  }
+  ctx.globalAlpha=1;
+}
+
+// ══ Atmospheric fallback background ══
+function drawFallbackBg(){
+  var g1=ctx.createLinearGradient(0,0,W*0.3,H);
+  g1.addColorStop(0,PALETTE.shadow||PALETTE.bg);g1.addColorStop(0.5,PALETTE.bg);g1.addColorStop(1,PALETTE.wall);
+  ctx.fillStyle=g1;ctx.fillRect(0,0,W,H);
+  // Radial light source from upper area
+  var rl=ctx.createRadialGradient(W*0.5,H*0.2,0,W*0.5,H*0.3,W*0.7);
+  rl.addColorStop(0,PALETTE.accent+'18');rl.addColorStop(0.4,PALETTE.accent+'08');rl.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=rl;ctx.fillRect(0,0,W,H);
+  // Silhouette shapes (distant architecture/landscape)
+  ctx.fillStyle=PALETTE.bg+'cc';
+  var t=animFrame*0.003;
+  for(var i=0;i<7;i++){
+    var bx=i*0.16-0.04+Math.sin(t+i*1.3)*0.005;
+    var bh=0.15+Math.sin(i*2.7)*0.12;
+    var by=0.82-bh;
+    ctx.fillRect(nx(bx),ny(by),nx(0.08),ny(bh+0.20));
+  }
+  // Ground mist
+  var mist=ctx.createLinearGradient(0,H*0.85,0,H);
+  mist.addColorStop(0,'rgba(0,0,0,0)');mist.addColorStop(0.5,PALETTE.accent+'0c');mist.addColorStop(1,PALETTE.bg+'88');
+  ctx.fillStyle=mist;ctx.fillRect(0,H*0.85,W,H*0.15);
+  // Ambient particles
+  drawParticles(PALETTE.accent,-1);
+  // Scanline overlay
+  ctx.globalAlpha=0.03;
+  for(var s=0;s<H;s+=4){ctx.fillStyle=s%8<4?'#000':'#fff';ctx.fillRect(0,s,W,1)}
+  ctx.globalAlpha=1;
+}
+
+// ══ Room fallback background ══
+function drawRoomFallbackBg(room){
+  var wc=room.wallColor||PALETTE.wall;
+  var fc=room.floorColor||PALETTE.floor;
+  // Perspective room: ceiling, back wall, floor with vanishing point
+  var g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,PALETTE.bg);g.addColorStop(0.3,wc);g.addColorStop(0.8,wc);g.addColorStop(1,fc);
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  // Perspective lines from corners to vanishing point
+  ctx.save();ctx.globalAlpha=0.08;ctx.strokeStyle=PALETTE.accent;ctx.lineWidth=1;
+  var vx=W*0.5,vy=H*0.35;
+  ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(vx,vy);ctx.moveTo(W,0);ctx.lineTo(vx,vy);
+  ctx.moveTo(0,H);ctx.lineTo(vx,vy);ctx.moveTo(W,H);ctx.lineTo(vx,vy);ctx.stroke();ctx.restore();
+  // Central radial glow
+  var rl=ctx.createRadialGradient(vx,vy,0,vx,vy,W*0.5);
+  rl.addColorStop(0,PALETTE.accent+'15');rl.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=rl;ctx.fillRect(0,0,W,H);
+  // Floor reflection line
+  ctx.save();ctx.globalAlpha=0.12;ctx.strokeStyle=PALETTE.accent;ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(0,H*0.80);ctx.lineTo(W,H*0.80);ctx.stroke();ctx.restore();
+  // Light shaft
+  ctx.save();ctx.globalAlpha=0.04;
+  ctx.fillStyle=PALETTE.accent;
+  ctx.beginPath();ctx.moveTo(W*0.35,0);ctx.lineTo(W*0.55,0);ctx.lineTo(W*0.52,H*0.7);ctx.lineTo(W*0.38,H*0.7);ctx.fill();
+  ctx.restore();
+}
+
+
+// ═══════════ PUZZLE HELPERS ═══════════
+function isDoorLocked(fromRoom, toRoom){
+  for(var i=0;i<PUZZLES.length;i++){var p=PUZZLES[i];
+    if(p.doorInRoom===fromRoom&&p.leadsToRoom===toRoom&&!solvedPuzzles.has(fromRoom+'>'+toRoom))return p;
+    if(p.doorInRoom===toRoom&&p.leadsToRoom===fromRoom&&!solvedPuzzles.has(toRoom+'>'+fromRoom))return p;
+  }return null;
+}
+function tryUnlock(fromRoom, toRoom){
+  for(var i=0;i<PUZZLES.length;i++){var p=PUZZLES[i];
+    var key=p.doorInRoom+'>'+p.leadsToRoom;var rkey=p.leadsToRoom+'>'+p.doorInRoom;
+    if((p.doorInRoom===fromRoom&&p.leadsToRoom===toRoom)||(p.doorInRoom===toRoom&&p.leadsToRoom===fromRoom)){
+      if(solvedPuzzles.has(key)||solvedPuzzles.has(rkey))return true;
+      if(inventory.some(function(it){return it.name===p.requiredItem})){
+        solvedPuzzles.add(key);solvedPuzzles.add(rkey);
+        examineText=p.unlockedMessage||'The way forward opens!';examineX=0.5;examineY=0.5;examineTimer=180;return true;
+      }else{examineText=p.lockedMessage||'This passage is sealed.';examineX=0.5;examineY=0.5;examineTimer=150;return false}
+    }
+  }return true;
+}
+
+
+function drawTitle(){
+  var hasImg = drawBgImage(loadedImages['title']);
+  if(!hasImg) drawFallbackBg();
+  // Dark overlay with radial vignette
+  ctx.fillStyle='rgba(0,0,0,0.45)';ctx.fillRect(0,0,W,H);
+  var vig=ctx.createRadialGradient(W*0.5,H*0.40,W*0.18,W*0.5,H*0.5,W*0.85);
+  vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(0.6,'rgba(0,0,0,0.25)');vig.addColorStop(1,'rgba(0,0,0,0.80)');
+  ctx.fillStyle=vig;ctx.fillRect(0,0,W,H);
+  // Animated accent lines with glow
+  var t=animFrame*0.015;
+  ctx.save();
+  for(var i=0;i<3;i++){
+    var ly=H*(0.30+i*0.20+Math.sin(t+i*1.1)*0.015);
+    ctx.globalAlpha=0.08+Math.sin(t*0.7+i)*0.04;
+    ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=8;
+    ctx.strokeStyle=PALETTE.accent;ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(0,ly);ctx.lineTo(W,ly);ctx.stroke();
+  }
+  ctx.restore();
+
+  // ── Character art ──
+  var textOffX = 0.5;
+  var charSrc=getCleanChar();
+  if(charSrc){
+    var bob=Math.sin(animFrame*0.025)*5;
+    var cw2=W*0.18, ch2=cw2*(loadedImages['char'].naturalHeight/loadedImages['char'].naturalWidth);
+    var maxCh=H*0.55; if(ch2>maxCh){cw2=cw2*(maxCh/ch2);ch2=maxCh}
+    var cx2=W*0.06, cy2=H*0.20+bob;
+    // Glow behind character
+    ctx.save();
+    var cGlow=ctx.createRadialGradient(cx2+cw2/2,cy2+ch2*0.5, cw2*0.2, cx2+cw2/2,cy2+ch2*0.5, cw2*0.8);
+    cGlow.addColorStop(0,PALETTE.accent+'30');cGlow.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=cGlow;ctx.fillRect(cx2-cw2*0.3,cy2-ch2*0.1,cw2*1.6,ch2*1.3);
+    // Shadow under character
+    ctx.globalAlpha=0.25;ctx.fillStyle=PALETTE.bg;
+    ctx.beginPath();ctx.ellipse(cx2+cw2/2,cy2+ch2+8,cw2*0.4,10,0,0,Math.PI*2);ctx.fill();
+    ctx.restore();
+    ctx.drawImage(charSrc, cx2, cy2, cw2, ch2);
+    textOffX = 0.56;
+  }
+
+  // ── Title text with multi-layer glow ──
+  ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=35;
+  drawTB(TITLE,textOffX,0.20,38,PALETTE.accent);
+  ctx.shadowBlur=12;
+  drawTB(TITLE,textOffX,0.20,38,PALETTE.accent);ctx.restore();
+  drawTB(TITLE,textOffX,0.20,38,'#fff');
+
+  // Subtitle / game vibe
+  ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=10;
+  drawT('"'+GAME_VIBE+'"',textOffX,0.34,17,PALETTE.accent);ctx.restore();
+  drawT('"'+GAME_VIBE+'"',textOffX,0.34,17,PALETTE.accent);
+
+  // Scene count
+  drawT(ROOM_COUNT+' '+SCENE_LABEL+' \u00b7 A '+CHAR_NAME+' Adventure',textOffX,0.44,12,PALETTE.text+'88');
+
+  // ── Tap to begin (pulsing) ──
+  var pulse=0.35+Math.sin(animFrame*0.04)*0.35;
+  ctx.globalAlpha=pulse;
+  drawT('tap anywhere to begin',0.5,0.72,14,PALETTE.text);
+  ctx.globalAlpha=1;
+
+  // ── How to Play link ──
+  ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=6;
+  drawT('How to Play',0.5,0.86,11,PALETTE.accent+'cc');ctx.restore();
+
+  // ── BellForge credit ──
+  drawT('Built with BellForge',0.5,0.95,8,PALETTE.text+'33');
+}
+
+
+function drawOpening(){
+  var hasImg = drawBgImage(loadedImages['title']);
+  if(!hasImg) drawFallbackBg();
+  ctx.fillStyle='rgba(0,0,0,0.65)';ctx.fillRect(0,0,W,H);
+  var alpha=Math.min(1,(animFrame-openingStart)/60);
+  ctx.globalAlpha=alpha;
+  ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=20;
+  drawTB(TITLE,0.5,0.12,22,PALETTE.accent);ctx.restore();
+  drawTB(TITLE,0.5,0.12,22,'#fff');
+  glowRect(0.12,0.24,0.76,0.44,12,PALETTE.bg,PALETTE.accent+'60');
+  wrapT(OPENING,0.5,0.32,14,PALETTE.text,0.68);
+  var p2=0.5+Math.sin(animFrame*0.05)*0.3;
+  ctx.globalAlpha=alpha*p2;
+  drawT('tap to continue',0.5,0.80,13,PALETTE.text+'aa');
+  ctx.globalAlpha=1;
+}
+
+
+// ═══════════ TUTORIAL ═══════════
+function drawTutorial(){
+  ctx.fillStyle='rgba(0,0,0,0.85)';ctx.fillRect(0,0,W,H);
+  drawTGlow('How to Play',0.5,0.12,24,PALETTE.accent,12);
+  var tips=['\ud83d\udc46  Tap objects to examine them','\ud83d\udeaa  Tap glowing doors to move between '+SCENE_LABEL,'\u2728  Pick up items \u2014 they go in your pack','\ud83c\udf92  Tap the pack (bottom-right) to see items','\ud83d\udca1  Tap the hint button (top-right) when stuck','\ud83d\udd12  Some doors need an item to open'];
+  for(var i=0;i<tips.length;i++){drawT(tips[i],0.5,0.26+i*0.10,13,PALETTE.text)}
+  var pulse2=0.6+Math.sin(animFrame*0.08)*0.2;
+  ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=16;
+  ctx.globalAlpha=pulse2;rRect(0.35,0.84,0.30,0.08,18,PALETTE.accent,null);
+  ctx.globalAlpha=1;rRect(0.36,0.845,0.28,0.065,16,PALETTE.accent,null);
+  ctx.restore();
+  drawTB('GOT IT',0.5,0.878,15,PALETTE.bg);
+}
+
+
+function drawEnding(){
+  var hasImg = drawBgImage(loadedImages['title']);
+  if(!hasImg) drawFallbackBg();
+  ctx.fillStyle='rgba(0,0,0,0.55)';ctx.fillRect(0,0,W,H);
+  drawParticles(PALETTE.accent,-1);
+  ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=40;
+  drawTB('\ud83c\udf89 Victory!',0.5,0.15,32,PALETTE.accent);ctx.restore();
+  drawTB('\ud83c\udf89 Victory!',0.5,0.15,32,'#fff');
+  glowRect(0.15,0.28,0.70,0.30,14,PALETTE.bg,PALETTE.accent+'70');
+  wrapT(ENDING,0.5,0.34,14,PALETTE.text,0.62);
+  drawT('Items collected: '+inventory.length+' / '+ROOM_COUNT,0.5,0.64,12,PALETTE.text+'aa');
+  // Play again button with glow
+  ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=15;
+  rRect(0.32,0.72,0.36,0.08,20,PALETTE.accent,null);ctx.restore();
+  rRect(0.32,0.72,0.36,0.08,20,PALETTE.accent,null);
+  drawTB('PLAY AGAIN',0.5,0.76,15,PALETTE.bg);
+  drawT('Built with BellForge',0.5,0.94,8,PALETTE.text+'33');
+}
+
+
+// ═══════════ DRAW ROOM ═══════════
+function drawRoom(roomIdx){
+  var room=ROOMS[roomIdx];
+  var hasImg = drawBgImage(loadedImages['room_'+roomIdx]);
+  if(!hasImg){
+    drawRoomFallbackBg(room);
+    if(room.hasWindow){
+      var wt=room.windowType||'tall';
+      ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=18;
+      if(wt==='round'){
+        ctx.fillStyle=PALETTE.bg+'cc';ctx.beginPath();ctx.arc(nx(0.5),ny(0.22),nx(0.08),0,Math.PI*2);ctx.fill();
+        ctx.strokeStyle=PALETTE.accent+'66';ctx.lineWidth=3;ctx.stroke();
+      }else if(wt==='wide'){
+        rRect(0.25,0.10,0.50,0.16,6,PALETTE.bg+'cc',PALETTE.accent+'66');
+      }else{
+        rRect(0.38,0.10,0.10,0.28,6,PALETTE.bg+'cc',PALETTE.accent+'66');
+        rRect(0.52,0.10,0.10,0.28,6,PALETTE.bg+'cc',PALETTE.accent+'66');
+      }
+      ctx.restore();
+    }
+    if(room.furniture){for(var fi=0;fi<room.furniture.length;fi++){drawFurniture(room.furniture[fi])}}
+  } else {
+    var lg2=ctx.createLinearGradient(0,0,0,H);
+    lg2.addColorStop(0,'rgba(0,0,0,0.1)');lg2.addColorStop(0.5,'rgba(0,0,0,0)');lg2.addColorStop(1,'rgba(0,0,0,0.2)');
+    ctx.fillStyle=lg2;ctx.fillRect(0,0,W,H);
+  }
+  // Room ambient particles
+  drawParticles(PALETTE.accent,1);
+  
+  var pts=roomParticles[roomIdx];
+  ctx.globalAlpha=0.3;
+  for(var pi=0;pi<pts.length;pi++){var p=pts[pi];var py2=p.y+Math.sin(animFrame*p.speed*10+p.phase)*0.03;ctx.fillStyle=PALETTE.accent;ctx.beginPath();ctx.arc(nx(p.x),ny(py2),p.size,0,Math.PI*2);ctx.fill()}
+  ctx.globalAlpha=1;
+  var doorGlow=0.3+Math.sin(animFrame*0.05)*0.15;
+  if(roomIdx>0){
+    var locked=isDoorLocked(roomIdx,roomIdx-1);var dc=locked?'#ff4444':PALETTE.accent;
+    ctx.save();ctx.shadowColor=dc;ctx.shadowBlur=20;
+    ctx.globalAlpha=doorGlow;rRect(0.01,0.30,0.06,0.38,6,dc+'30',null);ctx.globalAlpha=1;
+    rRect(0.02,0.32,0.04,0.34,4,dc+'22',dc);
+    ctx.restore();
+    drawTB(locked?'\ud83d\udd12':'\u25c0',0.04,0.50,20,dc);
+  }
+  if(roomIdx<ROOM_COUNT-1){
+    var locked2=isDoorLocked(roomIdx,roomIdx+1);var dc2=locked2?'#ff4444':PALETTE.accent;
+    ctx.save();ctx.shadowColor=dc2;ctx.shadowBlur=20;
+    ctx.globalAlpha=doorGlow;rRect(0.93,0.30,0.06,0.38,6,dc2+'30',null);ctx.globalAlpha=1;
+    rRect(0.94,0.32,0.04,0.34,4,dc2+'22',dc2);
+    ctx.restore();
+    drawTB(locked2?'\ud83d\udd12':'\u25b6',0.96,0.50,20,dc2);
+  }
+  if(!foundItems.has(roomIdx)){
+    var it=ITEMS[roomIdx];var pos=itemPositions[roomIdx];
+    if(it&&pos){
+      var bob=Math.sin(animFrame*0.04)*0.008;
+      var itemImg = loadedImages['item_'+roomIdx];
+      if(itemImg&&itemImg.complete&&itemImg.naturalWidth){
+        ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=20;
+        var isz=nx(0.10);
+        ctx.drawImage(itemImg, nx(pos.x)-isz/2, ny(pos.y+bob)-isz/2, isz, isz);
+        ctx.restore();
+      } else {
+        ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=18;
+        rRect(pos.x-0.035,pos.y-0.035,0.07,0.07,10,PALETTE.accent+'35',PALETTE.accent+'aa');ctx.restore();
+        drawTB(it.emoji,pos.x,pos.y+bob,28,'#fff');
+      }
+    }
+  }
+  // ═══ HUD ═══
+  var nameAlpha=Math.min(1,roomNameTimer/30);
+  ctx.globalAlpha=nameAlpha;
+  glowRect(0.10,0.008,0.80,0.040,10,PALETTE.bg+'dd',PALETTE.accent+'40');
+  drawTGlow(room.name,0.5,0.028,14,PALETTE.accent,8);ctx.globalAlpha=1;
+  glowRect(0.02,0.008,0.06,0.035,8,PALETTE.bg+'cc',PALETTE.accent+'66');
+  drawT('\u2630',0.05,0.025,14,PALETTE.accent);
+  glowRect(0.92,0.008,0.06,0.035,8,PALETTE.bg+'cc',PALETTE.accent+'66');
+  drawT('\ud83d\udca1',0.95,0.025,14,'#fff');
+  drawT((roomIdx+1)+' / '+ROOM_COUNT,0.5,0.955,11,PALETTE.text+'77');
+  if(room.atmosphere){ctx.globalAlpha=0.4;drawT(room.atmosphere,0.5,0.975,9,PALETTE.text);ctx.globalAlpha=1}
+  var bagX=0.90,bagY=0.92;
+  var packImg=loadedImages['pack'];
+  if(packImg&&packImg.complete&&packImg.naturalWidth){
+    var psz=nx(0.055);
+    ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=12;
+    ctx.drawImage(packImg,nx(bagX)-psz/2,ny(bagY)-psz/2,psz,psz);
+    ctx.restore();
+  } else {
+    glowRect(bagX-0.04,bagY-0.030,0.08,0.06,12,PALETTE.bg+'dd',PALETTE.accent);
+    drawT('🎒',bagX,bagY,20,'#fff');
+  }
+  if(inventory.length>0){ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=8;ctx.fillStyle=PALETTE.accent;ctx.beginPath();ctx.arc(nx(bagX+0.03),ny(bagY-0.020),8,0,Math.PI*2);ctx.fill();ctx.restore();drawTB(String(inventory.length),bagX+0.03,bagY-0.020,9,'#fff')}
+  if(bagOpen&&inventory.length>0){
+    var iw=Math.min(inventory.length,6)*0.08+0.04;
+    glowRect(bagX-iw,bagY-0.06,iw,0.055,10,PALETTE.bg+'f0',PALETTE.accent+'88');
+    for(var bi=0;bi<Math.min(inventory.length,6);bi++){
+      var ix=bagX-iw+0.04+bi*0.08;
+      var bagItemImg=loadedImages['item_'+getItemRoomIndex(inventory[bi].name)];
+      if(bagItemImg&&bagItemImg.complete&&bagItemImg.naturalWidth){
+        var bisz=nx(0.05);ctx.drawImage(bagItemImg,nx(ix)-bisz/2,ny(bagY-0.035)-bisz/2,bisz,bisz);
+      } else {
+        drawT(inventory[bi].emoji,ix,bagY-0.035,16,'#fff');
+      }
+    }
+    if(inventory.length>6)drawT('+'+(inventory.length-6),bagX-0.02,bagY-0.035,10,PALETTE.text);
+  }
+  if(hintVisible&&hintTimer>0){
+    var ha=Math.min(1,hintTimer/30);ctx.globalAlpha=ha;
+    glowRect(0.06,0.05,0.88,0.08,12,PALETTE.bg+'f0',PALETTE.accent+'88');
+    var hintText=HINTS[roomIdx]||'Look around carefully...';
+    drawT('\ud83d\udca1 '+hintText,0.5,0.09,12,PALETTE.text);ctx.globalAlpha=1;
+  }
+  if(examineText&&examineTimer>0){
+    var ea=Math.min(1,examineTimer/30);ctx.globalAlpha=ea;
+    var ex=Math.max(0.25,Math.min(0.75,examineX));
+    var ey=Math.max(0.15,Math.min(0.78,examineY));
+    glowRect(ex-0.22,ey-0.04,0.44,0.08,10,PALETTE.bg+'f0',PALETTE.accent+'88');
+    wrapT(examineText,ex,ey-0.01,12,PALETTE.text,0.40);ctx.globalAlpha=1;
+  }
+  if(menuOpen){
+    ctx.fillStyle='rgba(0,0,0,0.7)';ctx.fillRect(0,0,W,H);
+    glowRect(0.12,0.20,0.76,0.52,16,PALETTE.bg+'f8',PALETTE.accent+'66');
+    drawTGlow('⏸ Paused',0.5,0.27,24,PALETTE.accent,12);
+    drawT(TITLE,0.5,0.35,14,PALETTE.text+'aa');
+    drawT('Room: '+ROOMS[currentRoom].name,0.5,0.41,12,PALETTE.text+'88');
+    drawT('Items: '+inventory.length+' / '+ROOM_COUNT,0.5,0.46,12,PALETTE.text+'88');
+    ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=14;
+    rRect(0.25,0.53,0.50,0.05,12,PALETTE.accent,null);ctx.restore();
+    drawTB('RESUME',0.5,0.555,16,PALETTE.bg);
+    rRect(0.25,0.60,0.50,0.05,12,PALETTE.accent+'44',PALETTE.accent);
+    drawTB('How to Play',0.5,0.625,14,PALETTE.accent);
+  }
+}
+
+function getItemRoomIndex(name){
+  for(var i=0;i<ITEMS.length;i++){if(ITEMS[i].name===name)return i}return -1;
+}
+
+function drawFurniture(f){
+  var c=f.color||PALETTE.wall;
+  ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=10;
+  switch(f.type){
+    case 'circle':
+      ctx.fillStyle=c;ctx.beginPath();ctx.ellipse(nx(f.x+f.w/2),ny(f.y+f.h/2),nx(f.w/2),ny(f.h/2),0,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle=PALETTE.accent+'60';ctx.lineWidth=2;ctx.stroke();break;
+    case 'arch':
+      ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(nx(f.x),ny(f.y+f.h));ctx.lineTo(nx(f.x),ny(f.y+f.h*0.3));
+      ctx.quadraticCurveTo(nx(f.x+f.w/2),ny(f.y),nx(f.x+f.w),ny(f.y+f.h*0.3));ctx.lineTo(nx(f.x+f.w),ny(f.y+f.h));ctx.closePath();ctx.fill();
+      ctx.strokeStyle=PALETTE.accent+'60';ctx.lineWidth=2;ctx.stroke();break;
+    case 'triangle':
+      ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(nx(f.x+f.w/2),ny(f.y));ctx.lineTo(nx(f.x+f.w),ny(f.y+f.h));ctx.lineTo(nx(f.x),ny(f.y+f.h));ctx.closePath();ctx.fill();
+      ctx.strokeStyle=PALETTE.accent+'50';ctx.lineWidth=1.5;ctx.stroke();break;
+    default:
+      var grd=ctx.createLinearGradient(nx(f.x),ny(f.y),nx(f.x),ny(f.y+f.h));
+      grd.addColorStop(0,c);grd.addColorStop(1,PALETTE.bg+'88');
+      glowRect(f.x,f.y,f.w,f.h,6,grd,PALETTE.accent+'50');
+  }
+  ctx.restore();
+  if(f.label){
+    ctx.save();ctx.shadowColor=PALETTE.bg;ctx.shadowBlur=4;
+    ctx.globalAlpha=0.6;drawT(f.label,f.x+f.w/2,f.y+f.h+0.02,8,PALETTE.text);
+    ctx.restore();ctx.globalAlpha=1;
+  }
+}
+
+function resetGame(){
+  screen='title';currentRoom=0;inventory=[];foundItems.clear();solvedPuzzles.clear();
+  examineText='';bagOpen=false;hintVisible=false;menuOpen=false;
+}
+
+function checkWin(){if(inventory.length>=ROOM_COUNT&&foundItems.size>=ROOM_COUNT){setTimeout(function(){screen='ending'},800)}}
+
+
+function frame(){
+  resize();animFrame++;
+  ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
+  if(screen==='title')drawTitle();
+  else if(screen==='opening')drawOpening();
+  else if(screen==='howto'){drawTutorial()}
+  else if(screen==='ending')drawEnding();
+  else if(screen==='game'){
+    
+    if(transitionAlpha>0){
+      drawRoom(currentRoom);ctx.fillStyle=PALETTE.bg;ctx.globalAlpha=transitionAlpha;ctx.fillRect(0,0,W,H);ctx.globalAlpha=1;
+      transitionAlpha-=0.04;if(transitionAlpha<=0)transitionAlpha=0;
+    }else{drawRoom(currentRoom)}
+
+    if(showTutorial)drawTutorial();
+  }
+  if(typeof examineTimer!=='undefined'&&examineTimer>0)examineTimer--;
+  if(typeof hintTimer!=='undefined'&&hintTimer>0){hintTimer--}else if(typeof hintVisible!=='undefined'){hintVisible=false}
+  if(roomNameTimer<60)roomNameTimer++;
+  requestAnimationFrame(frame);
+}
+
+
+
+canvas.addEventListener('pointerdown',function(e){
+  var rect=canvas.getBoundingClientRect();
+  var px=(e.clientX-rect.left)/rect.width;
+  var py=(e.clientY-rect.top)/rect.height;
+  if(screen==='title'){
+    if(py>0.82&&py<0.90&&px>0.35&&px<0.65){screen='howto';return}
+    screen='opening';openingStart=animFrame;return;
+  }
+  if(screen==='howto'){screen='title';return}
+  if(screen==='opening'){screen='game';showTutorial=false;roomNameTimer=0;return}
+  if(screen==='ending'){resetGame();return}
+  if(showTutorial){showTutorial=false;return}
+
+  if(menuOpen){
+    if(px>0.25&&px<0.75&&py>0.53&&py<0.58){menuOpen=false;return}
+    if(px>0.25&&px<0.75&&py>0.60&&py<0.65){menuOpen=false;showTutorial=true;return}
+    return;
+  }
+  if(px<0.08&&py<0.045){menuOpen=true;return}
+  if(px>0.92&&py<0.045){hintVisible=true;hintTimer=180;return}
+  if(px>0.86&&px<0.98&&py>0.88){bagOpen=!bagOpen;return}
+  if(bagOpen){bagOpen=false;return}
+  if(currentRoom>0&&px<0.08&&py>0.28&&py<0.70){
+    if(tryUnlock(currentRoom,currentRoom-1)){currentRoom--;transitionAlpha=1;roomNameTimer=0;checkWin()}return;
+  }
+  if(currentRoom<ROOM_COUNT-1&&px>0.92&&py>0.28&&py<0.70){
+    if(tryUnlock(currentRoom,currentRoom+1)){currentRoom++;transitionAlpha=1;roomNameTimer=0;checkWin()}return;
+  }
+  if(!foundItems.has(currentRoom)){
+    var it=ITEMS[currentRoom];var pos=itemPositions[currentRoom];
+    if(it&&pos&&Math.abs(px-pos.x)<0.06&&Math.abs(py-pos.y)<0.06){
+      inventory.push({name:it.name,emoji:it.emoji});foundItems.add(currentRoom);
+      examineText=it.description;examineX=px;examineY=py-0.1;examineTimer=150;checkWin();return;
+    }
+  }
+  var room=ROOMS[currentRoom];
+  if(!loadedImages['room_'+currentRoom]||!loadedImages['room_'+currentRoom].complete){
+    if(room.furniture){for(var fi=0;fi<room.furniture.length;fi++){var f=room.furniture[fi];
+      if(px>=f.x&&px<=f.x+f.w&&py>=f.y&&py<=f.y+f.h){examineText='You examine the '+f.label+'.';examineX=px;examineY=py-0.1;examineTimer=120;return}
+    }}
+  }
+  if(py>0.82){examineText=ROOMS[currentRoom].examineText;examineX=px;examineY=py-0.12;examineTimer=120;return}
+  examineText=room.description;examineX=px;examineY=py-0.1;examineTimer=100;
+});
+
+
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

@@ -528,11 +528,12 @@ DIFFICULTY: ${difficultyGuide}
 Design ${roomCount} unique scenes. Each must feel DIFFERENT — different furniture, different layouts, different mood.
 
 Return ONLY JSON array (no fences):
-[{"name":"Scene Name","description":"What this scene looks like (1 vivid sentence matching the ${config.artStyle.name} art style)","examineText":"Atmospheric first-person text when examining","atmosphere":"2-3 word mood tag","wallColor":"#hex unique to this scene","floorColor":"#hex","ceilingColor":"#hex","hasWindow":true,"windowType":"round|tall|wide|none","lightingDir":"left|right|center|dim","furniture":[{"type":"rect|circle|arch|triangle","x":0.1,"y":0.2,"w":0.15,"h":0.25,"color":"#hex","label":"what this is (bookshelf, desk, etc)"}]}]
+[{"name":"Scene Name","description":"Max 10 words describing the scene","examineText":"Max 12 words, first-person atmospheric","atmosphere":"2-3 word mood tag","wallColor":"#hex unique to this scene","floorColor":"#hex","ceilingColor":"#hex","hasWindow":true,"windowType":"round|tall|wide|none","lightingDir":"left|right|center|dim","furniture":[{"type":"rect|circle|arch|triangle","x":0.1,"y":0.2,"w":0.15,"h":0.25,"color":"#hex","label":"what this is (bookshelf, desk, etc)"}]}]
 
 RULES:
 - Furniture x/y/w/h are normalized 0-1. x+w must be < 0.95, y+h must be < 0.85.
 - Each scene needs ${furnitureCount} furniture pieces — vary by scene.
+- Keep description and examineText SHORT (max 10-12 words each).
 - Vary furniture positions scene to scene — NOT all the same layout.
 - Wall/floor colors should vary subtly but stay in ${config.theme.name} theme and ${config.artStyle.name} palette.
 - Exactly ${roomCount} scenes.`);
@@ -587,18 +588,23 @@ Story: "${config.story.title}" — ${config.story.description}. Setting: ${confi
 Difficulty: ${config.structure.difficulty}, Puzzle Density: ${config.structure.puzzleDensity}
 
 Return ONLY this JSON (no fences):
-{"items":[{"name":"Thematic Item Name","emoji":"single emoji","description":"Flavor text when picked up (1 sentence, atmospheric)","roomIndex":0}],"puzzles":[{"doorInRoom":2,"leadsToRoom":3,"requiredItem":"Item Name","lockedMessage":"Why this door won't open (atmospheric)","unlockedMessage":"What happens when you use the item (atmospheric)"}]}
+{"items":[{"name":"Thematic Item Name","emoji":"single emoji","description":"Max 8 words, punchy pickup flavor text","roomIndex":0}],"puzzles":[{"doorInRoom":2,"leadsToRoom":3,"requiredItem":"Item Name","lockedMessage":"Why blocked (max 10 words)","unlockedMessage":"What happens (max 10 words)"}]}
 
 RULES:
 - Exactly ${roomCount} items, one per scene, roomIndex 0 to ${roomCount - 1}.
 - Items MUST fit the ${config.theme.name} theme — no generic "Key" or "Gem" unless the theme demands it.
 - Item descriptions should evoke the ${config.artStyle.name} visual style.
+- Keep ALL text SHORT — item descriptions max 8 words, locked/unlocked messages max 10 words.
 - ${config.structure.puzzleDensity === 'heavy' ? '2-3' : config.structure.puzzleDensity === 'moderate' ? '1-2' : '0-1'} puzzle connections where a door between scenes requires a specific item to pass.
 - Each puzzle's requiredItem must exactly match an item name from the items array.
 - Locked doors should have atmospheric messages, not generic text.`);
     const d3 = JSON.parse(cleanJson(p3.response.text()));
     const items = d3.items;
-    const puzzles = d3.puzzles || [];
+    const puzzles = (d3.puzzles || []).map((p: any) => ({
+      ...p,
+      lockedMessage: p.lockedMessage || `This passage is sealed. You need the ${p.requiredItem}.`,
+      unlockedMessage: p.unlockedMessage || `You use the ${p.requiredItem}. The way forward opens.`,
+    }));
     onStatus?.(`${items.length} items created, ${puzzles.length} puzzle gates wired`);
     return { items, puzzles };
   } catch (err) {
@@ -711,11 +717,12 @@ DIFFICULTY: ${difficultyGuide}
 Design ${roomCount} unique scenes. Each must feel DIFFERENT — different furniture, different layouts, different mood.
 
 Return ONLY JSON array (no fences):
-[{"name":"Scene Name","description":"What this scene looks like (1 vivid sentence matching the ${config.artStyle.name} art style)","examineText":"Atmospheric first-person text when examining","atmosphere":"2-3 word mood tag","wallColor":"#hex unique to this scene","floorColor":"#hex","ceilingColor":"#hex","hasWindow":true,"windowType":"round|tall|wide|none","lightingDir":"left|right|center|dim","furniture":[{"type":"rect|circle|arch|triangle","x":0.1,"y":0.2,"w":0.15,"h":0.25,"color":"#hex","label":"what this is (bookshelf, desk, etc)"}]}]
+[{"name":"Scene Name","description":"Max 10 words describing the scene","examineText":"Max 12 words, first-person atmospheric","atmosphere":"2-3 word mood tag","wallColor":"#hex unique to this scene","floorColor":"#hex","ceilingColor":"#hex","hasWindow":true,"windowType":"round|tall|wide|none","lightingDir":"left|right|center|dim","furniture":[{"type":"rect|circle|arch|triangle","x":0.1,"y":0.2,"w":0.15,"h":0.25,"color":"#hex","label":"what this is (bookshelf, desk, etc)"}]}]
 
 RULES:
 - Furniture x/y/w/h are normalized 0-1. x+w must be < 0.95, y+h must be < 0.85.
 - Each scene needs ${furnitureCount} furniture pieces — vary by scene.
+- Keep description and examineText SHORT (max 10-12 words each).
 - Vary furniture positions scene to scene — NOT all the same layout.
 - Wall/floor colors should vary subtly but stay in ${config.theme.name} theme and ${config.artStyle.name} palette.
 - Exactly ${roomCount} scenes.`);
@@ -757,18 +764,23 @@ Story: "${config.story.title}" — ${config.story.description}. Setting: ${confi
 Difficulty: ${config.structure.difficulty}, Puzzle Density: ${config.structure.puzzleDensity}
 
 Return ONLY this JSON (no fences):
-{"items":[{"name":"Thematic Item Name","emoji":"single emoji","description":"Flavor text when picked up (1 sentence, atmospheric)","roomIndex":0}],"puzzles":[{"doorInRoom":2,"leadsToRoom":3,"requiredItem":"Item Name","lockedMessage":"Why this door won't open (atmospheric)","unlockedMessage":"What happens when you use the item (atmospheric)"}]}
+{"items":[{"name":"Thematic Item Name","emoji":"single emoji","description":"Max 8 words, punchy pickup flavor text","roomIndex":0}],"puzzles":[{"doorInRoom":2,"leadsToRoom":3,"requiredItem":"Item Name","lockedMessage":"Why blocked (max 10 words)","unlockedMessage":"What happens (max 10 words)"}]}
 
 RULES:
 - Exactly ${roomCount} items, one per scene, roomIndex 0 to ${roomCount - 1}.
 - Items MUST fit the ${config.theme.name} theme — no generic "Key" or "Gem" unless the theme demands it.
 - Item descriptions should evoke the ${config.artStyle.name} visual style.
+- Keep ALL text SHORT — item descriptions max 8 words, locked/unlocked messages max 10 words.
 - ${config.structure.puzzleDensity === 'heavy' ? '2-3' : config.structure.puzzleDensity === 'moderate' ? '1-2' : '0-1'} puzzle connections where a door between scenes requires a specific item to pass.
 - Each puzzle's requiredItem must exactly match an item name from the items array.
 - Locked doors should have atmospheric messages, not generic text.`);
     const d3 = JSON.parse(cleanJson(p3.response.text()));
     items = d3.items;
-    puzzles = d3.puzzles || [];
+    puzzles = (d3.puzzles || []).map((p: any) => ({
+      ...p,
+      lockedMessage: p.lockedMessage || `This passage is sealed. You need the ${p.requiredItem}.`,
+      unlockedMessage: p.unlockedMessage || `You use the ${p.requiredItem}. The way forward opens.`,
+    }));
     onStatus?.(`${items.length} items and ${puzzles.length} puzzle gates designed`);
   } catch (err) {
     console.error('[Gemini Chunk 3 - Items] Error:', err);

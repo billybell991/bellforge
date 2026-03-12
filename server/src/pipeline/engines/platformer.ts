@@ -124,7 +124,7 @@ ${openingScreen()}
 
 function drawTutorial(){
   ctx.fillStyle='rgba(0,0,0,0.85)';ctx.fillRect(0,0,W,H);
-  drawTB('How to Play',0.5,0.12,24,PALETTE.accent);
+  drawTB('How to Play',0.5,0.10,30,PALETTE.accent);
   var tips=[
     '\\u2b05\\ufe0f  Tap LEFT side to run left',
     '\\u27a1\\ufe0f  Tap RIGHT side to run right',
@@ -133,11 +133,11 @@ function drawTutorial(){
     '\\ud83d\\udeaa  Reach the exit door to advance',
     '\\ud83d\\udc7e  Avoid enemies \\u2014 they push you back!'
   ];
-  for(var i=0;i<tips.length;i++){drawT(tips[i],0.5,0.26+i*0.10,13,PALETTE.text)}
+  for(var i=0;i<tips.length;i++){drawT(tips[i],0.5,0.24+i*0.10,16,PALETTE.text)}
   var pulse2=0.6+Math.sin(animFrame*0.08)*0.2;
   ctx.globalAlpha=pulse2;rRect(0.35,0.84,0.30,0.08,18,PALETTE.accent,null);
   ctx.globalAlpha=1;rRect(0.36,0.845,0.28,0.065,16,PALETTE.accent,null);
-  drawTB('GOT IT',0.5,0.878,15,PALETTE.bg);
+  drawTB('GOT IT',0.5,0.878,17,PALETTE.bg);
 }
 
 ${endingScreen()}
@@ -418,6 +418,7 @@ function frame(){
   ctx.fillStyle='#000';ctx.fillRect(0,0,W,H);
   if(screen==='title') drawTitle();
   else if(screen==='opening') drawOpening();
+  else if(screen==='howto'){drawTutorial()}
   else if(screen==='ending') drawEnding();
   else if(screen==='game'){
     updatePhysics();

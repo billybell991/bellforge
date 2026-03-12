@@ -1,0 +1,45 @@
+[
+  {
+    "id": "d0b3e9b5-6d34-4438-9ec8-575e2656799a",
+    "name": "Moonlit Manor",
+    "rating": 0,
+    "config": {
+      "genre": {
+        "id": "point_click",
+        "name": "Point & Click Adventure",
+        "icon": "??",
+        "description": "Explore rooms, solve puzzles, uncover stories",
+        "tag": "FLAGSHIP",
+        "orientation": "landscape"
+      },
+      "theme": {
+        "id": "horror",
+        "name": "Horror / Supernatural",
+        "icon": "??",
+        "description": "Dark atmospheres and spine-tingling mysteries",
+        "color": "#ff3d00"
+      },
+      "artStyle": {
+        "id": "cel_shaded",
+        "name": "Cel-Shaded / Toonish",
+        "icon": "??",
+        "description": "Bold outlines, flat colors, cartoon charm",
+        "recommended": true
+      },
+      "structure": {
+        "roomCount": 4,
+        "difficulty": "standard",
+        "puzzleDensity": "moderate"
+      },
+      "story": {
+        "title": "Moonlit Manor",
+        "description": "A paranormal investigator enters a haunted Victorian manor to find a missing heirloom locket. Each room holds ghostly clues.",
+        "characterName": "Detective Raven",
+        "setting": "A crumbling Victorian manor on a fog-shrouded hilltop"
+      }
+    },
+    "buildId": "4f2ff23a-7e25-4098-a0bb-9434de75f8b9",
+    "apkSize": "13.4 MB",
+    "createdAt": "2026-03-12T20:03:11.913Z"
+  }
+]
