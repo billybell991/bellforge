@@ -115,7 +115,7 @@ const TITLE = ${JSON.stringify(title)};
 const CHAR_NAME = ${JSON.stringify(charName)};
 const GAME_VIBE = ${JSON.stringify(gameVibe)};
 const SCENE_LABEL = ${JSON.stringify(sceneLabel)};
-const START_TEXT = ${JSON.stringify(startButtonText)};
+const START_TEXT = ${JSON.stringify(startButtonText || 'Play')};
 const ITEMS = ${JSON.stringify(c.items)};
 const PUZZLES = ${JSON.stringify(c.puzzles)};
 const HINTS = ${JSON.stringify(c.hintTexts)};
@@ -256,6 +256,14 @@ function drawTitle(){
   }
   // Dark overlay for text readability
   ctx.fillStyle='rgba(0,0,0,0.50)';ctx.fillRect(0,0,W,H);
+  // Heavy vignette to mask any text baked into background image
+  var vig=ctx.createRadialGradient(W*0.5,H*0.45,W*0.25,W*0.5,H*0.5,W*0.75);
+  vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(0.7,'rgba(0,0,0,0.3)');vig.addColorStop(1,'rgba(0,0,0,0.85)');
+  ctx.fillStyle=vig;ctx.fillRect(0,0,W,H);
+  // Dark strip across top to cover any Imagen text artifacts
+  var topFade=ctx.createLinearGradient(0,0,0,H*0.12);
+  topFade.addColorStop(0,'rgba(0,0,0,0.9)');topFade.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=topFade;ctx.fillRect(0,0,W,H*0.12);
   // Animated accent lines
   var t=animFrame*0.02;
   ctx.globalAlpha=0.05;
@@ -267,8 +275,13 @@ function drawTitle(){
     var bob=Math.sin(animFrame*0.03)*6;
     var cw2=W*0.18, ch2=cw2*(loadedImages['char'].naturalHeight/loadedImages['char'].naturalWidth);
     var maxCh=H*0.55; if(ch2>maxCh){cw2=cw2*(maxCh/ch2);ch2=maxCh}
+    var cx2=W*0.06, cy2=H*0.22+bob;
+    // Draw dark backing behind character to prevent transparency checkerboard
+    ctx.save();ctx.globalAlpha=0.6;ctx.fillStyle=PALETTE.bg;
+    ctx.beginPath();ctx.ellipse(cx2+cw2/2,cy2+ch2*0.55,cw2*0.55,ch2*0.5,0,0,Math.PI*2);ctx.fill();
+    ctx.restore();
     ctx.globalAlpha=0.9;
-    ctx.drawImage(loadedImages['char'], W*0.06, H*0.22+bob, cw2, ch2);
+    ctx.drawImage(loadedImages['char'], cx2, cy2, cw2, ch2);
     ctx.globalAlpha=1;
     textOffX = 0.58; // shift text right when character is shown
   }

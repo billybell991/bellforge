@@ -107,7 +107,7 @@ export async function generateGameImages(
   // Title screen background (landscape)
   report('Generating title screen artwork...');
   const titleBg = await generateImage(
-    `${artPrompt} game main menu background illustration, ${config.setting}, ${themePrompt}, dramatic cinematic composition, landscape orientation, absolutely no text no words no letters no writing no logos no UI no signage`,
+    `${artPrompt} game environment background illustration, ${config.setting}, ${themePrompt}, dramatic cinematic composition, landscape orientation, pure scenery only, absolutely no text no words no letters no writing no logos no UI no signage no titles no menus no buttons no captions no labels no headers`,
     '16:9',
   );
   stepIdx++;
@@ -116,7 +116,7 @@ export async function generateGameImages(
   // Character portrait
   report(`Generating ${config.characterName} character art...`);
   const character = await generateImage(
-    `${artPrompt} game character portrait, ${config.characterName}, adventurer in ${config.setting}, full body, facing forward, transparent-style background solid color, game sprite art, absolutely no text no words no letters`,
+    `${artPrompt} game character portrait, ${config.characterName}, adventurer in ${config.setting}, full body, facing forward, on a solid dark background, game sprite art, no transparency, absolutely no text no words no letters no captions no labels`,
     '3:4',
   );
   stepIdx++;
