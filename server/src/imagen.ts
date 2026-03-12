@@ -107,7 +107,7 @@ export async function generateGameImages(
   // Title screen background (landscape)
   report('Generating title screen artwork...');
   const titleBg = await generateImage(
-    `${artPrompt} game main menu background illustration, ${config.setting}, ${themePrompt}, dramatic cinematic composition, landscape orientation, no text no UI no logos no words`,
+    `${artPrompt} game main menu background illustration, ${config.setting}, ${themePrompt}, dramatic cinematic composition, landscape orientation, absolutely no text no words no letters no writing no logos no UI no signage`,
     '16:9',
   );
   stepIdx++;
@@ -116,7 +116,7 @@ export async function generateGameImages(
   // Character portrait
   report(`Generating ${config.characterName} character art...`);
   const character = await generateImage(
-    `${artPrompt} game character portrait, ${config.characterName}, adventurer in ${config.setting}, full body, facing forward, transparent-style background solid color, game sprite art, no text`,
+    `${artPrompt} game character portrait, ${config.characterName}, adventurer in ${config.setting}, full body, facing forward, transparent-style background solid color, game sprite art, absolutely no text no words no letters`,
     '3:4',
   );
   stepIdx++;
@@ -128,7 +128,7 @@ export async function generateGameImages(
     const room = config.rooms[i];
     report(`Painting ${label} ${i + 1}/${config.rooms.length}: ${room.name}...`);
     const bg = await generateImage(
-      `${artPrompt} game background scene, interior view of ${room.name}, ${room.description}, ${room.atmosphere} mood, ${themePrompt}, detailed environment art, no text no UI no characters`,
+      `${artPrompt} game background scene, interior view of ${room.name}, ${room.description}, ${room.atmosphere} mood, ${themePrompt}, detailed environment art, absolutely no text no words no letters no UI no characters`,
       '16:9',
     );
     roomBgs.push(bg);
@@ -143,7 +143,7 @@ export async function generateGameImages(
     const item = itemsToGen[i];
     report(`Generating item art ${i + 1}/${itemsToGen.length}: ${item.name}...`);
     const img = await generateImage(
-      `${artPrompt} game item icon, single ${item.name} object, ${item.description}, centered on dark background, collectible game item, clean illustration, no text`,
+      `${artPrompt} game item icon, single ${item.name} object, ${item.description}, centered on dark background, collectible game item, clean illustration, absolutely no text no words no letters`,
       '1:1',
     );
     itemImages.push(img);

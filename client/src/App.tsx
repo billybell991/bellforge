@@ -46,7 +46,7 @@ export default function App() {
 
   // ── Lifted build progress state (survives page navigation) ──
   const [buildPercent, setBuildPercent] = useState(0);
-  const [buildStageName, setBuildStageName] = useState('Connecting to forge...');
+  const [buildStageName, setBuildStageName] = useState('Stoking the forge...');
   const [buildDetail, setBuildDetail] = useState('');
   const [buildError, setBuildError] = useState<string | null>(null);
   const [buildLog, setBuildLog] = useState<BuildLogEntry[]>([]);
@@ -56,10 +56,22 @@ export default function App() {
   // Track what page we came from when navigating away from build
   const preNavPageRef = useRef<AppPage | null>(null);
 
+  // Library count for badge display
+  const [libraryCount, setLibraryCount] = useState(0);
+
   const config: GameConfig | null =
     genre && theme && artStyle
       ? { genre, theme, artStyle, structure, story }
       : null;
+
+  // ── Library count fetcher ──
+  const fetchLibraryCount = useCallback(async () => {
+    try {
+      const res = await fetch('/api/library');
+      const data = await res.json();
+      setLibraryCount(data.entries?.length || 0);
+    } catch { /* server may be down */ }
+  }, []);
 
   // ── WebSocket management (lives at App level, survives page changes) ──
   const connectWs = useCallback((id: string) => {
@@ -113,6 +125,9 @@ export default function App() {
           // Set result info
           setApkInfo({ path: msg.apkPath, size: msg.apkSize });
           setPreviewUrl(msg.previewUrl);
+
+          // Refresh library count (server auto-saved this game)
+          fetchLibraryCount();
 
           // Navigate to preview after a brief pause
           setTimeout(() => {
@@ -205,7 +220,7 @@ export default function App() {
       setTheme(t);
       setArtStyle(a);
       setStructure({ roomCount: 4 + Math.floor(Math.random() * 9), difficulty: 'standard', puzzleDensity: 'moderate' });
-      setStory({ title: 'Auto-Forged Adventure', description: 'A surprise game crafted by the forge.', characterName: 'The Explorer', setting: 'A mysterious realm' });
+      setStory({ title: '', description: '', characterName: '', setting: '' });
       setPage('wizard');
     } finally {
       setAutoForging(false);
@@ -227,7 +242,7 @@ export default function App() {
       // Reset build state for fresh build
       setBuildId(newBuildId);
       setBuildPercent(0);
-      setBuildStageName('Connecting to forge...');
+      setBuildStageName('Stoking the forge...');
       setBuildDetail('');
       setBuildError(null);
       setBuildLog([]);
@@ -279,7 +294,7 @@ export default function App() {
     buildCompletedRef.current = false;
     setBuildId(null);
     setBuildPercent(0);
-    setBuildStageName('Connecting to forge...');
+    setBuildStageName('Stoking the forge...');
     setBuildDetail('');
     setBuildError(null);
     setBuildLog([]);
@@ -297,15 +312,13 @@ export default function App() {
   // When navigating back from library while build was active, reconnect WS
   const handleLibraryBack = useCallback(() => {
     if (buildActive && buildId) {
-      // Reconnect to the running build
-      connectWs(buildId);
-      setPage('building');
-      preNavPageRef.current = null;
-    } else if (preNavPageRef.current === 'building' && buildId) {
+      // Build still in progress — reconnect and return to it
       connectWs(buildId);
       setPage('building');
       preNavPageRef.current = null;
     } else {
+      // Build finished or no build — always go to landing for a fresh start
+      preNavPageRef.current = null;
       setPage('landing');
     }
   }, [buildActive, buildId, connectWs]);
@@ -325,6 +338,11 @@ export default function App() {
   useEffect(() => {
     return () => disconnectWs();
   }, [disconnectWs]);
+
+  // Fetch library count on mount
+  useEffect(() => {
+    fetchLibraryCount();
+  }, [fetchLibraryCount]);
 
   const showHeader = page !== 'landing';
 
@@ -350,7 +368,7 @@ export default function App() {
               </button>
             )}
             <button className="forge-header-library" onClick={handleGoToLibrary}>
-              📚 Library
+              📚 Library{libraryCount > 0 && <span className="library-badge">{libraryCount}</span>}
             </button>
             <div className="forge-header-version">v1.0.0</div>
           </div>
@@ -359,7 +377,7 @@ export default function App() {
 
       <div className={showHeader ? 'has-header' : ''}>
         {page === 'landing' && (
-          <Landing onStart={handleStartForging} onAutoForge={handleAutoForge} onLibrary={handleGoToLibrary} />
+          <Landing onStart={handleStartForging} onAutoForge={handleAutoForge} onLibrary={handleGoToLibrary} libraryCount={libraryCount} />
         )}
         {autoForging && (
           <div className="auto-forge-overlay">
@@ -406,7 +424,6 @@ export default function App() {
             apkPath={apkInfo.path}
             apkSize={apkInfo.size}
             orientation={genre.orientation}
-            buildId={buildId}
             onDeploy={handleGoToDeploy}
             onStartOver={handleStartOver}
           />

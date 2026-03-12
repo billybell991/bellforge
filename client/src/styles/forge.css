@@ -1942,16 +1942,37 @@ body {
 .landing-library-link {
   margin-top: 24px;
   background: transparent;
-  border: none;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius);
   color: var(--text-muted);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   cursor: pointer;
-  padding: 8px 16px;
-  transition: all 0.2s ease;
+  padding: 12px 24px;
+  transition: all 0.3s ease;
 }
 
 .landing-library-link:hover {
   color: var(--forge-amber);
+  border-color: var(--forge-amber);
+}
+
+.landing-library-link.has-games {
+  background: rgba(255, 107, 53, 0.06);
+  border-color: rgba(255, 107, 53, 0.3);
+  color: var(--forge-amber);
+  font-weight: 500;
+  animation: library-pulse 3s ease-in-out infinite;
+}
+
+.landing-library-link.has-games:hover {
+  background: rgba(255, 107, 53, 0.12);
+  border-color: var(--forge-orange);
+  box-shadow: var(--glow-orange);
+}
+
+@keyframes library-pulse {
+  0%, 100% { border-color: rgba(255, 107, 53, 0.3); }
+  50% { border-color: rgba(255, 107, 53, 0.6); }
 }
 
 /* Gemini Status Indicator */
@@ -1987,25 +2008,19 @@ body {
   color: var(--text-muted);
 }
 
-/* Preview save button */
+/* Auto-saved indicator */
 
-.preview-btn-save {
-  border-color: var(--teal) !important;
-  color: var(--teal) !important;
-  background: rgba(0, 191, 165, 0.08) !important;
-}
-
-.preview-btn-save:hover:not(:disabled) {
-  background: rgba(0, 191, 165, 0.18) !important;
-  box-shadow: 0 0 15px rgba(0, 191, 165, 0.2);
-}
-
-.preview-btn-saved {
-  border-color: var(--text-muted) !important;
-  color: var(--text-muted) !important;
-  background: transparent !important;
-  cursor: default !important;
-  opacity: 0.7;
+.preview-auto-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 20px;
+  border-radius: 20px;
+  background: rgba(0, 200, 83, 0.08);
+  border: 1px solid rgba(0, 200, 83, 0.25);
+  color: #66bb6a;
+  font-size: 0.85rem;
+  margin-bottom: 20px;
 }
 
 .fade-in {
@@ -2086,6 +2101,22 @@ body {
 .forge-header-library:hover {
   border-color: var(--forge-amber);
   color: var(--forge-amber);
+}
+
+.library-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--forge-orange);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  margin-left: 6px;
+  line-height: 1;
 }
 
 /* Building-in-progress indicator in header */

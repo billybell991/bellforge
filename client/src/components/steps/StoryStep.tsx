@@ -90,7 +90,7 @@ export function StoryStep({ value, genreHint, themeHint, onChange }: StoryStepPr
 
       <div style={{ textAlign: 'center' }}>
         <button className="surprise-btn" onClick={handleSurprise} disabled={generating}>
-          {generating ? '🤖 Gemini is thinking...' : '✨ Surprise Me — AI-Generated Story'}
+          {generating ? '🤖 Weaving your tale...' : '✨ Surprise Me — AI-Generated Story'}
         </button>
       </div>
     </div>

@@ -153,36 +153,36 @@ function getPipelineStages(config: Record<string, unknown>): PipelineStage[] {
   const t = genreTerms(genreId);
 
   return [
-    { id: 'init', name: 'Initializing Project', percent: 3, duration: 1200,
-      detail: 'Creating project scaffold with Kotlin/Canvas architecture...' },
-    { id: 'architecture', name: 'Generating Game Architecture', percent: 6, duration: 1800,
-      detail: `Setting up ${genre} framework with BaseRoom, GameView, GameState...` },
-    { id: 'brief_palette', name: 'Gemini → Designing Palette & Atmosphere', percent: 10, duration: 3000,
-      detail: 'Gemini is designing color palette, lighting, and game atmosphere...' },
-    { id: 'brief_rooms', name: `Gemini → Designing ${t.Scene} Layouts`, percent: 18, duration: 4000,
-      detail: `Gemini is designing ${roomCount} unique ${t.scenes} with ${t.furnishings}...` },
-    { id: 'brief_items', name: 'Gemini → Creating Items & Puzzles', percent: 28, duration: 3000,
-      detail: 'Gemini is crafting thematic items and puzzle connections...' },
-    { id: 'brief_hints', name: 'Gemini → Writing Hints & Details', percent: 35, duration: 2000,
-      detail: 'Gemini is writing context-aware hints and examine text...' },
-    { id: 'rooms', name: `Laying Out ${roomCount} ${t.Scenes}`, percent: 40, duration: 2500,
-      detail: `Defining normalized coordinate layouts, hotspot regions, examine spots...` },
-    { id: 'art_bg', name: `Imagen 4.0 → Painting ${t.Scenes}`, percent: 48, duration: 4000,
-      detail: `Sending ${roomCount} ${t.scene} prompts to Imagen in ${artStyle} style...` },
-    { id: 'art_items', name: 'Imagen 4.0 → Creating Item Assets', percent: 58, duration: 3500,
-      detail: 'Generating inventory item sprites, UI icons, and interactive objects...' },
-    { id: 'art_ui', name: 'Imagen 4.0 → Crafting UI Elements', percent: 64, duration: 2500,
-      detail: 'Creating bag icon, inventory panel, dialog frames, HUD elements...' },
-    { id: 'logic', name: 'Writing Game Logic (Kotlin)', percent: 72, duration: 3000,
-      detail: `Generating ${t.scene} classes, puzzle logic, state transitions, undo system...` },
-    { id: 'inventory', name: 'Wiring Inventory & Hotspot Systems', percent: 80, duration: 2000,
-      detail: 'Connecting floating bag, item slide-out, hotspot hit-testing, syncHotspots...' },
-    { id: 'gradle_setup', name: 'Assembling Android Project', percent: 85, duration: 2000,
-      detail: 'Generating build.gradle.kts, AndroidManifest.xml, Gradle wrapper...' },
-    { id: 'gradle_build', name: 'Building APK with Gradle', percent: 92, duration: 5000,
-      detail: 'Running :app:assembleDebug via standalone Gradle 8.1.1...' },
-    { id: 'signing', name: 'Signing APK', percent: 96, duration: 1500,
-      detail: 'Applying debug signature to APK package...' },
+    { id: 'init', name: 'Lighting the Forge', percent: 3, duration: 1200,
+      detail: 'Laying the foundation stones of your game world...' },
+    { id: 'architecture', name: 'Raising the Framework', percent: 6, duration: 1800,
+      detail: `Bending iron and code into a ${genre} skeleton...` },
+    { id: 'brief_palette', name: 'Mixing the Paints', percent: 10, duration: 3000,
+      detail: 'Choosing pigments by the light of the forge fire...' },
+    { id: 'brief_rooms', name: `Drafting ${roomCount} ${t.Scenes}`, percent: 18, duration: 4000,
+      detail: `Mapping uncharted territories — placing ${t.furnishings} in every corner...` },
+    { id: 'brief_items', name: 'Forging Keys & Mysteries', percent: 28, duration: 3000,
+      detail: 'Hammering out collectibles, locked doors, and brain-teasers...' },
+    { id: 'brief_hints', name: 'Inscribing Guiding Whispers', percent: 35, duration: 2000,
+      detail: 'Writing cryptic nudges for when adventurers lose their way...' },
+    { id: 'rooms', name: `Charting ${roomCount} ${t.Scenes}`, percent: 40, duration: 2500,
+      detail: `Placing hotspots, pathways, and hidden secrets across the map...` },
+    { id: 'art_bg', name: `Painting ${t.Scenes} on Canvas`, percent: 48, duration: 4000,
+      detail: `Imagen is bringing ${roomCount} ${t.scenes} to life in ${artStyle} style...` },
+    { id: 'art_items', name: 'Sculpting Item Sprites', percent: 58, duration: 3500,
+      detail: 'Breathing detail into every collectible, tool, and artifact...' },
+    { id: 'art_ui', name: 'Gilding the Interface', percent: 64, duration: 2500,
+      detail: 'Etching the HUD, panels, and frames that guide the player...' },
+    { id: 'logic', name: 'Enchanting with Logic', percent: 72, duration: 3000,
+      detail: `Weaving puzzle gates, state machines, and cause-and-effect into every ${t.scene}...` },
+    { id: 'inventory', name: 'Stitching the Adventurer\'s Pack', percent: 80, duration: 2000,
+      detail: 'Binding the bag, wiring item slots, and attaching hotspot triggers...' },
+    { id: 'gradle_setup', name: 'Assembling the Artifact', percent: 85, duration: 2000,
+      detail: 'Wrapping the game code into an installable Android package...' },
+    { id: 'gradle_build', name: 'Tempering the Build', percent: 92, duration: 5000,
+      detail: 'Compiling, linking, and hardening — the final heat treat...' },
+    { id: 'signing', name: 'Stamping the Forge Mark', percent: 96, duration: 1500,
+      detail: 'Signing the APK with the forge\'s seal of quality...' },
     { id: 'complete', name: 'Build Complete!', percent: 100, duration: 500,
       detail: 'Your game is ready to deploy!' },
   ];
@@ -471,7 +471,7 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
     } else if (stage.id === 'brief_palette') {
       // Chunk 1: Palette + vibe + opening/ending text
       const nextPercent = stages.find(s => s.id === 'brief_rooms')?.percent ?? stage.percent + 8;
-      sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🎨 Choosing color palette & atmosphere', percent: stage.percent + 1, detail: 'Gemini is picking the perfect colors for your game world...', timestamp: Date.now() });
+      sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🎨 Choosing color palette & atmosphere', percent: stage.percent + 1, detail: 'Mixing pigments and setting the mood by firelight...', timestamp: Date.now() });
       const chunk1 = await generateBriefPalette(gameConfig, (msg) => {
         sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🎨 Designing visual identity', percent: stage.percent + 3, detail: msg, timestamp: Date.now() });
       });
@@ -485,9 +485,9 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
       // Chunk 2: Scene layouts with furniture
       const nextPercent = stages.find(s => s.id === 'brief_items')?.percent ?? stage.percent + 10;
       const sceneCount = gameConfig.structure.roomCount;
-      sendProgress(buildId, { type: 'progress', stage: stage.id, name: `🏗️ Designing ${sceneCount} unique scenes`, percent: stage.percent + 1, detail: 'Gemini is drafting layouts, furniture placement, and lighting...', timestamp: Date.now() });
+      sendProgress(buildId, { type: 'progress', stage: stage.id, name: `🏗️ Designing ${sceneCount} unique scenes`, percent: stage.percent + 1, detail: 'Sketching floor plans, placing furnishings, adjusting the light...', timestamp: Date.now() });
       briefRooms = await generateBriefRooms(gameConfig, briefPalette!, (msg) => {
-        sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🏗️ Gemini is thinking...', percent: stage.percent + 3, detail: msg, timestamp: Date.now() });
+        sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🏗️ Sketching blueprints by firelight...', percent: stage.percent + 3, detail: msg, timestamp: Date.now() });
       });
       // Report each scene individually with smooth progress
       const perSceneRange = nextPercent - (stage.percent + 4);
@@ -503,7 +503,7 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
     } else if (stage.id === 'brief_items') {
       // Chunk 3: Items + puzzle connections
       const nextPercent = stages.find(s => s.id === 'brief_hints')?.percent ?? stage.percent + 7;
-      sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🧩 Crafting items & puzzle gates', percent: stage.percent + 1, detail: 'Gemini is creating collectibles, locked doors, and puzzle requirements...', timestamp: Date.now() });
+      sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🧩 Crafting items & puzzle gates', percent: stage.percent + 1, detail: 'Forging keys, locks, and mysteries for explorers to uncover...', timestamp: Date.now() });
       const chunk3 = await generateBriefItems(gameConfig, briefRooms!, (msg) => {
         sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🧩 Wiring puzzle logic', percent: stage.percent + 3, detail: msg, timestamp: Date.now() });
       });
@@ -514,7 +514,7 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
     } else if (stage.id === 'brief_hints') {
       // Chunk 4: Context-aware hints
       const nextPercent = stages.find(s => s.id === 'rooms')?.percent ?? stage.percent + 5;
-      sendProgress(buildId, { type: 'progress', stage: stage.id, name: '💬 Writing companion hints', percent: stage.percent + 1, detail: 'Gemini is writing gentle nudges for when players get stuck...', timestamp: Date.now() });
+      sendProgress(buildId, { type: 'progress', stage: stage.id, name: '💬 Inscribing guiding whispers', percent: stage.percent + 1, detail: 'Carving cryptic hints into the walls for lost adventurers...', timestamp: Date.now() });
       briefHints = await generateBriefHints(gameConfig, briefRooms!, briefItems!, (msg) => {
         sendProgress(buildId, { type: 'progress', stage: stage.id, name: '💬 Polishing hint text', percent: stage.percent + 2, detail: msg, timestamp: Date.now() });
       });
@@ -687,11 +687,28 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
   record.apkPath = apkPath;
   record.previewHtml = previewHtml;
 
+  // Auto-save to library so the user never loses a game
+  const apkSizeStr = `${(8 + Math.random() * 12).toFixed(1)} MB`;
+  if (!library.some((e) => e.buildId === buildId)) {
+    const entry: LibraryEntry = {
+      id: uuidv4(),
+      name: (config.story as Record<string, string>)?.title || 'Untitled Game',
+      rating: 0,
+      config: config,
+      buildId,
+      apkSize: apkSizeStr,
+      createdAt: new Date().toISOString(),
+    };
+    library.push(entry);
+    saveLibrary(library);
+    console.log(`  📚 Auto-saved "${entry.name}" to library`);
+  }
+
   sendProgress(buildId, {
     type: 'complete',
     percent: 100,
     apkPath,
-    apkSize: `${(8 + Math.random() * 12).toFixed(1)} MB`,
+    apkSize: apkSizeStr,
     previewUrl: `/api/preview/${buildId}`,
   });
 }

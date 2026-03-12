@@ -228,19 +228,24 @@ export async function generateStory(genreHint?: string, themeHint?: string): Pro
 
       const prompt = `You are a wildly creative game designer who NEVER repeats yourself. Seed: ${timestamp}
 
-CREATIVE DIRECTION — use these as INSPIRATION (not literally):
+═══ THE #1 RULE: THE THEME IS ${(themeHint || 'mystery').toUpperCase()} ═══
+Every element of this story MUST be rooted in the "${themeHint || 'mystery'}" theme — the setting, characters, mood, vocabulary, and plot.
+DO NOT drift into generic sci-fi, space, or fantasy UNLESS "${themeHint}" explicitly IS one of those.
+If the theme is Horror — make it HORRIFYING. If Cozy — make it WARM. If Steampunk — BRASS AND STEAM. If Cyberpunk — NEON AND RAIN.
+
+CREATIVE DIRECTION — use these as INSPIRATION (warp them to fit the ${themeHint || 'mystery'} theme, don't use them literally):
 - Setting spark: "${settingSeed}"
 - Character spark: "${charSeed}"  
 - Plot twist spark: "${twistSeed}"
 
-Generate a completely original, surprising story for a ${genreHint || 'point-and-click adventure'} game with a ${themeHint || 'mystery'} theme.
+Generate a completely original, surprising story for a ${genreHint || 'point-and-click adventure'} game.
 
 MANDATORY RULES:
-- The title must be UNIQUE and unexpected — no generic fantasy/sci-fi clichés
+- The title must be UNIQUE, unexpected, and THEMED to ${themeHint || 'mystery'}
 - The character name must be memorable and unusual — NEVER use: ${avoidNames.join(', ')}, Anya, Kael, Elara, Luna, or any other overused fantasy names
-- The setting must feel specific and lived-in, not generic
+- The setting must feel specific, lived-in, and DRENCHED in ${themeHint || 'mystery'} atmosphere
 - The description must hint at a surprising twist or unusual mechanic
-- BE WEIRD. BE BOLD. Surprise me. No safe choices.
+- BE WEIRD. BE BOLD. Surprise me. No safe choices. But STAY IN THEME.
 
 Return EXACTLY this JSON (no markdown, no code fences, just raw JSON):
 {"title":"2-5 word evocative title","characterName":"single memorable protagonist name","setting":"one vivid sentence describing the location","description":"2-3 sentences about what the player does, the mystery, and the stakes"}`;
@@ -432,7 +437,9 @@ function cleanJson(text: string): string {
 function briefContext(config: GameConfig): string {
   const roomCount = config.structure.roomCount;
   const creativitySeed = `Creativity seed: ${Date.now()}. Wild setting inspiration: "${randomPick(WILD_SETTINGS)}". Plot twist spark: "${randomPick(WILD_TWISTS)}".`;
-  return `Genre: ${config.genre.name}, Theme: ${config.theme.name}, Art Style: ${config.artStyle.name}, Story: "${config.story.title}" — ${config.story.description}, Setting: ${config.story.setting}, Protagonist: ${config.story.characterName}, Rooms: ${roomCount}, Difficulty: ${config.structure.difficulty}. ${creativitySeed}`;
+  return `Genre: ${config.genre.name}.
+═══ THEME (PRIMARY CREATIVE CONSTRAINT): ${config.theme.name} — EVERY room, item, color, and description MUST reflect this theme. Do NOT drift into space/sci-fi/generic fantasy unless the theme IS one of those. ═══
+Art Style: ${config.artStyle.name}. Story: "${config.story.title}" — ${config.story.description}. Setting: ${config.story.setting}. Protagonist: ${config.story.characterName}. Rooms: ${roomCount}. Difficulty: ${config.structure.difficulty}. ${creativitySeed}`;
 }
 
 /** CHUNK 1: Palette + Vibe + Opening/Ending */
@@ -452,7 +459,7 @@ export async function generateBriefPalette(
     const p1 = await model.generateContent(`You are a creative director designing a game. ${ctx}
 
 Return ONLY this JSON (no fences, no explanation):
-{"gameVibe":"One evocative sentence — the FEELING of playing this game","palette":{"bg":"#hex dark bg","wall":"#hex mid wall","accent":"#hex vibrant accent","floor":"#hex floor","text":"#hex light text","highlight":"#hex glow/highlight","shadow":"#hex deep shadow"},"openingText":"2-3 sentences. The player just arrived. Set the scene in second person. Make it gripping.","endingText":"2-3 sentences. The player solved it. Wrap up the story satisfyingly in second person."}`);
+{"gameVibe":"A punchy 3-8 word tagline — the FEELING of this game (short enough to read at a glance)","palette":{"bg":"#hex dark bg","wall":"#hex mid wall","accent":"#hex vibrant accent","floor":"#hex floor","text":"#hex light text","highlight":"#hex glow/highlight","shadow":"#hex deep shadow"},"openingText":"2-3 sentences. The player just arrived. Set the scene in second person. Make it gripping. Proofread carefully.","endingText":"2-3 sentences. The player solved it. Wrap up the story satisfyingly in second person. Proofread carefully."}`);
     const d1 = JSON.parse(cleanJson(p1.response.text()));
     onStatus?.(`Palette locked: accent ${d1.palette.accent} · "${d1.gameVibe}"`);
     return { palette: d1.palette, gameVibe: d1.gameVibe, openingText: d1.openingText, endingText: d1.endingText };
@@ -632,7 +639,7 @@ export async function generateCreativeBrief(
     const p1 = await model.generateContent(`You are a creative director designing a game. ${ctx}
 
 Return ONLY this JSON (no fences, no explanation):
-{"gameVibe":"One evocative sentence — the FEELING of playing this game","palette":{"bg":"#hex dark bg","wall":"#hex mid wall","accent":"#hex vibrant accent","floor":"#hex floor","text":"#hex light text","highlight":"#hex glow/highlight","shadow":"#hex deep shadow"},"openingText":"2-3 sentences. The player just arrived. Set the scene in second person. Make it gripping.","endingText":"2-3 sentences. The player solved it. Wrap up the story satisfyingly in second person."}`);
+{"gameVibe":"A punchy 3-8 word tagline — the FEELING of this game (short enough to read at a glance)","palette":{"bg":"#hex dark bg","wall":"#hex mid wall","accent":"#hex vibrant accent","floor":"#hex floor","text":"#hex light text","highlight":"#hex glow/highlight","shadow":"#hex deep shadow"},"openingText":"2-3 sentences. The player just arrived. Set the scene in second person. Make it gripping. Proofread carefully.","endingText":"2-3 sentences. The player solved it. Wrap up the story satisfyingly in second person. Proofread carefully."}`);
     const d1 = JSON.parse(cleanJson(p1.response.text()));
     palette = d1.palette;
     gameVibe = d1.gameVibe;

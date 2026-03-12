@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import type { Orientation } from '../types';
 
 interface GamePreviewProps {
@@ -6,33 +6,13 @@ interface GamePreviewProps {
   apkPath: string;
   apkSize: string;
   orientation: Orientation;
-  buildId: string | null;
   onDeploy: () => void;
   onStartOver: () => void;
 }
 
-export function GamePreview({ previewUrl, apkPath, apkSize, orientation, buildId, onDeploy, onStartOver }: GamePreviewProps) {
+export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeploy, onStartOver }: GamePreviewProps) {
   const [fullscreen, setFullscreen] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [saving, setSaving] = useState(false);
   const isLandscape = true; // games always render in 16:9 landscape
-
-  const handleSave = useCallback(async () => {
-    if (!buildId || saved) return;
-    setSaving(true);
-    try {
-      await fetch('/api/library', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ buildId }),
-      });
-      setSaved(true);
-    } catch {
-      alert('Failed to save to library');
-    } finally {
-      setSaving(false);
-    }
-  }, [buildId, saved]);
 
   return (
     <div className="preview-screen">
@@ -40,6 +20,11 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, buildId
       <p className="preview-subtitle">
         Play-test it right here, then push to your phone when you're happy.
       </p>
+
+      {/* Auto-saved indicator */}
+      <div className="preview-auto-saved">
+        ✅ Automatically saved to your library
+      </div>
 
       {/* Phone frame with iframe */}
       <div className={`phone-frame ${isLandscape ? 'phone-landscape' : ''} ${fullscreen ? 'phone-fullscreen' : ''}`}>
@@ -60,13 +45,6 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, buildId
           onClick={() => setFullscreen((f) => !f)}
         >
           {fullscreen ? '📱 Phone Size' : '🖥️ Fullscreen'}
-        </button>
-        <button
-          className={`preview-btn preview-btn-save ${saved ? 'preview-btn-saved' : ''}`}
-          onClick={handleSave}
-          disabled={saving || saved}
-        >
-          {saved ? '✅ Saved to Library' : saving ? '💾 Saving...' : '💾 Save to Library'}
         </button>
         <button className="preview-btn preview-btn-primary preview-btn-disabled" disabled title="Real APK pipeline coming soon">
           📲 Push to Phone — Coming Soon

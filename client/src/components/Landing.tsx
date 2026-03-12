@@ -4,6 +4,7 @@ interface LandingProps {
   onStart: () => void;
   onAutoForge: () => void;
   onLibrary: () => void;
+  libraryCount: number;
 }
 
 const FEATURES = [
@@ -13,7 +14,7 @@ const FEATURES = [
   { icon: '📱', title: 'Instant Deploy', desc: 'Push your game straight to your Android phone over USB.' },
 ];
 
-export function Landing({ onStart, onAutoForge, onLibrary }: LandingProps) {
+export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: LandingProps) {
   const [taglineVisible, setTaglineVisible] = useState(false);
   const [geminiStatus, setGeminiStatus] = useState<{ available: boolean; hint: string } | null>(null);
 
@@ -66,8 +67,8 @@ export function Landing({ onStart, onAutoForge, onLibrary }: LandingProps) {
         </div>
       </div>
 
-      <button className="landing-library-link" onClick={onLibrary}>
-        📚 View Your Library
+      <button className={`landing-library-link ${libraryCount > 0 ? 'has-games' : ''}`} onClick={onLibrary}>
+        📚 {libraryCount > 0 ? `Your Library — ${libraryCount} Game${libraryCount !== 1 ? 's' : ''} Forged` : 'View Your Library'}
       </button>
     </div>
   );

@@ -44,10 +44,24 @@ export function generatePreviewHtml(config: PreviewConfig): string {
   const seed = config.seed;
   const rooms = c.rooms;
   const title = config.story.title || 'Untitled Game';
-  const charName = config.story.characterName || 'The Explorer';
+  const charName = config.story.characterName || 'Protagonist';
   const gameVibe = c.gameVibe;
   const images = config.images;
   const sceneLabel = config.sceneLabel || 'rooms';
+
+  // Themed start button text based on theme + seed
+  const THEMED_BUTTONS: Record<string, string[]> = {
+    horror: ['Enter If You Dare', 'Face Your Fear', 'Step Into Darkness', 'Descend'],
+    fantasy: ['Begin Your Quest', 'Enter the Realm', 'Draw Your Sword', 'Adventure Awaits'],
+    scifi: ['Initiate Sequence', 'Launch Mission', 'Engage', 'Step Aboard'],
+    mystery: ['Open the Case', 'Begin Investigation', 'Follow the Trail', 'Examine'],
+    cozy: ['Come On In', 'Begin Your Day', 'Step Inside', 'Settle In'],
+    cyberpunk: ['Jack In', 'Go Online', 'Enter the Grid', 'Connect'],
+    steampunk: ['Pull the Lever', 'Engage the Engine', 'Wind the Key', 'Full Steam Ahead'],
+    postapoc: ['Brave the Wasteland', 'Venture Out', 'Begin Survival', 'Emerge'],
+  };
+  const themeButtons = THEMED_BUTTONS[config.theme.id] || ['Begin', 'Enter', 'Start', 'Play'];
+  const startButtonText = themeButtons[seed % themeButtons.length];
 
   // Serialize room data for the client
   const roomsData = rooms.map((r: CreativeRoom) => ({
@@ -101,6 +115,7 @@ const TITLE = ${JSON.stringify(title)};
 const CHAR_NAME = ${JSON.stringify(charName)};
 const GAME_VIBE = ${JSON.stringify(gameVibe)};
 const SCENE_LABEL = ${JSON.stringify(sceneLabel)};
+const START_TEXT = ${JSON.stringify(startButtonText)};
 const ITEMS = ${JSON.stringify(c.items)};
 const PUZZLES = ${JSON.stringify(c.puzzles)};
 const HINTS = ${JSON.stringify(c.hintTexts)};
@@ -261,15 +276,15 @@ function drawTitle(){
   ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=25;
   drawTB(TITLE,textOffX,0.22,38,PALETTE.accent);ctx.restore();
   drawTB(TITLE,textOffX,0.22,38,'#fff');
-  // Vibe tagline — short, evocative
-  drawT('"'+GAME_VIBE+'"',textOffX,0.36,14,PALETTE.accent+'cc');
+  // Vibe tagline — punchy, large, themed
+  drawTB('"'+GAME_VIBE+'"',textOffX,0.36,20,PALETTE.accent);
   // Subtitle line
-  drawT(ROOM_COUNT+' '+SCENE_LABEL+' · A '+CHAR_NAME+' Adventure',textOffX,0.44,13,PALETTE.text+'99');
+  drawT(ROOM_COUNT+' '+SCENE_LABEL+' · A '+CHAR_NAME+' Adventure',textOffX,0.46,13,PALETTE.text+'99');
   // Start pulse — centered bottom
   var pulse=0.5+Math.sin(animFrame*0.06)*0.15;
   ctx.globalAlpha=pulse;rRect(0.32,0.72,0.36,0.10,24,PALETTE.accent+'40',null);
   ctx.globalAlpha=1;rRect(0.33,0.73,0.34,0.08,20,PALETTE.accent,null);
-  drawTB('TAP TO BEGIN',0.5,0.77,18,PALETTE.bg);
+  drawTB(START_TEXT,0.5,0.77,18,PALETTE.bg);
   drawT('Built with BellForge',0.5,0.94,9,PALETTE.text+'44');
 }
 
