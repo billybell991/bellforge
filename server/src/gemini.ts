@@ -433,13 +433,42 @@ function cleanJson(text: string): string {
  * Each step is a focused Gemini call that builds on the previous results.
  */
 
+// Art style palette guidance — tells Gemini HOW the art style affects colors
+function artStylePaletteGuide(artId: string): string {
+  const guides: Record<string, string> = {
+    cel_shaded: 'Bold, saturated, high-contrast colors with strong accent pops. Think Borderlands — vivid but not pastel.',
+    pixel_art: 'Limited retro palette (12-16 colors). Rich, chunky colors typical of SNES/GBA era. Slightly desaturated, warm.',
+    watercolor: 'Soft, muted, translucent washes of color. Pastel-leaning. Colors should feel blended and gentle.',
+    noir: 'Primarily grayscale with ONE selective accent color (red, amber, or cyan). Very high contrast. Deep blacks, bright whites.',
+    neon: 'Dark/black backgrounds with electric neon accent colors (cyan, magenta, hot pink, electric blue). Glowing, vivid.',
+    hand_drawn: 'Earthy, natural tones like pencil and ink. Warm off-whites, sepia, charcoal grays. Muted organic palette.',
+    low_poly: 'Clean, modern, flat-design colors. Limited palette, medium saturation. Think Google Material Design.',
+  };
+  return guides[artId] || guides.cel_shaded;
+}
+
+// Genre-specific scene design instructions
+function genreSceneGuide(genreId: string): string {
+  const guides: Record<string, string> = {
+    point_click: 'Design rooms as explorable environments with interactive objects. Each room should feel like a place to investigate.',
+    escape_room: 'Rooms are confined puzzle spaces. Pack each with mechanisms, locks, and hidden compartments. Claustrophobic feeling.',
+    platformer: 'Design levels as side-scrolling environments. Furniture becomes platforms, obstacles, and landmarks at various heights. Emphasize verticality.',
+    visual_novel: 'Design scenes as story backdrops. Focus on atmosphere and character interaction spaces. Fewer objects, more mood.',
+    interactive_fiction: 'Design locations as evocative text-adventure spaces. Rich atmospheric descriptions matter more than furniture count.',
+    puzzle: 'Design stages as puzzle environments. Objects should suggest logic, patterns, and mechanisms. Clean, focused layouts.',
+    hidden_object: 'Design scenes PACKED with objects and details. Cluttered, rich, detailed environments where things can hide.',
+  };
+  return guides[genreId] || guides.point_click;
+}
+
 // Shared context builder for brief chunks
 function briefContext(config: GameConfig): string {
   const roomCount = config.structure.roomCount;
   const creativitySeed = `Creativity seed: ${Date.now()}. Wild setting inspiration: "${randomPick(WILD_SETTINGS)}". Plot twist spark: "${randomPick(WILD_TWISTS)}".`;
   return `Genre: ${config.genre.name}.
 ═══ THEME (PRIMARY CREATIVE CONSTRAINT): ${config.theme.name} — EVERY room, item, color, and description MUST reflect this theme. Do NOT drift into space/sci-fi/generic fantasy unless the theme IS one of those. ═══
-Art Style: ${config.artStyle.name}. Story: "${config.story.title}" — ${config.story.description}. Setting: ${config.story.setting}. Protagonist: ${config.story.characterName}. Rooms: ${roomCount}. Difficulty: ${config.structure.difficulty}. ${creativitySeed}`;
+═══ ART STYLE (VISUAL CONSTRAINT): ${config.artStyle.name} — ALL visual descriptions, color choices, and atmosphere MUST match this art style. ${artStylePaletteGuide(config.artStyle.id)} ═══
+Story: "${config.story.title}" — ${config.story.description}. Setting: ${config.story.setting}. Protagonist: ${config.story.characterName}. Scenes: ${roomCount}. Difficulty: ${config.structure.difficulty}. Puzzle density: ${config.structure.puzzleDensity}. ${creativitySeed}`;
 }
 
 /** CHUNK 1: Palette + Vibe + Opening/Ending */
@@ -487,20 +516,26 @@ export async function generateBriefRooms(
   const ctx = briefContext(config);
   onStatus?.(`Designing ${roomCount} unique scenes with furniture layouts...`);
   try {
+    const genreGuide = genreSceneGuide(config.genre.id);
+    const difficultyGuide = config.structure.difficulty === 'challenging' ? 'Complex layouts, more objects, denser environments.' : config.structure.difficulty === 'casual' ? 'Simple, open layouts. Fewer objects, clear paths.' : 'Moderate complexity. Balanced layouts.';
+    const furnitureCount = config.genre.id === 'hidden_object' ? '6-10' : config.structure.difficulty === 'challenging' ? '5-8' : '3-6';
     const p2 = await model.generateContent(`You are a game level designer. ${ctx}
 Accent color: ${palette.accent}. Wall color: ${palette.wall}. Floor color: ${palette.floor}.
 
-Design ${roomCount} unique rooms. Each room must feel DIFFERENT — different furniture, different layouts, different mood.
+GENRE-SPECIFIC DESIGN: ${genreGuide}
+DIFFICULTY: ${difficultyGuide}
+
+Design ${roomCount} unique scenes. Each must feel DIFFERENT — different furniture, different layouts, different mood.
 
 Return ONLY JSON array (no fences):
-[{"name":"Room Name","description":"What this room looks like (1 vivid sentence)","examineText":"Atmospheric first-person text when examining the room","atmosphere":"2-3 word mood tag","wallColor":"#hex unique to this room","floorColor":"#hex","ceilingColor":"#hex","hasWindow":true,"windowType":"round|tall|wide|none","lightingDir":"left|right|center|dim","furniture":[{"type":"rect|circle|arch|triangle","x":0.1,"y":0.2,"w":0.15,"h":0.25,"color":"#hex","label":"what this is (bookshelf, desk, etc)"}]}]
+[{"name":"Scene Name","description":"What this scene looks like (1 vivid sentence matching the ${config.artStyle.name} art style)","examineText":"Atmospheric first-person text when examining","atmosphere":"2-3 word mood tag","wallColor":"#hex unique to this scene","floorColor":"#hex","ceilingColor":"#hex","hasWindow":true,"windowType":"round|tall|wide|none","lightingDir":"left|right|center|dim","furniture":[{"type":"rect|circle|arch|triangle","x":0.1,"y":0.2,"w":0.15,"h":0.25,"color":"#hex","label":"what this is (bookshelf, desk, etc)"}]}]
 
 RULES:
 - Furniture x/y/w/h are normalized 0-1. x+w must be < 0.95, y+h must be < 0.85.
-- Each room needs 3-7 furniture pieces — tables, shelves, paintings, machines, pillars, etc.
-- Vary furniture positions room to room — NOT all the same layout.
-- Wall/floor colors should vary subtly between rooms but stay in theme.
-- Exactly ${roomCount} rooms.`);
+- Each scene needs ${furnitureCount} furniture pieces — vary by scene.
+- Vary furniture positions scene to scene — NOT all the same layout.
+- Wall/floor colors should vary subtly but stay in ${config.theme.name} theme and ${config.artStyle.name} palette.
+- Exactly ${roomCount} scenes.`);
     const d2 = JSON.parse(cleanJson(p2.response.text()));
     if (Array.isArray(d2) && d2.length === roomCount) {
       const rooms = d2.map((r: Record<string, unknown>) => ({
@@ -546,18 +581,19 @@ export async function generateBriefItems(
   onStatus?.('Crafting thematic items and puzzle connections...');
   try {
     const roomNames = rooms.map(r => r.name);
-    const p3 = await model.generateContent(`You are a puzzle designer for a ${config.genre.name} game. 
-Rooms (in order): ${roomNames.map((n, i) => `${i}: ${n}`).join(', ')}
-Story: "${config.story.title}" — ${config.story.description}
+    const p3 = await model.generateContent(`You are a puzzle designer for a ${config.genre.name} game with ${config.artStyle.name} art style and ${config.theme.name} theme.
+Scenes (in order): ${roomNames.map((n, i) => `${i}: ${n}`).join(', ')}
+Story: "${config.story.title}" — ${config.story.description}. Setting: ${config.story.setting}. Protagonist: ${config.story.characterName}.
 Difficulty: ${config.structure.difficulty}, Puzzle Density: ${config.structure.puzzleDensity}
 
 Return ONLY this JSON (no fences):
 {"items":[{"name":"Thematic Item Name","emoji":"single emoji","description":"Flavor text when picked up (1 sentence, atmospheric)","roomIndex":0}],"puzzles":[{"doorInRoom":2,"leadsToRoom":3,"requiredItem":"Item Name","lockedMessage":"Why this door won't open (atmospheric)","unlockedMessage":"What happens when you use the item (atmospheric)"}]}
 
 RULES:
-- Exactly ${roomCount} items, one per room, roomIndex 0 to ${roomCount - 1}.
-- Items must be thematically unique — no generic "Key" or "Gem" unless the theme demands it.
-- ${config.structure.puzzleDensity === 'heavy' ? '2-3' : config.structure.puzzleDensity === 'moderate' ? '1-2' : '0-1'} puzzle connections where a door between rooms requires a specific item to pass.
+- Exactly ${roomCount} items, one per scene, roomIndex 0 to ${roomCount - 1}.
+- Items MUST fit the ${config.theme.name} theme — no generic "Key" or "Gem" unless the theme demands it.
+- Item descriptions should evoke the ${config.artStyle.name} visual style.
+- ${config.structure.puzzleDensity === 'heavy' ? '2-3' : config.structure.puzzleDensity === 'moderate' ? '1-2' : '0-1'} puzzle connections where a door between scenes requires a specific item to pass.
 - Each puzzle's requiredItem must exactly match an item name from the items array.
 - Locked doors should have atmospheric messages, not generic text.`);
     const d3 = JSON.parse(cleanJson(p3.response.text()));
@@ -627,7 +663,10 @@ export async function generateCreativeBrief(
 
   const roomCount = config.structure.roomCount;
   const creativitySeed = `Creativity seed: ${Date.now()}. Wild setting inspiration: "${randomPick(WILD_SETTINGS)}". Plot twist spark: "${randomPick(WILD_TWISTS)}".`;
-  const ctx = `Genre: ${config.genre.name}, Theme: ${config.theme.name}, Art Style: ${config.artStyle.name}, Story: "${config.story.title}" — ${config.story.description}, Setting: ${config.story.setting}, Protagonist: ${config.story.characterName}, Rooms: ${roomCount}, Difficulty: ${config.structure.difficulty}. ${creativitySeed}`;
+  const ctx = `Genre: ${config.genre.name}.
+═══ THEME: ${config.theme.name} — ALL content MUST reflect this theme. ═══
+═══ ART STYLE: ${config.artStyle.name} — ${artStylePaletteGuide(config.artStyle.id)} ═══
+Story: "${config.story.title}" — ${config.story.description}. Setting: ${config.story.setting}. Protagonist: ${config.story.characterName}. Scenes: ${roomCount}. Difficulty: ${config.structure.difficulty}. Puzzle density: ${config.structure.puzzleDensity}. ${creativitySeed}`;
 
   // ─── CHUNK 1: Palette + Vibe + Opening/Ending ───
   onStatus?.('Gemini → Step 1/4: Designing color palette and creative vision...');
@@ -637,6 +676,9 @@ export async function generateCreativeBrief(
   let endingText: string;
   try {
     const p1 = await model.generateContent(`You are a creative director designing a game. ${ctx}
+
+CRITICAL — The palette MUST match the art style:
+${artStylePaletteGuide(config.artStyle.id)}
 
 Return ONLY this JSON (no fences, no explanation):
 {"gameVibe":"A punchy 3-8 word tagline — the FEELING of this game (short enough to read at a glance)","palette":{"bg":"#hex dark bg","wall":"#hex mid wall","accent":"#hex vibrant accent","floor":"#hex floor","text":"#hex light text","highlight":"#hex glow/highlight","shadow":"#hex deep shadow"},"openingText":"2-3 sentences. The player just arrived. Set the scene in second person. Make it gripping. Proofread carefully.","endingText":"2-3 sentences. The player solved it. Wrap up the story satisfyingly in second person. Proofread carefully."}`);
@@ -657,20 +699,26 @@ Return ONLY this JSON (no fences, no explanation):
   onStatus?.('Gemini → Step 2/4: Designing unique room layouts and furniture...');
   let rooms: CreativeRoom[];
   try {
+    const genreGuide = genreSceneGuide(config.genre.id);
+    const difficultyGuide = config.structure.difficulty === 'challenging' ? 'Complex layouts, more objects, denser environments.' : config.structure.difficulty === 'casual' ? 'Simple, open layouts. Fewer objects, clear paths.' : 'Moderate complexity. Balanced layouts.';
+    const furnitureCount = config.genre.id === 'hidden_object' ? '6-10' : config.structure.difficulty === 'challenging' ? '5-8' : '3-6';
     const p2 = await model.generateContent(`You are a game level designer. ${ctx}
 Accent color: ${palette!.accent}. Wall color: ${palette!.wall}. Floor color: ${palette!.floor}.
 
-Design ${roomCount} unique rooms. Each room must feel DIFFERENT — different furniture, different layouts, different mood.
+GENRE-SPECIFIC DESIGN: ${genreGuide}
+DIFFICULTY: ${difficultyGuide}
+
+Design ${roomCount} unique scenes. Each must feel DIFFERENT — different furniture, different layouts, different mood.
 
 Return ONLY JSON array (no fences):
-[{"name":"Room Name","description":"What this room looks like (1 vivid sentence)","examineText":"Atmospheric first-person text when examining the room","atmosphere":"2-3 word mood tag","wallColor":"#hex unique to this room","floorColor":"#hex","ceilingColor":"#hex","hasWindow":true,"windowType":"round|tall|wide|none","lightingDir":"left|right|center|dim","furniture":[{"type":"rect|circle|arch|triangle","x":0.1,"y":0.2,"w":0.15,"h":0.25,"color":"#hex","label":"what this is (bookshelf, desk, etc)"}]}]
+[{"name":"Scene Name","description":"What this scene looks like (1 vivid sentence matching the ${config.artStyle.name} art style)","examineText":"Atmospheric first-person text when examining","atmosphere":"2-3 word mood tag","wallColor":"#hex unique to this scene","floorColor":"#hex","ceilingColor":"#hex","hasWindow":true,"windowType":"round|tall|wide|none","lightingDir":"left|right|center|dim","furniture":[{"type":"rect|circle|arch|triangle","x":0.1,"y":0.2,"w":0.15,"h":0.25,"color":"#hex","label":"what this is (bookshelf, desk, etc)"}]}]
 
 RULES:
 - Furniture x/y/w/h are normalized 0-1. x+w must be < 0.95, y+h must be < 0.85.
-- Each room needs 3-7 furniture pieces — tables, shelves, paintings, machines, pillars, etc.
-- Vary furniture positions room to room — NOT all the same layout.
-- Wall/floor colors should vary subtly between rooms but stay in theme.
-- Exactly ${roomCount} rooms.`);
+- Each scene needs ${furnitureCount} furniture pieces — vary by scene.
+- Vary furniture positions scene to scene — NOT all the same layout.
+- Wall/floor colors should vary subtly but stay in ${config.theme.name} theme and ${config.artStyle.name} palette.
+- Exactly ${roomCount} scenes.`);
     const d2 = JSON.parse(cleanJson(p2.response.text()));
     if (Array.isArray(d2) && d2.length === roomCount) {
       rooms = d2.map((r: Record<string, unknown>) => ({
@@ -703,18 +751,19 @@ RULES:
   let puzzles: PuzzleConnection[];
   try {
     const roomNames = rooms!.map(r => r.name);
-    const p3 = await model.generateContent(`You are a puzzle designer for a ${config.genre.name} game. 
-Rooms (in order): ${roomNames.map((n, i) => `${i}: ${n}`).join(', ')}
-Story: "${config.story.title}" — ${config.story.description}
+    const p3 = await model.generateContent(`You are a puzzle designer for a ${config.genre.name} game with ${config.artStyle.name} art style and ${config.theme.name} theme.
+Scenes (in order): ${roomNames.map((n, i) => `${i}: ${n}`).join(', ')}
+Story: "${config.story.title}" — ${config.story.description}. Setting: ${config.story.setting}. Protagonist: ${config.story.characterName}.
 Difficulty: ${config.structure.difficulty}, Puzzle Density: ${config.structure.puzzleDensity}
 
 Return ONLY this JSON (no fences):
 {"items":[{"name":"Thematic Item Name","emoji":"single emoji","description":"Flavor text when picked up (1 sentence, atmospheric)","roomIndex":0}],"puzzles":[{"doorInRoom":2,"leadsToRoom":3,"requiredItem":"Item Name","lockedMessage":"Why this door won't open (atmospheric)","unlockedMessage":"What happens when you use the item (atmospheric)"}]}
 
 RULES:
-- Exactly ${roomCount} items, one per room, roomIndex 0 to ${roomCount - 1}.
-- Items must be thematically unique — no generic "Key" or "Gem" unless the theme demands it.
-- ${config.structure.puzzleDensity === 'heavy' ? '2-3' : config.structure.puzzleDensity === 'moderate' ? '1-2' : '0-1'} puzzle connections where a door between rooms requires a specific item to pass.
+- Exactly ${roomCount} items, one per scene, roomIndex 0 to ${roomCount - 1}.
+- Items MUST fit the ${config.theme.name} theme — no generic "Key" or "Gem" unless the theme demands it.
+- Item descriptions should evoke the ${config.artStyle.name} visual style.
+- ${config.structure.puzzleDensity === 'heavy' ? '2-3' : config.structure.puzzleDensity === 'moderate' ? '1-2' : '0-1'} puzzle connections where a door between scenes requires a specific item to pass.
 - Each puzzle's requiredItem must exactly match an item name from the items array.
 - Locked doors should have atmospheric messages, not generic text.`);
     const d3 = JSON.parse(cleanJson(p3.response.text()));

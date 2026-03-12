@@ -107,7 +107,7 @@ export async function generateGameImages(
   // Title screen background (landscape)
   report('Generating title screen artwork...');
   const titleBg = await generateImage(
-    `${artPrompt} game environment background illustration, ${config.setting}, ${themePrompt}, dramatic cinematic composition, landscape orientation, pure scenery only, absolutely no text no words no letters no writing no logos no UI no signage no titles no menus no buttons no captions no labels no headers`,
+    `${artPrompt} game environment background illustration, ${config.setting}, ${themePrompt}, dramatic cinematic composition, landscape orientation, pure scenery only, ${artPrompt} absolutely no text no words no letters no writing no logos no UI no signage no titles no menus no buttons no captions no labels no headers`,
     '16:9',
   );
   stepIdx++;
@@ -116,7 +116,7 @@ export async function generateGameImages(
   // Character portrait
   report(`Generating ${config.characterName} character art...`);
   const character = await generateImage(
-    `${artPrompt} game character portrait, ${config.characterName}, adventurer in ${config.setting}, full body, facing forward, on a solid dark background, game sprite art, no transparency, absolutely no text no words no letters no captions no labels`,
+    `${artPrompt} game character portrait, ${config.characterName}, adventurer in ${config.setting}, full body, facing forward, ${themePrompt}, on a solid dark background, game sprite art, no transparency, ${artPrompt} absolutely no text no words no letters no captions no labels`,
     '3:4',
   );
   stepIdx++;
@@ -128,7 +128,7 @@ export async function generateGameImages(
     const room = config.rooms[i];
     report(`Painting ${label} ${i + 1}/${config.rooms.length}: ${room.name}...`);
     const bg = await generateImage(
-      `${artPrompt} game background scene, interior view of ${room.name}, ${room.description}, ${room.atmosphere} mood, ${themePrompt}, detailed environment art, absolutely no text no words no letters no UI no characters`,
+      `${artPrompt} game background scene, interior view of ${room.name}, ${room.description}, ${room.atmosphere} mood, ${themePrompt}, detailed environment art, ${artPrompt} absolutely no text no words no letters no UI no characters`,
       '16:9',
     );
     roomBgs.push(bg);
@@ -143,7 +143,7 @@ export async function generateGameImages(
     const item = itemsToGen[i];
     report(`Generating item art ${i + 1}/${itemsToGen.length}: ${item.name}...`);
     const img = await generateImage(
-      `${artPrompt} game item icon, single ${item.name} object, ${item.description}, centered on dark background, collectible game item, clean illustration, absolutely no text no words no letters`,
+      `${artPrompt} game item icon, single ${item.name} object, ${item.description}, centered on dark background, collectible game item, ${artPrompt} clean illustration, absolutely no text no words no letters`,
       '1:1',
     );
     itemImages.push(img);
