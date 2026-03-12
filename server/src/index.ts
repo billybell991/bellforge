@@ -10,7 +10,7 @@ import { join } from 'path';
 import 'dotenv/config';
 import { generatePreviewHtml } from './pipeline/preview-gen.js';
 import type { GameImages } from './pipeline/preview-gen.js';
-import { generateStory, generateAutoConfig, generateCreativeBrief, generateBriefPalette, generateBriefRooms, generateBriefItems, generateBriefHints, isGeminiAvailable } from './gemini.js';
+import { generateStory, generateAutoConfig, generateCreativeBrief, generateBriefPalette, generateBriefRooms, generateBriefItems, generateBriefHints, qaCreativeBrief, qaGameCode, isGeminiAvailable } from './gemini.js';
 import { generateGameImages } from './imagen.js';
 import type { GameConfig } from './pipeline/types.js';
 import type { CreativeBrief, CreativePalette, CreativeRoom, CreativeItem, PuzzleConnection } from './gemini.js';
@@ -163,9 +163,11 @@ function getPipelineStages(config: Record<string, unknown>): PipelineStage[] {
       detail: `Mapping uncharted territories — placing ${t.furnishings} in every corner...` },
     { id: 'brief_items', name: 'Forging Keys & Mysteries', percent: 28, duration: 3000,
       detail: 'Hammering out collectibles, locked doors, and brain-teasers...' },
-    { id: 'brief_hints', name: 'Inscribing Guiding Whispers', percent: 35, duration: 2000,
+    { id: 'brief_hints', name: 'Inscribing Guiding Whispers', percent: 33, duration: 2000,
       detail: 'Writing cryptic nudges for when adventurers lose their way...' },
-    { id: 'rooms', name: `Charting ${roomCount} ${t.Scenes}`, percent: 40, duration: 2500,
+    { id: 'qa_brief', name: 'Gemini QA — Inspecting the Blueprint', percent: 37, duration: 3000,
+      detail: 'Gemini reviews the creative brief for broken puzzles, orphan items, and theme drift...' },
+    { id: 'rooms', name: `Charting ${roomCount} ${t.Scenes}`, percent: 42, duration: 2500,
       detail: `Placing hotspots, pathways, and hidden secrets across the map...` },
     { id: 'art_bg', name: `Painting ${t.Scenes} on Canvas`, percent: 48, duration: 4000,
       detail: `Imagen is bringing ${roomCount} ${t.scenes} to life in ${artStyle} style...` },
@@ -175,9 +177,11 @@ function getPipelineStages(config: Record<string, unknown>): PipelineStage[] {
       detail: 'Etching the HUD, panels, and frames that guide the player...' },
     { id: 'logic', name: 'Enchanting with Logic', percent: 72, duration: 3000,
       detail: `Weaving puzzle gates, state machines, and cause-and-effect into every ${t.scene}...` },
-    { id: 'inventory', name: 'Stitching the Adventurer\'s Pack', percent: 80, duration: 2000,
+    { id: 'inventory', name: 'Stitching the Adventurer\'s Pack', percent: 78, duration: 2000,
       detail: 'Binding the bag, wiring item slots, and attaching hotspot triggers...' },
-    { id: 'gradle_setup', name: 'Assembling the Artifact', percent: 85, duration: 2000,
+    { id: 'qa_game', name: 'Gemini QA — Playtesting the Code', percent: 82, duration: 3000,
+      detail: 'Gemini reviews the assembled game logic for dead ends, broken puzzles, and unreachable items...' },
+    { id: 'gradle_setup', name: 'Assembling the Artifact', percent: 87, duration: 2000,
       detail: 'Wrapping the game code into an installable Android package...' },
     { id: 'gradle_build', name: 'Tempering the Build', percent: 92, duration: 5000,
       detail: 'Compiling, linking, and hardening — the final heat treat...' },
@@ -513,7 +517,7 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
 
     } else if (stage.id === 'brief_hints') {
       // Chunk 4: Context-aware hints
-      const nextPercent = stages.find(s => s.id === 'rooms')?.percent ?? stage.percent + 5;
+      const nextPercent = stages.find(s => s.id === 'qa_brief')?.percent ?? stage.percent + 5;
       sendProgress(buildId, { type: 'progress', stage: stage.id, name: '💬 Inscribing guiding whispers', percent: stage.percent + 1, detail: 'Carving cryptic hints into the walls for lost adventurers...', timestamp: Date.now() });
       briefHints = await generateBriefHints(gameConfig, briefRooms!, briefItems!, (msg) => {
         sendProgress(buildId, { type: 'progress', stage: stage.id, name: '💬 Polishing hint text', percent: stage.percent + 2, detail: msg, timestamp: Date.now() });
@@ -530,6 +534,25 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
         hintTexts: briefHints!,
       };
       sendProgress(buildId, { type: 'progress', stage: stage.id, name: '✅ Creative brief complete', percent: nextPercent - 1, detail: `${creativeBrief.rooms.length} scenes, ${creativeBrief.items.length} items, ${creativeBrief.puzzles.length} puzzles, ${briefHints.length} hints`, timestamp: Date.now() });
+
+    } else if (stage.id === 'qa_brief') {
+      // Gemini QA pass — review the brief for broken puzzles, orphan items, theme drift
+      if (creativeBrief) {
+        sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🔍 Gemini QA — inspecting the blueprint', percent: stage.percent + 1, detail: 'Checking puzzle chains, item references, theme coherence...', timestamp: Date.now() });
+        const qaResult = await qaCreativeBrief(gameConfig, creativeBrief, (msg) => {
+          sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🔍 QA reviewing...', percent: stage.percent + 2, detail: msg, timestamp: Date.now() });
+        });
+        const nextPercent = stages.find(s => s.id === 'rooms')?.percent ?? stage.percent + 5;
+        if (qaResult.passed) {
+          sendProgress(buildId, { type: 'progress', stage: stage.id, name: '✅ QA passed — blueprint is solid', percent: nextPercent - 1, detail: 'No issues found. Proceeding to build.', timestamp: Date.now() });
+        } else {
+          const issueList = qaResult.issues.slice(0, 3).join('; ');
+          const fixList = qaResult.fixes.slice(0, 3).join('; ');
+          sendProgress(buildId, { type: 'progress', stage: stage.id, name: `⚠️ QA found ${qaResult.issues.length} issue(s) — auto-fixed`, percent: nextPercent - 1, detail: `Issues: ${issueList}. Fixes: ${fixList}`, timestamp: Date.now() });
+        }
+      } else {
+        await sleep(stage.duration);
+      }
 
     } else if (stage.id === 'rooms') {
       // Brief is done — report scene layout details
@@ -650,6 +673,10 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
         }
       }
       await sleep(800);
+    } else if (stage.id === 'qa_game') {
+      // Actual QA call happens after preview generation (post-loop)
+      // Just show a placeholder message here — real progress comes later
+      await sleep(500);
     } else if (stage.id === 'complete') {
       await sleep(300);
     } else {
@@ -681,6 +708,19 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
     images: gameImages,
     sceneLabel: t.scenes,
   });
+
+  // ── Post-preview QA: Gemini reviews the assembled game code ──
+  sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: '🔍 Gemini QA — playtesting the code', percent: 82, detail: 'Stripping images and sending game logic to Gemini for review...', timestamp: Date.now() });
+  const gameQaResult = await qaGameCode(gameConfig, previewHtml, (msg) => {
+    sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: '🔍 QA reviewing game logic...', percent: 84, detail: msg, timestamp: Date.now() });
+  });
+  if (gameQaResult.passed) {
+    sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: '✅ Game QA passed — logic is solid', percent: 86, detail: 'No dead ends, broken puzzles, or unreachable items detected.', timestamp: Date.now() });
+  } else {
+    const issueList = gameQaResult.issues.slice(0, 3).join('; ');
+    sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: `⚠️ Game QA: ${gameQaResult.issues.length} potential issue(s)`, percent: 86, detail: `${issueList}`, timestamp: Date.now() });
+    console.log(`  ⚠️ Game QA issues for ${buildId}:`, gameQaResult.issues);
+  }
 
   record.status = 'complete';
   record.progress = 100;

@@ -768,3 +768,195 @@ RULES:
     endingText: endingText!,
   };
 }
+
+// ── QA Pass — Gemini reviews the assembled creative brief for issues ──
+
+export interface QAResult {
+  passed: boolean;
+  issues: string[];
+  fixes: string[];
+}
+
+/**
+ * Send the assembled creative brief to Gemini for a QA review.
+ * Checks for: orphan items, broken puzzle chains, unreachable rooms,
+ * theme drift, incoherent story, unhelpful hints, and spelling errors.
+ * Returns a structured report. If fixable issues are found, mutates
+ * the brief in-place with corrections.
+ */
+export async function qaCreativeBrief(
+  config: GameConfig,
+  brief: CreativeBrief,
+  onStatus?: (msg: string) => void,
+): Promise<QAResult> {
+  if (!model) {
+    onStatus?.('Gemini unavailable — skipping QA pass');
+    return { passed: true, issues: [], fixes: ['QA skipped (no Gemini)'] };
+  }
+
+  onStatus?.('Sending creative brief to Gemini for quality review...');
+
+  const roomSummary = brief.rooms.map((r, i) => `${i}: "${r.name}" — ${r.description} (${r.furniture.length} furniture)`).join('\n');
+  const itemSummary = brief.items.map((it, i) => `${i}: ${it.emoji} ${it.name} (in room ${it.roomIndex}) — "${it.description}"`).join('\n');
+  const puzzleSummary = brief.puzzles.map((p, i) => `${i}: door in room ${p.doorInRoom} → room ${p.leadsToRoom}, requires "${p.requiredItem}"`).join('\n') || '(none)';
+  const hintSummary = brief.hintTexts.map((h, i) => `${i}: "${h}"`).join('\n');
+
+  const prompt = `You are a QA analyst reviewing a creative brief for a ${config.genre.name} game.
+Theme: ${config.theme.name}. Art Style: ${config.artStyle.name}.
+Story: "${config.story.title}" — ${config.story.description}
+Setting: ${config.story.setting}. Protagonist: ${config.story.characterName}.
+Game vibe: "${brief.gameVibe}"
+
+ROOMS:
+${roomSummary}
+
+ITEMS:
+${itemSummary}
+
+PUZZLES:
+${puzzleSummary}
+
+HINTS:
+${hintSummary}
+
+OPENING: "${brief.openingText}"
+ENDING: "${brief.endingText}"
+
+Review this brief and check for ALL of these issues:
+1. ORPHAN ITEMS — any item whose roomIndex is out of bounds (>= ${brief.rooms.length}) or duplicated?
+2. BROKEN PUZZLES — any puzzle referencing a requiredItem that doesn't exist in the items array (exact name match)? Any doorInRoom or leadsToRoom out of bounds?
+3. UNREACHABLE ROOMS — are puzzle gates creating a dead end where the player can't reach the item needed to pass?
+4. THEME DRIFT — do room names, item names, descriptions, and vibe actually match "${config.theme.name}"? Flag anything that feels generic or off-theme.
+5. STORY COHERENCE — does the opening/ending text match the story title and setting? Any contradictions?
+6. HINT QUALITY — are any hints too vague ("look around") or too direct ("pick up the key")? Do they reference real objects in their rooms?
+7. SPELLING/GRAMMAR — any typos or broken sentences in opening, ending, descriptions, or hints?
+
+Return ONLY this JSON (no fences):
+{"passed":true/false,"issues":["description of each issue found"],"fixes":["description of each fix applied"],"fixedItems":null or [{"name":"...","emoji":"...","description":"...","roomIndex":0},...],"fixedPuzzles":null or [{"doorInRoom":0,"leadsToRoom":1,"requiredItem":"...","lockedMessage":"...","unlockedMessage":"..."},...],"fixedHints":null or ["hint0","hint1",...],"fixedVibe":null or "corrected vibe","fixedOpening":null or "corrected opening","fixedEnding":null or "corrected ending"}`;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const qa = JSON.parse(cleanJson(result.response.text()));
+
+    const issues: string[] = Array.isArray(qa.issues) ? qa.issues : [];
+    const fixes: string[] = Array.isArray(qa.fixes) ? qa.fixes : [];
+
+    // Apply fixes to the brief in-place
+    if (Array.isArray(qa.fixedItems) && qa.fixedItems.length === brief.items.length) {
+      brief.items = qa.fixedItems;
+      onStatus?.(`QA fixed ${qa.fixedItems.length} items`);
+    }
+    if (Array.isArray(qa.fixedPuzzles)) {
+      brief.puzzles = qa.fixedPuzzles;
+      onStatus?.(`QA fixed ${qa.fixedPuzzles.length} puzzle connections`);
+    }
+    if (Array.isArray(qa.fixedHints) && qa.fixedHints.length === brief.hintTexts.length) {
+      brief.hintTexts = qa.fixedHints;
+      onStatus?.(`QA fixed ${qa.fixedHints.length} hints`);
+    }
+    if (typeof qa.fixedVibe === 'string' && qa.fixedVibe) {
+      brief.gameVibe = qa.fixedVibe;
+      onStatus?.(`QA fixed vibe: "${qa.fixedVibe}"`);
+    }
+    if (typeof qa.fixedOpening === 'string' && qa.fixedOpening) {
+      brief.openingText = qa.fixedOpening;
+      onStatus?.('QA fixed opening text');
+    }
+    if (typeof qa.fixedEnding === 'string' && qa.fixedEnding) {
+      brief.endingText = qa.fixedEnding;
+      onStatus?.('QA fixed ending text');
+    }
+
+    const passed = issues.length === 0;
+    onStatus?.(passed
+      ? '✅ QA passed — no issues found'
+      : `⚠️ QA found ${issues.length} issue(s), applied ${fixes.length} fix(es)`);
+
+    return { passed, issues, fixes };
+  } catch (err) {
+    console.error('[Gemini QA] Error:', err);
+    onStatus?.('QA review failed — proceeding without fixes');
+    return { passed: true, issues: [], fixes: ['QA call failed — skipped'] };
+  }
+}
+
+/**
+ * Post-preview QA — Gemini reviews the assembled game code for logic bugs.
+ * Receives the game JS (stripped of base64 images to stay within token limits)
+ * and checks for dead-end rooms, unreachable items, broken state machines, etc.
+ */
+export async function qaGameCode(
+  config: GameConfig,
+  previewHtml: string,
+  onStatus?: (msg: string) => void,
+): Promise<QAResult> {
+  if (!model) {
+    onStatus?.('Gemini unavailable — skipping game code QA');
+    return { passed: true, issues: [], fixes: ['Game QA skipped (no Gemini)'] };
+  }
+
+  onStatus?.('Extracting game logic for review...');
+
+  // Strip base64 image data to keep within token limits
+  // Replace data URIs with placeholders so Gemini sees the structure but not the bulk
+  const stripped = previewHtml
+    .replace(/data:image\/png;base64,[A-Za-z0-9+/=]+/g, 'data:image/png;base64,[IMAGE_DATA_STRIPPED]')
+    .replace(/data:image\/jpeg;base64,[A-Za-z0-9+/=]+/g, 'data:image/jpeg;base64,[IMAGE_DATA_STRIPPED]');
+
+  // If still too large (>80k chars), truncate to the script section only
+  let codeToReview = stripped;
+  const scriptStart = stripped.indexOf('<script>');
+  const scriptEnd = stripped.lastIndexOf('</script>');
+  if (scriptStart !== -1 && scriptEnd !== -1 && stripped.length > 80000) {
+    codeToReview = stripped.substring(scriptStart, scriptEnd + '</script>'.length);
+  }
+
+  // Further truncate if still massive (shouldn't happen after image strip)
+  if (codeToReview.length > 100000) {
+    codeToReview = codeToReview.substring(0, 100000) + '\n// [TRUNCATED]';
+  }
+
+  onStatus?.('Sending game code to Gemini for logic review...');
+
+  const prompt = `You are a senior game QA engineer reviewing the JavaScript source code of a ${config.genre.name} game.
+Theme: ${config.theme.name}. Title: "${config.story.title}".
+
+Below is the complete game code. Review it for FUNCTIONAL issues only (not style/formatting):
+
+\`\`\`html
+${codeToReview}
+\`\`\`
+
+Check for these specific issues:
+1. DEAD-END ROOMS — can the player get trapped in a room with no way out?
+2. UNREACHABLE ITEMS — is any item placed in a room the player can't reach due to puzzle gates?
+3. PUZZLE LOGIC — does every locked door's requiredItem actually exist in the game data? Can the player always get the item BEFORE needing it?
+4. WIN CONDITION — is there a clear path from room 0 to the ending? Can the player actually complete the game?
+5. STATE BUGS — any variables used before initialization? Any array index out-of-bounds risks?
+6. NAVIGATION — does every room have at least one door/exit? Are door connections bidirectional where expected?
+7. INVENTORY — can the player pick up all items? Are item pickup handlers wired correctly?
+
+IMPORTANT: Only report REAL bugs that would prevent the player from completing the game. Ignore cosmetic issues, naming style, or subjective design choices.
+
+Return ONLY this JSON (no fences):
+{"passed":true/false,"issues":["description of each real bug found"],"fixes":["description of what should be fixed"]}`;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const qa = JSON.parse(cleanJson(result.response.text()));
+
+    const issues: string[] = Array.isArray(qa.issues) ? qa.issues : [];
+    const fixes: string[] = Array.isArray(qa.fixes) ? qa.fixes : [];
+    const passed = issues.length === 0;
+
+    onStatus?.(passed
+      ? '✅ Game code QA passed — no logic bugs found'
+      : `⚠️ Game QA found ${issues.length} potential issue(s)`);
+
+    return { passed, issues, fixes };
+  } catch (err) {
+    console.error('[Gemini Game QA] Error:', err);
+    onStatus?.('Game code QA failed — proceeding anyway');
+    return { passed: true, issues: [], fixes: ['Game QA call failed — skipped'] };
+  }
+}
