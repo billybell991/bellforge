@@ -1068,6 +1068,35 @@ body {
   background: rgba(0, 229, 255, 0.1);
 }
 
+.review-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.review-reroll-btn {
+  font-size: 1rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border-card);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  line-height: 1;
+}
+
+.review-reroll-btn:hover {
+  border-color: var(--forge-amber);
+  background: rgba(255, 170, 0, 0.1);
+  transform: rotate(15deg);
+}
+
+.review-reroll-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .review-value {
   display: flex;
   align-items: center;
@@ -1123,6 +1152,62 @@ body {
   background: linear-gradient(135deg, rgba(255, 107, 53, 0.4), rgba(255, 61, 0, 0.3));
   color: #fff;
   transform: scale(1.05);
+}
+
+.forge-confirm {
+  animation: fade-in 0.3s ease;
+}
+
+.forge-confirm-text {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+
+.forge-confirm-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.forge-confirm-yes {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 16px 48px;
+  border: 2px solid var(--forge-orange);
+  border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.3), rgba(255, 61, 0, 0.2));
+  color: var(--forge-amber);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  animation: forge-pulse 2s ease-in-out infinite;
+}
+
+.forge-confirm-yes:hover {
+  background: linear-gradient(135deg, rgba(255, 107, 53, 0.5), rgba(255, 61, 0, 0.4));
+  color: #fff;
+  transform: scale(1.05);
+}
+
+.forge-confirm-no {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  padding: 16px 32px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-xl);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.forge-confirm-no:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: rgba(0, 229, 255, 0.06);
 }
 
 /* ═══════════════════════════════════════

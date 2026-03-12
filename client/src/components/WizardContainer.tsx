@@ -149,6 +149,11 @@ export function WizardContainer(props: WizardContainerProps) {
             story={props.story}
             onEditStep={goToStep}
             onForge={props.onForge}
+            onGenreChange={props.onGenreChange}
+            onThemeChange={props.onThemeChange}
+            onArtStyleChange={props.onArtStyleChange}
+            onStructureChange={props.onStructureChange}
+            onStoryChange={props.onStoryChange}
           />
         )}
       </div>
