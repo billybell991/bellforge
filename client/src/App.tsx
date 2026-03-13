@@ -10,6 +10,7 @@ import { GamePreview } from './components/GamePreview';
 import { DeployGuide } from './components/DeployGuide';
 import { Library } from './components/Library';
 import { EmberField } from './components/EmberField';
+import { DebugButton } from './components/DebugButton';
 
 const defaultStructure: StructureConfig = {
   roomCount: 6,
@@ -493,38 +494,35 @@ export default function App() {
     fetchLibraryCount();
   }, [fetchLibraryCount]);
 
-  const showHeader = page !== 'landing';
-
   return (
     <div className="app-shell">
       <EmberField />
+      <DebugButton page={page} entertainmentType={entertainmentType} buildPercent={buildPercent} buildStageName={buildStageName} />
 
-      {showHeader && (
-        <header className="forge-header">
-          <div className="forge-header-brand" onClick={handleStartOver}>
-            <span>⚒️</span> BELLFORGE
-          </div>
-          <div className="forge-header-right">
-            {/* Build-in-progress indicator */}
-            {buildActive && page !== 'building' && (
-              <button
-                className="forge-header-building"
-                onClick={handleReturnToBuild}
-                title="Return to build in progress"
-              >
-                <span className="build-pulse" />
-                ⚒️ Building {buildPercent}%
-              </button>
-            )}
-            <button className="forge-header-library" onClick={handleGoToLibrary}>
-              📚 Library{libraryCount > 0 && <span className="library-badge">{libraryCount}</span>}
+      <header className="forge-header">
+        <div className="forge-header-brand" onClick={handleStartOver}>
+          <span>⚒️</span> BELLFORGE
+        </div>
+        <div className="forge-header-right">
+          {/* Build-in-progress indicator */}
+          {buildActive && page !== 'building' && (
+            <button
+              className="forge-header-building"
+              onClick={handleReturnToBuild}
+              title="Return to build in progress"
+            >
+              <span className="build-pulse" />
+              ⚒️ Building {buildPercent}%
             </button>
-            <div className="forge-header-version">v1.0.0</div>
-          </div>
-        </header>
-      )}
+          )}
+          <button className="forge-header-library" onClick={handleGoToLibrary}>
+            📚 Library{libraryCount > 0 && <span className="library-badge">{libraryCount}</span>}
+          </button>
+          <div className="forge-header-version">v1.0.0</div>
+        </div>
+      </header>
 
-      <div className={showHeader ? 'has-header' : ''}>
+      <div className="has-header">
         {page === 'landing' && (
           <Landing onStart={handleStartForging} onAutoForge={handleAutoForge} onLibrary={handleGoToLibrary} libraryCount={libraryCount} />
         )}

@@ -46,7 +46,9 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
   const features = entertainmentType === 'adventure' ? ADVENTURE_FEATURES
     : entertainmentType === 'comic' ? COMIC_FEATURES
     : GAME_FEATURES;
-  const tagline = entertainmentType === 'adventure'
+  const tagline = !entertainmentType
+    ? 'AI-Powered Entertainment. Built in Minutes.'
+    : entertainmentType === 'adventure'
     ? 'Forge Your Adventure. You Are the Hero.'
     : entertainmentType === 'comic'
     ? 'Forge Your Comic. Every Panel AI-Drawn.'

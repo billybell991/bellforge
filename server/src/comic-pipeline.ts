@@ -127,12 +127,18 @@ function getArtStylePrefix(artStyleId: string): string {
   return styles[artStyleId] || 'professional comic book art, dynamic composition,';
 }
 
-// ── Phase 1: Concept & Story Beats ──
+// ── Phase 1a: Concept & Story Outline (lightweight — no panel scripts) ──
 
-export async function phaseConcept(
+interface PageOutline {
+  pageNumber: number;
+  setting: string;
+  description: string;
+}
+
+export async function phaseConceptOutline(
   config: ComicConfig,
   onProgress?: (msg: string) => void,
-): Promise<{ concept: ComicConcept; beats: ComicBeat[] } | null> {
+): Promise<{ concept: ComicConcept; outline: PageOutline[] } | null> {
   const genre = config.comicGenre.id.replace(/_/g, ' ');
   const themeName = config.theme.name;
   const pageCount = config.structure.pageCount;
@@ -145,16 +151,16 @@ export async function phaseConcept(
   const charLine = characterName ? `\nProtagonist name: "${characterName}"` : '';
   const titleLine = title ? `\nTitle: "${title}"` : '';
 
-  onProgress?.('Asking Gemini to craft the story and characters...');
+  onProgress?.('Designing concept, characters, and story arc...');
 
-  const prompt = `You are a master comic book writer and artist.
+  const prompt = `You are a master comic book writer. Design the concept and story outline for a ${genre} comic book.
 
-Create a complete ${genre} comic book with exactly ${pageCount} interior pages.
+The comic has exactly ${pageCount} interior pages.
 Theme/atmosphere: ${themeName}
 Tone: ${tone}
 ${titleLine}${charLine}${seedLine}
 
-Output valid JSON:
+Output valid JSON with the concept and a one-line-per-page outline (NO panel scripts — those come later):
 {
   "title": "Comic Title",
   "subtitle": "A one-line tagline",
@@ -173,34 +179,16 @@ Output valid JSON:
     }
   ],
   "issueNumber": 1,
-  "beats": [
-    {
-      "pageNumber": 1,
-      "setting": "Location description",
-      "description": "What happens on this page",
-      "panels": [
-        {
-          "panelNumber": 1,
-          "artDirection": "Detailed visual description of what to draw (camera angle, composition, action, lighting)",
-          "characters": ["Hero Name"],
-          "dialogue": [
-            {"speaker": "Hero Name", "text": "Dialogue line", "type": "speech"},
-            {"speaker": "", "text": "Narration text", "type": "narration"}
-          ]
-        }
-      ]
-    }
+  "outline": [
+    { "pageNumber": 1, "setting": "Location description", "description": "What happens on this page (one sentence)" }
   ]
 }
 
 CRITICAL RULES:
-- Each page should have 3-6 panels
-- Include a mix of: establishing shots, action panels, close-ups, reaction shots
-- Dialogue uses "speech" for speech bubbles, "thought" for thought bubbles, "narration" for caption boxes
-- Keep dialogue punchy — 1-2 short sentences per bubble max
-- Story should have a clear arc: hook → escalation → climax → resolution
 - The visualDescription for each character must be hyper-specific and consistent — it will be pasted verbatim into EVERY art prompt
-- Art direction should describe the SCENE not the style — style will be prepended separately
+- Story should have a clear arc: hook → escalation → climax → resolution
+- outline must have exactly ${pageCount} entries
+- Keep outline descriptions short — just enough to convey what happens
 
 Output ONLY the JSON.`;
 
@@ -221,44 +209,68 @@ Output ONLY the JSON.`;
     concept.title = config.story.title;
   }
 
-  const beats = (parsed.beats as unknown as ComicBeat[]) || [];
+  const outline = (parsed.outline as unknown as PageOutline[]) || [];
 
-  return { concept, beats };
+  return { concept, outline };
 }
 
-// ── Phase 2: Panel Script Expansion ──
-// For large comics, beats may come back thin. Expand any pages with < 3 panels.
+// ── Phase 1b: Detailed Panel Scripts (chunked — 4 pages per call) ──
 
-export async function phaseExpandScripts(
+export async function phasePanelScripts(
   concept: ComicConcept,
-  beats: ComicBeat[],
+  outline: PageOutline[],
   config: ComicConfig,
-  onProgress?: (msg: string) => void,
+  onProgress?: (msg: string, batchIdx: number, totalBatches: number) => void,
 ): Promise<ComicBeat[]> {
-  const thinPages = beats.filter(b => !b.panels || b.panels.length < 3);
-  if (thinPages.length === 0) return beats;
+  const allBeats: ComicBeat[] = [];
+  const BATCH_SIZE = 4;
+  const totalBatches = Math.ceil(outline.length / BATCH_SIZE);
 
-  onProgress?.(`Expanding ${thinPages.length} thin pages...`);
+  const charBlock = [
+    `Protagonist: ${concept.protagonist.name} — ${concept.protagonist.visualDescription}`,
+    ...concept.characters.map(c => `${c.name} (${c.role}): ${c.visualDescription}`),
+  ].join('\n');
 
-  const chunkSize = 4;
-  for (let i = 0; i < thinPages.length; i += chunkSize) {
-    const chunk = thinPages.slice(i, i + chunkSize);
-    const chunkNum = Math.floor(i / chunkSize) + 1;
-    const totalChunks = Math.ceil(thinPages.length / chunkSize);
-    onProgress?.(`Expanding panel scripts chunk ${chunkNum}/${totalChunks}...`);
+  for (let i = 0; i < outline.length; i += BATCH_SIZE) {
+    const batch = outline.slice(i, i + BATCH_SIZE);
+    const batchIdx = Math.floor(i / BATCH_SIZE);
+    const pageRange = batch.length === 1 ? `page ${batch[0].pageNumber}` : `pages ${batch[0].pageNumber}-${batch[batch.length - 1].pageNumber}`;
+    onProgress?.(`Writing detailed scripts for ${pageRange}...`, batchIdx, totalBatches);
 
-    const prompt = `You are expanding panel scripts for a ${config.comicGenre.name} comic called "${concept.title}".
+    const prompt = `You are scripting panel-by-panel layouts for a ${config.comicGenre.name} comic called "${concept.title}".
 
-Protagonist: ${concept.protagonist.name} — ${concept.protagonist.description}
-Characters: ${JSON.stringify(concept.characters.map(c => ({ name: c.name, role: c.role })))}
+Characters:
+${charBlock}
 
-For each page below, write 4-5 detailed panels with art direction and dialogue.
+Story outline for these pages:
+${batch.map(p => `Page ${p.pageNumber}: [${p.setting}] ${p.description}`).join('\n')}
 
-Pages to expand:
-${JSON.stringify(chunk, null, 2)}
+For each page, write 4-5 panels with detailed art direction and dialogue.
 
-Output valid JSON array of the expanded pages (same structure as input but with fuller panels):
-[{ "pageNumber": N, "setting": "...", "description": "...", "panels": [...] }]
+Output valid JSON array:
+[
+  {
+    "pageNumber": ${batch[0].pageNumber},
+    "setting": "Location description",
+    "description": "What happens on this page",
+    "panels": [
+      {
+        "panelNumber": 1,
+        "artDirection": "Detailed visual description of what to draw (camera angle, composition, action, lighting, character poses). Describe the SCENE, not the art style.",
+        "characters": ["Character Name"],
+        "dialogue": [
+          {"speaker": "Character Name", "text": "Dialogue line", "type": "speech"}
+        ]
+      }
+    ]
+  }
+]
+
+RULES:
+- 4-5 panels per page, mix of: establishing shots, action, close-ups, reaction shots
+- "speech" for speech bubbles, "thought" for thought bubbles, "narration" for caption boxes
+- Keep dialogue punchy — 1-2 short sentences per bubble max
+- Art direction should be vivid and specific about composition, not style
 
 Output ONLY the JSON array.`;
 
@@ -267,16 +279,51 @@ Output ONLY the JSON array.`;
       try {
         let cleaned = result.trim();
         if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```\w*\n?/, '').replace(/\n?```$/, '');
-        const expanded = JSON.parse(cleaned) as ComicBeat[];
-        for (const exp of expanded) {
-          const idx = beats.findIndex(b => b.pageNumber === exp.pageNumber);
-          if (idx >= 0) beats[idx] = exp;
+        // Parse as array
+        let parsed: ComicBeat[];
+        if (cleaned.startsWith('[')) {
+          parsed = JSON.parse(cleaned) as ComicBeat[];
+        } else {
+          const obj = JSON.parse(cleaned) as Record<string, unknown>;
+          // Sometimes Gemini wraps in an object
+          parsed = (obj.pages || obj.beats || [obj]) as ComicBeat[];
         }
-      } catch { /* keep originals */ }
+        allBeats.push(...parsed);
+      } catch {
+        // If parsing fails, create stubs from the outline batch
+        for (const p of batch) {
+          allBeats.push({
+            pageNumber: p.pageNumber,
+            setting: p.setting,
+            description: p.description,
+            panels: [{
+              panelNumber: 1,
+              artDirection: `Wide establishing shot of ${p.setting}. ${p.description}`,
+              characters: [concept.protagonist.name],
+              dialogue: [{ speaker: '', text: p.description, type: 'narration' as const }],
+            }],
+          });
+        }
+      }
+    } else {
+      // Gemini failed entirely — stub from outline
+      for (const p of batch) {
+        allBeats.push({
+          pageNumber: p.pageNumber,
+          setting: p.setting,
+          description: p.description,
+          panels: [{
+            panelNumber: 1,
+            artDirection: `Wide establishing shot of ${p.setting}. ${p.description}`,
+            characters: [concept.protagonist.name],
+            dialogue: [{ speaker: '', text: p.description, type: 'narration' as const }],
+          }],
+        });
+      }
     }
   }
 
-  return beats;
+  return allBeats;
 }
 
 // ── Phase 3: Assembly ──
@@ -353,32 +400,35 @@ export async function runComicPipeline(
 ): Promise<ComicPipelineResult | null> {
   const t0 = Date.now();
 
-  // Phase 1: Concept + story beats
-  sendProgress(5, `Crafting a ${config.comicGenre.name} comic story...`, 'story');
-  const conceptResult = await phaseConcept(config, (msg) => sendProgress(10, msg, 'story'));
-  if (!conceptResult) {
+  // Phase 1a: Concept + story outline (lightweight — small JSON)
+  sendProgress(5, `Crafting a ${config.comicGenre.name} comic concept...`, 'story');
+  const outlineResult = await phaseConceptOutline(config, (msg) => sendProgress(8, msg, 'story'));
+  if (!outlineResult) {
     sendProgress(0, 'Failed to generate comic concept — Gemini did not return valid JSON');
     return null;
   }
-  const { concept, beats } = conceptResult;
+  const { concept, outline } = outlineResult;
 
   const elapsed1 = Math.floor((Date.now() - t0) / 1000);
-  sendProgress(15, `Story ready (${elapsed1}s): "${concept.title}" — ${beats.length} pages, ${concept.characters.length + 1} characters`, 'script');
+  sendProgress(12, `Concept ready (${elapsed1}s): "${concept.title}" — ${outline.length} pages, ${concept.characters.length + 1} characters`, 'story');
 
-  // Phase 2: Expand panel scripts
-  sendProgress(18, `Expanding panel scripts for ${beats.length} pages...`, 'script');
-  const expandedBeats = await phaseExpandScripts(concept, beats, config, (msg) => {
-    sendProgress(22, msg, 'script');
+  // Phase 1b: Detailed panel scripts (chunked — 4 pages per Gemini call)
+  sendProgress(15, `Writing panel scripts for ${outline.length} pages...`, 'script');
+  const beats = await phasePanelScripts(concept, outline, config, (msg, batchIdx, totalBatches) => {
+    const pct = 15 + Math.floor(((batchIdx + 1) / totalBatches) * 12);
+    sendProgress(pct, msg, 'script');
   });
-  sendProgress(25, 'Panel scripts finalized', 'layouts');
 
-  // Phase 3: Assembly
-  sendProgress(28, 'Designing page layouts...', 'layouts');
-  const story = assembleComic(concept, expandedBeats, config);
+  const elapsed2 = Math.floor((Date.now() - t0) / 1000);
+  sendProgress(28, `Scripts complete (${elapsed2}s): ${beats.length} pages fully scripted`, 'layouts');
+
+  // Phase 2: Assembly
+  sendProgress(30, 'Designing page layouts...', 'layouts');
+  const story = assembleComic(concept, beats, config);
   const totalPanels = story.pages.reduce((sum, p) => sum + p.panels.length, 0);
   sendProgress(32, `Assembled: ${story.totalPages} pages, ${totalPanels} panels`, 'layouts');
 
-  // Phase 4: Art generation progress markers
+  // Phase 3: Art generation progress markers
   // (Actual Imagen calls would go here — for now emit progress stages)
   sendProgress(35, 'Generating cover artwork...', 'cover_art');
   await sleep(500);
@@ -393,12 +443,12 @@ export async function runComicPipeline(
   }
   sendProgress(65, `All ${story.totalPages} pages illustrated`, 'panel_art_final');
 
-  // Phase 5: Text overlay markers
+  // Phase 4: Text overlay markers
   sendProgress(75, 'Rendering speech bubbles and narration boxes...', 'text_overlay');
   await sleep(300);
   sendProgress(78, `Overlaying dialogue on ${totalPanels} panels`, 'text_overlay');
 
-  // Phase 6: QA
+  // Phase 5: QA
   sendProgress(82, 'Checking panel continuity...', 'qa_panels');
   const fixedStory = await phaseQA(story, concept, (msg) => {
     if (msg.includes('story flow')) {

@@ -46,17 +46,29 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
         ✅ Automatically saved to your library
       </div>
 
-      {/* Phone frame with iframe */}
-      <div className={`phone-frame ${isLandscape ? 'phone-landscape' : ''} ${fullscreen ? 'phone-fullscreen' : ''}`}>
-        <div className="phone-notch" />
-        <iframe
-          src={previewUrl}
-          className="phone-screen"
-          title={isAdventure ? 'Adventure Preview' : isComic ? 'Comic Preview' : 'Game Preview'}
-          sandbox="allow-scripts"
-        />
-        <div className="phone-home-bar" />
-      </div>
+      {/* Comic: direct wide viewer (no phone frame) */}
+      {isComic ? (
+        <div className={`comic-viewer-frame ${fullscreen ? 'comic-viewer-fullscreen' : ''}`}>
+          <iframe
+            src={previewUrl}
+            className="comic-viewer-screen"
+            title="Comic Preview"
+            sandbox="allow-scripts"
+          />
+        </div>
+      ) : (
+        /* Phone frame with iframe */
+        <div className={`phone-frame ${isLandscape ? 'phone-landscape' : ''} ${fullscreen ? 'phone-fullscreen' : ''}`}>
+          <div className="phone-notch" />
+          <iframe
+            src={previewUrl}
+            className="phone-screen"
+            title={isAdventure ? 'Adventure Preview' : 'Game Preview'}
+            sandbox="allow-scripts"
+          />
+          <div className="phone-home-bar" />
+        </div>
+      )}
 
       {/* Controls */}
       <div className="preview-controls">

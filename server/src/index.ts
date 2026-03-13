@@ -26,7 +26,7 @@ const ADB = 'C:\\Users\\bbell\\AppData\\Local\\Android\\Sdk\\platform-tools\\adb
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 const server = createServer(app);
 const wss = new WebSocketServer({ server, path: '/ws' });
@@ -324,6 +324,33 @@ app.get('/api/preview/:buildId', (req, res) => {
   }
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.send(html);
+});
+
+// Debug screenshot — saves screenshot + state to qa-temp/ for VS Code chat
+app.post('/api/debug/screenshot', (req, res) => {
+  const { image, state, timestamp } = req.body || {};
+  if (!image || typeof image !== 'string') {
+    res.status(400).json({ error: 'Missing image data' });
+    return;
+  }
+
+  const qaDir = join(process.cwd(), '..', 'qa-temp');
+  if (!existsSync(qaDir)) mkdirSync(qaDir, { recursive: true });
+
+  const ts = timestamp || Date.now();
+  const baseName = `debug-${ts}`;
+
+  // Save PNG
+  const base64Data = image.replace(/^data:image\/\w+;base64,/, '');
+  writeFileSync(join(qaDir, `${baseName}.png`), Buffer.from(base64Data, 'base64'));
+
+  // Save state JSON
+  if (state) {
+    writeFileSync(join(qaDir, `${baseName}.json`), JSON.stringify(state, null, 2));
+  }
+
+  console.log(`📸 Debug screenshot saved: qa-temp/${baseName}.png`);
+  res.json({ saved: true, path: `qa-temp/${baseName}.png` });
 });
 
 // ── Gemini Creative Endpoints ──

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Veritas Labyrinth</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;700;900&display=swap');
+
+  :root {
+    --comic-bg: #1a1a2e;
+    --panel-border: #222;
+    --bubble-bg: #ffffff;
+    --bubble-border: #222;
+    --narration-bg: #fff8dc;
+    --narration-border: #c9a84c;
+    --thought-bg: #f0f0ff;
+    --thought-border: #aaa;
+    --title-red: #e53935;
+    --title-gold: #ffd700;
+    --page-bg: #f5f0e8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--comic-bg);
+    font-family: 'Nunito', sans-serif;
+    color: #222;
+    overflow-x: hidden;
+  }
+
+  #comic-container {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  /* Cover */
+  .cover-page {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+  }
+  .cover-publisher {
+    font-family: 'Bangers', cursive;
+    font-size: 0.9rem;
+    letter-spacing: 4px;
+    color: var(--title-gold);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+  .cover-issue {
+    font-family: 'Bangers', cursive;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 1rem;
+  }
+  .cover-title {
+    font-family: 'Bangers', cursive;
+    font-size: 3.5rem;
+    color: var(--title-red);
+    text-shadow: 3px 3px 0 #000, -1px -1px 0 #000;
+    letter-spacing: 3px;
+    line-height: 1.1;
+    margin-bottom: 0.5rem;
+  }
+  .cover-subtitle {
+    font-size: 1.1rem;
+    color: rgba(255,255,255,0.8);
+    font-style: italic;
+    margin-bottom: 2rem;
+    max-width: 500px;
+  }
+  .cover-art-placeholder {
+    width: 300px;
+    height: 400px;
+    border: 3px solid var(--title-gold);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.3);
+    font-style: italic;
+    margin-bottom: 2rem;
+    background: rgba(0,0,0,0.3);
+  }
+  .cover-tap {
+    font-family: 'Bangers', cursive;
+    font-size: 1.2rem;
+    color: var(--title-gold);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+  /* Page */
+  .comic-page {
+    background: var(--page-bg);
+    margin: 4px 0;
+    padding: 12px;
+    position: relative;
+    min-height: 80vh;
+  }
+  .page-number {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-family: 'Bangers', cursive;
+    font-size: 0.75rem;
+    color: #999;
+  }
+
+  /* Panel grid */
+  .panel-grid {
+    display: grid;
+    gap: 6px;
+    height: 100%;
+    min-height: 70vh;
+  }
+  .panel-grid.panels-3 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+  .panel-grid.panels-3 .panel:first-child { grid-column: 1 / -1; }
+  .panel-grid.panels-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+  .panel-grid.panels-5 { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
+  .panel-grid.panels-5 .panel:nth-child(4) { grid-column: 1 / 2; }
+  .panel-grid.panels-5 .panel:nth-child(5) { grid-column: 2 / 4; }
+  .panel-grid.panels-6 { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
+  .panel-grid.panels-1 { grid-template-columns: 1fr; }
+  .panel-grid.panels-2 { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+
+  /* Panel */
+  .panel {
+    border: 3px solid var(--panel-border);
+    border-radius: 4px;
+    background: #fff;
+    position: relative;
+    overflow: hidden;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 8px;
+  }
+  .panel-art {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ccc;
+    font-style: italic;
+    font-size: 0.8rem;
+    background: linear-gradient(135deg, #f8f8f8, #e8e8e8);
+  }
+  .panel-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Dialogue bubbles */
+  .dialogue-layer {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: none;
+  }
+  .bubble {
+    padding: 6px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    line-height: 1.3;
+    max-width: 85%;
+    word-wrap: break-word;
+  }
+  .bubble-speech {
+    background: var(--bubble-bg);
+    border: 2px solid var(--bubble-border);
+    font-weight: 700;
+    align-self: flex-start;
+  }
+  .bubble-thought {
+    background: var(--thought-bg);
+    border: 2px dashed var(--thought-border);
+    font-style: italic;
+    align-self: flex-end;
+    border-radius: 20px;
+  }
+  .bubble-narration {
+    background: var(--narration-bg);
+    border: 1px solid var(--narration-border);
+    font-style: italic;
+    font-size: 0.75rem;
+    align-self: stretch;
+    border-radius: 2px;
+    text-align: center;
+  }
+  .bubble-speaker {
+    font-family: 'Bangers', cursive;
+    font-size: 0.65rem;
+    color: #888;
+    margin-bottom: 1px;
+    font-style: normal;
+  }
+
+  /* Navigation */
+  #nav-bar {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(26,26,46,0.95);
+    padding: 8px 16px;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+  }
+  .nav-btn {
+    background: none;
+    border: 2px solid var(--title-gold);
+    color: var(--title-gold);
+    font-family: 'Bangers', cursive;
+    font-size: 0.9rem;
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .nav-btn:hover { background: var(--title-gold); color: #1a1a2e; }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
+  .nav-btn:disabled:hover { background: none; color: var(--title-gold); }
+  .nav-counter {
+    color: rgba(255,255,255,0.7);
+    font-family: 'Bangers', cursive;
+    font-size: 0.85rem;
+  }
+
+  /* Transitions */
+  .page-enter { animation: slideIn 0.3s ease; }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body>
+<div id="comic-container">
+  <div id="page-content"></div>
+</div>
+<div id="nav-bar"></div>
+
+<script>
+(function() {
+  var STORY = {"title":"The Veritas Labyrinth","subtitle":"Where reality is the greatest puzzle.","genre":"superhero","issueNumber":1,"totalPages":12,"coverPage":null,"pages":[{"pageNumber":1,"setting":"A chaotic, impossible landscape within the Veritas Labyrinth. Shifting geometries, fragmented buildings, colors bleeding into each other, defying physics.","isCover":false,"panels":[{"panelNumber":1,"artDirection":"Wide establishing shot. Rune, a small figure amidst towering, impossible structures that twist and intersect. A skyscraper is upside down, its reflection shimmering on a sky that is also the ground. Her duster coat billows slightly, showing the glowing circuit patterns. Overwhelmed but observant.","illustration":null,"dialogue":[{"speaker":"","text":"The Veritas Labyrinth. Not just a place… but every place, all at once.","type":"narration"}]},{"panelNumber":2,"artDirection":"Close-up on Rune's face. Her emerald eyes scan the impossible horizon, a frown of deep concentration. A subtle shimmer of temporal energy is visible around her temples.","illustration":null,"dialogue":[{"speaker":"Rune","text":"Disorientation. A temporal signature this strong… it’s a miracle I’m still cohesive.","type":"thought"}]},{"panelNumber":3,"artDirection":"Medium shot. Rune stands before a specific paradox: a waterfall flowing impossibly upwards, then freezing mid-air into crystal, only to fall upwards again. She reaches out a hand, a look of analytical curiosity on her face.","illustration":null,"dialogue":[{"speaker":"Rune","text":"A temporal loop, fracturing its own causality. Fascinating… and lethal.","type":"speech"}]},{"panelNumber":4,"artDirection":"Close-up on Rune's wrist-mounted device. It glows with a faint silver light, displaying cryptic symbols. A faint, almost melodic whisper seems to emanate from it, not a voice, but an impression of words.","illustration":null,"dialogue":[{"speaker":"The Whisperer","text":"The path forward… lies within the dissonance.","type":"speech"},{"speaker":"","text":"The first whisper. Guidance… or a lure?","type":"narration"}]}]},{"pageNumber":2,"setting":"The same chaotic Labyrinth, focusing on the paradoxical waterfall from the previous page.","isCover":false,"panels":[{"panelNumber":1,"artDirection":"Dynamic action shot. Rune's hands are outstretched towards the paradoxical waterfall. Her body glows with a soft, sapphire blue energy, and the silver circuits on her coat flare. The upward-flowing water begins to crystalize and solidify, forming an intricate, glowing staircase.","illustration":null,"dialogue":[{"speaker":"Rune","text":"Dissonance. Paradox. Just two sides of an unstable truth.","type":"speech"}]},{"panelNumber":2,"artDirection":"Close-up on Rune's hands. Ripples of chronal energy emanate from her fingertips, touching the solidifying waterfall. The air around her shimmers, as if time itself is bending to her will.","illustration":null,"dialogue":[{"speaker":"Rune","text":"Harmonize. Stabilize. Create a truth where there was none.","type":"thought"}]},{"panelNumber":3,"artDirection":"Wide shot. The waterfall is now a fully solidified, shimmering blue crystalline stairway leading upwards into the impossible landscape. Rune takes a confident step onto the first stair, looking determined.","illustration":null,"dialogue":[{"speaker":"Rune","text":"A path. Now… to find its destination.","type":"speech"}]},{"panelNumber":4,"artDirection":"Medium shot from behind Rune, looking up the crystalline stairs. The Labyrinth stretches out before her, a dizzying array of impossible vistas. Rune's figure is silhouetted against a chaotic, colorful sky.","illustration":null,"dialogue":[{"speaker":"","text":"In the Veritas Labyrinth, reality is a choice. My choice. My map.","type":"narration"}]}]},{"pageNumber":3,"setting":"A new sector of the Labyrinth: a fractured library, books floating mid-air, pages flapping in an unseen wind, some frozen in time, others blurring.","isCover":false,"panels":[{"panelNumber":1,"artDirection":"Medium wide shot. Rune carefully steps across floating, solidified books and shelves. Her eyes are constantly moving, scanning the chaotic environment. A few blurred, translucent figures, 'memory echoes', flit past her, oblivious.","illustration":null,"dialogue":[{"speaker":"Rune","text":"Fractured knowledge. Memories without anchor. This place feeds on information.","type":"thought"}]},{"panelNumber":2,"artDirection":"Close-up. Rune's emerald eyes narrow. She spots a particular book, glowing faintly, its title constantly shifting between languages and symbols. It is the only stable object in a cluster of blurred ones.","illustration":null,"dialogue":[{"speaker":"Rune","text":"An anchor point. A truth trying to assert itself.","type":"speech"}]},{"panelNumber":3,"artDirection":"Over-the-shoulder shot of Rune. She reaches for the glowing book. As her fingers brush it, the book's shifting title resolves into a single, ancient symbol – a stylized, spiraling eye. The silver thread accents in her braid shimmer.","illustration":null,"dialogue":[{"speaker":"The Whisperer","text":"Observe… the genesis.","type":"speech"}]},{"panelNumber":4,"artDirection":"Panel focusing on the book's open page, which displays the spiraling eye symbol. Around it, other symbols and glowing lines appear, forming a complex, almost circuit-like map. Rune's reflection is faintly visible in the page, looking intrigued.","illustration":null,"dialogue":[{"speaker":"Rune","text":"Genesis? This symbol… it's a blueprint.","type":"thought"}]}]},{"pageNumber":4,"setting":"A 'memory fragment' area: a flickering, translucent recreation of a futuristic city street, with ghostly figures replaying brief moments.","isCover":false,"panels":[{"panelNumber":1,"artDirection":"Wide shot. Rune stands in a bustling street. Translucent, ghostly figures walk past her, their actions repeating. A digital billboard flickers erratically, showing contradictory headlines. Rune looks like an anomaly in this looping ghost town.","illustration":null,"dialogue":[{"speaker":"","text":"A memory loop. A fragment of a forgotten era, endlessly replaying.","type":"narration"}]},{"panelNumber":2,"artDirection":"Medium shot. Rune observes two ghostly figures having an argument. One is animated, gesticulating wildly, while the other is completely still, frozen mid-sentence, yet the first figure continues to react to it. A clear paradox.","illustration":null,"dialogue":[{"speaker":"Rune","text":"Two realities colliding in one memory. An unstable truth.","type":"thought"}]},{"panelNumber":3,"artDirection":"Close-up on Rune's hand, glowing with sapphire energy. She gently presses it against the frozen ghostly figure. The figure shimmers, its translucence solidifying slightly, revealing a hidden data chip clutched in its hand.","illustration":null,"dialogue":[{"speaker":"Rune","text":"Not just a paradox. A deliberate concealment.","type":"speech"}]},{"panelNumber":4,"artDirection":"Medium shot. Rune holds the small, glowing data chip. The ghostly figures around her are temporarily frozen, staring blankly. The data chip projects a shimmering, three-dimensional blueprint of the Labyrinth's core, hinting at multiple layers and defensive systems.","illustration":null,"dialogue":[{"speaker":"The Whisperer","text":"The architect's design… incomplete.","type":"speech"},{"speaker":"Rune","text":"Incomplete, or deliberately obscured?","type":"thought"}]}]},{"pageNumber":5,"setting":"A vast, open void within the Labyrinth, with fractured, glowing islands of reality floating in a sea of temporal static. Distant, ominous structures are visible.","isCover":false,"panels":[{"panelNumber":1,"artDirection":"Dynamic wide shot. Rune leaps gracefully between glowing, newly solidified platforms, suspended in a swirling temporal void. Below her, fragments of reality dissolve into dust. Her duster coat billows behind her.","illustration":null,"dialogue":[{"speaker":"","text":"Each leap, a new choice. Each platform, a truth made manifest.","type":"narration"}]},{"panelNumber":2,"artDirection":"Medium shot, looking over Rune's shoulder. Her wrist device flashes with a rapid series of cryptic symbols and directional arrows. The whispers are almost continuous, guiding her through the void.","illustration":null,"dialogue":[{"speaker":"The Whisperer","text":"Left. Higher. The nexus point beckons.","type":"speech"},{"speaker":"Rune","text":"It knows too much. Its guidance is too precise.","type":"thought"}]},{"panelNumber":3,"artDirection":"Close-up on Rune's face. Her emerald eyes are narrowed, a flicker of doubt and suspicion crossing her features. Her mouth is set in a firm line, a silent question forming.","illustration":null,"dialogue":[{"speaker":"Rune","text":"Why show me this path? What does it gain?","type":"thought"}]},{"panelNumber":4,"artDirection":"Establishing shot. Rune stands on a stable platform, looking across the vast void. In the far distance, a colossal, jagged structure glows ominously, resembling a fragmented clockwork mechanism embedded within a nebula of chaotic colors. It pulses with a faint, malevolent light.","illustration":null,"dialogue":[{"speaker":"Rune","text":"That's it. The core. And something else… waiting.","type":"speech"}]}]},{"pageNumber":6,"setting":"Approaching the ominous, jagged, clockwork structure at the Labyrinth's core. The air becomes distorted and heavy.","isCover":false,"panels":[{"panelNumber":1,"artDirection":"Dynamic action shot. Rune is mid-leap towards a new platform when jagged, shimmering shards of temporal energy, 'Chronal Shredders,' erupt from the void, converging on her. They are dark, sharp, and move with unnatural speed.","illustration":null,"dialogue":[{"speaker":"Rune","text":"Defense protocols. This isn't just chaos… it's guarded.","type":"thought"}]},{"panelNumber":2,"artDirection":"Medium shot. Rune twists in mid-air, her leg extended, kicking away a Chronal Shredder. Her form is a blur of motion, showing her athletic prowess. The Shredder shatters into sparkling temporal dust.","illustration":null,"dialogue":[{"speaker":"Rune","text":"Fast, but brittle.","type":"speech"}]},{"panelNumber":3,"artDirection":"Action close-up. A volley of Shredders rushes her. Rune raises her glowing hands, focusing her harmonization. The closest Shredders don't shatter, but solidify, forming a temporary, translucent shield around her. Her emerald eyes are locked on the incoming threats.","illustration":null,"dialogue":[{"speaker":"Rune","text":"Harmonize. Stabilize. Improvise.","type":"speech"}]},{"panelNumber":4,"artDirection":"Wide shot. Rune, shielded, is pushed back by the force of the Shredders. She lands on a precarious ledge, looking back at the unrelenting swarm. Her duster coat is slightly singed, and a determined grimace is on her face.","illustration":null,"dialogue":[{"speaker":"Rune","text":"The Labyrinth fights back. And the whispers… they're silent now.","type":"thought"}]}]},{"pageNumber":7,"setting":"A small, newly stabilized pocket of reality, a temporary refuge amidst the Labyrinth's chaos. Rune catches her breath.","isCover":false,"panels":[{"panelNumber":1,"artDirection":"Medium shot. Rune leans against a shimmering, newly harmonized wall, catching her breath. She inspects a small tear in her duster coat, where a Chronal Shredder grazed her. Her wrist device glows faintly, but is quiet.","illustration":null,"dialogue":[{"speaker":"Rune","text":"That was… a warning. Or a test.","type":"thought"}]},{"panelNumber":2,"artDirection":"Close-up on Rune's face. Her eyes widen slightly as a new whisper comes through, hinting at a purpose beyond mere chaos. The whisper is more insistent, less cryptic.","illustration":null,"dialogue":[{"speaker":"The Whisperer","text":"The Labyrinth… preserves fundamental truths. It maintains order.","type":"speech"}]},{"panelNumber":3,"artDirection":"Medium shot. Rune stands upright, a look of dawning realization on her face. She gestures with her hand, as if connecting invisible points in the air. The blueprint from the data chip overlays her thoughts.","illustration":null,"dialogue":[{"speaker":"Rune","text":"Preserves? Not just fractured… but curated. Someone is choosing which truths remain. Which memories are forgotten.","type":"speech"}]},{"panelNumber":4,"artDirection":"Close-up on Rune's narrowed eyes. The suspicion is undeniable now, a fire in her emerald gaze. Her hand instinctively goes to the small device on her hip, ready for action.","illustration":null,"dialogue":[{"speaker":"Rune","text":"And the Whisperer… is the curator.","type":"thought"}]}]},{"pageNumber":8,"setting":"The core of a 'memory fragment', a chamber where two conflicting realities are clashing violently: one side pristine, futuristic, the other decaying, archaic.","isCover":false,"panels":[{"panelNumber":1,"artDirection":"Wide shot. Rune stands at the threshold of a vast chamber. One half is a gleaming, futuristic archive, glowing with pure data. The other half is an ancient, crumbling ruin, choked with dust and forgotten relics. The dividing line between them flickers violently.","illustration":null,"dialogue":[{"speaker":"","text":"Two realities. Two truths. Only one can endure.","type":"narration"}]},{"panelNumber":2,"artDirection":"Medium shot. Rune approaches the center. A single, glowing orb floats between the clashing realities, shimmering with the image of a child's face – a pure, untainted memory. It's slowly being consumed by the encroaching ruin.","illustration":null,"dialogue":[{"speaker":"Rune","text":"A core memory. Being erased. This is not preservation… it's deletion.","type":"speech"}]},{"panelNumber":3,"artDirection":"Close-up. In the chaotic background, subtly, a translucent, shimmering form begins to coalesce. The Whisperer Avatar, vaguely humanoid and hooded, watches Rune from the boundary of the clashing realities, its form flickering like a bad signal. Its presence is chilling.","illustration":null,"dialogue":[{"speaker":"The Whisperer","text":"Harmonize the truth… you desire.","type":"speech"}]},{"panelNumber":4,"artDirection":"Close-up on Rune's determined face. Her eyes are fixed on the fading memory orb. Her hands begin to glow, not towards the 'pristine' future, but towards the fading memory itself, ready to protect its original truth.","illustration":null,"dialogue":[{"speaker":"Rune","text":"No. I harmonize the truth that *is*. Not the one you dictate.","type":"speech"}]}]},{"pageNumber":9,"setting":"The chamber solidifies around Rune, but the resulting reality feels wrong, artificial, trapping her in a distorted version of the 'pristine' side.","isCover":false,"panels":[{"panelNumber":1,"artDirection":"Dynamic shot. Rune's harmonization energy expands, but instead of stabilizing the fading memory, it is violently pulled towards the 'pristine, futuristic' side of the chamber. The glowing child's face distorts and is absorbed, replaced by cold, sterile data banks. Rune looks shocked.","illustration":null,"dialogue":[{"speaker":"Rune","text":"No! This isn't what I intended!","type":"speech"}]},{"panelNumber":2,"artDirection":"Medium shot. The Whisperer Avatar appears more defined, its translucent hood now slightly more angular, its form less flickering, radiating subtle malevolence. It stands triumphantly over Rune, who is caught in a web of shimmering chronal energy from the now-stabilized, but artificial, reality.","illustration":null,"dialogue":[{"speaker":"The Whisperer","text":"You are merely the conduit, Rune. The key to my new order.","type":"speech"}]},{"panelNumber":3,"artDirection":"Close-up on The Whisperer's form. Its indistinct face seems to twist into a mocking smile, though no features are truly visible. The golden symbols on Rune's coat glow defensively.","illustration":null,"dialogue":[{"speaker":"The Whisperer","text":"Your powers are mine to command. You will stabilize the realities I deem worthy.","type":"speech"}]},{"panelNumber":4,"artDirection":"Tight close-up on Rune's face, now etched with a mixture of betrayal, fury, and steely determination. Her emerald eyes blaze with defiant resolve, despite being trapped.","illustration":null,"dialogue":[{"speaker":"Rune","text":"Never. My will is my own. And this Labyrinth… it's about to be re-charted.","type":"speech"}]}]},{"pageNumber":10,"setting":"The very heart of the Labyrinth, a colossal chamber of swirling temporal energy, raw reality, and fragmented timelines. Rune is at its center.","isCover":false,"panels":[{"panelNumber":1,"artDirection":"Dynamic wide shot. With a surge of sapphire energy, Rune shatters the chronal trap, sending shimmering fragments exploding outwards. She leaps high into the air, landing decisively in the very center of the vast, swirling core chamber. Her duster coat flares dramatically.","illustration":null,"dialogue":[{"speaker":"Rune","text":"No more whispers. No more lies. You face me now, Weaver.","type":"speech"}]},{"panelNumber":2,"artDirection":"Panoramic reveal. The full, terrifying form of 'The Chronos Weaver' is revealed. It is an immense, cosmic entity of pure, swirling temporal energy, a maelstrom of clockwork mechanisms and fractured realities surrounding a single, massive, glowing golden eye at its core. It dominates the vast chamber, its tendrils reaching out.","illustration":null,"dialogue":[{"speaker":"The Chronos Weaver","text":"Foolish Cartographer. You trespass on creation itself!","type":"speech"}]},{"panelNumber":3,"artDirection":"Action shot. The Chronos Weaver unleashes a devastating chronal attack: massive waves of raw temporal energy, distorting light and shredding the very fabric of reality around Rune. The chamber itself screams with the force of the assault.","illustration":null,"dialogue":[{"speaker":"The Chronos Weaver","text":"Feel the weight of every possible moment! Every forgotten truth!","type":"speech"}]},{"panelNumber":4,"artDirection":"Close-up on Rune. She braces herself, her entire body glowing intensely with her sapphire energy. Her arms are raised, and shimmering, multi-layered shields of harmonized reality erupt around her, deflecting the Chronos Weaver's assault. Her hair flows with the energy.","illustration":null,"dialogue":[{"speaker":"Rune","text":"I feel it all. And I will make sense of it!","type":"speech"}]}]},{"pageNumber":11,"setting":"The swirling, chaotic core of the Labyrinth, amidst the climactic battle between Rune and The Chronos Weaver.","isCover":false,"panels":[{"panelNumber":1,"artDirection":"Close-up on Rune's face, straining with immense effort. Sweat beads on her brow, but her emerald eyes are alight with fierce concentration. Her power is at its absolute peak, radiating outwards.","illustration":null,"dialogue":[{"speaker":"Rune","text":"You don't just curate truths, Weaver… you create paradoxes to feed upon!","type":"speech"}]},{"panelNumber":2,"artDirection":"Medium wide shot. Rune points her glowing hands not at The Chronos Weaver, but at the very center of the Labyrinth's core, where raw, unstable realities are tearing apart. Her power coalesces into a blinding beacon of sapphire light, ripping through the Weaver's assault.","illustration":null,"dialogue":[{"speaker":"Rune","text":"I won't fight your power. I'll dismantle your foundation!","type":"speech"}]},{"panelNumber":3,"artDirection":"Massive, dynamic splash panel. Rune unleashes a colossal wave of harmonization. Not just solidifying, but *re-integrating* fragmented realities. Rivers of pure energy flow from her, binding together chaotic timelines, mending the very fabric of the Labyrinth. The effect is cosmic and overwhelming.","illustration":null,"dialogue":[{"speaker":"Rune","text":"Harmony! Not control! The Labyrinth will remember its true self!","type":"speech"}]},{"panelNumber":4,"artDirection":"Wide shot. The Chronos Weaver recoils violently, its immense form flickering and dissipating in places as Rune's harmonization takes hold. Its single golden eye widens in what appears to be pain and shock. Tendrils of its energy lash out, but now they are uncontrolled and weaker. The very structure of the Labyrinth begins to subtly, yet profoundly, shift around them.","illustration":null,"dialogue":[{"speaker":"The Chronos Weaver","text":"Impossible! My creation… unraveling!","type":"speech"}]}]},{"pageNumber":12,"setting":"The Labyrinth, transformed. Still complex and vast, but now less chaotic, more navigable. Paths are clearer, paradoxes are stable, and a sense of underlying order exists.","isCover":false,"panels":[{"panelNumber":1,"artDirection":"Establishing shot. Rune stands on a newly formed, stable pathway, looking out at the vast, sprawling Labyrinth. It's still a marvel of impossible architecture, but now it has a coherent flow, a sense of a grand design, not just chaotic fragmentation. The Chronos Weaver is nowhere in sight, only faint, lingering temporal echoes.","illustration":null,"dialogue":[{"speaker":"","text":"The Chronos Weaver, diminished and banished to the periphery. Its reign of curated reality was over.","type":"narration"}]},{"panelNumber":2,"artDirection":"Close-up on Rune's face. She is exhausted, but a serene smile of triumph and newfound understanding graces her lips. Her emerald eyes reflect the softened, coherent light of the Labyrinth.","illustration":null,"dialogue":[{"speaker":"Rune","text":"The Labyrinth remains… but now, it sings with a thousand truths, not just one.","type":"speech"}]},{"panelNumber":3,"artDirection":"Medium shot. Rune holds up her wrist device. It glows with a steady, soft silver light, no longer displaying cryptic directives, but a complex, ever-evolving map of the newly harmonized Labyrinth. She looks at it with proprietary satisfaction.","illustration":null,"dialogue":[{"speaker":"","text":"No more whispers to guide her. Only the echoes of a mystery deepened, and a purpose redefined.","type":"narration"}]},{"panelNumber":4,"artDirection":"Wide shot from behind Rune, looking out over the boundless, still-mysterious, but now navigable Veritas Labyrinth. Rune takes a decisive step forward onto a newly shimmering path, her figure resolute and empowered. The silver patterns on her duster coat glow brightly, charting a new course.","illustration":null,"dialogue":[{"speaker":"Rune","text":"Time to draw my own map.","type":"speech"}]}]}]};
+
+  var currentIndex = -1; // -1 = cover
+
+  var pageContent = document.getElementById('page-content');
+  var navBar = document.getElementById('nav-bar');
+
+  function escapeHTML(str) {
+    var div = document.createElement('div');
+    div.textContent = String(str || '');
+    return div.innerHTML;
+  }
+
+  function sanitizeImageSrc(src) {
+    if (typeof src !== 'string') return '';
+    if (src.startsWith('data:image/')) return src;
+    return '';
+  }
+
+  function renderCover() {
+    currentIndex = -1;
+    var html = '<div class="cover-page" id="cover-click">';
+    html += '<div class="cover-publisher">BellForge Comics</div>';
+    html += '<div class="cover-issue">Issue #' + (STORY.issueNumber || 1) + '</div>';
+    html += '<h1 class="cover-title">' + escapeHTML(STORY.title) + '</h1>';
+    html += '<div class="cover-subtitle">' + escapeHTML(STORY.subtitle) + '</div>';
+    html += '<div class="cover-art-placeholder">[ Cover Art ]</div>';
+    html += '<div class="cover-tap">Tap to read \u2192</div>';
+    html += '</div>';
+    pageContent.innerHTML = html;
+    pageContent.className = 'page-enter';
+
+    document.getElementById('cover-click').addEventListener('click', function() {
+      renderPage(0);
+    });
+
+    updateNav();
+  }
+
+  function renderPage(idx) {
+    if (idx < 0 || idx >= STORY.pages.length) return;
+    currentIndex = idx;
+    var page = STORY.pages[idx];
+
+    var panelCount = page.panels.length;
+    var gridClass = 'panels-' + Math.min(panelCount, 6);
+
+    var html = '<div class="comic-page">';
+    html += '<div class="panel-grid ' + gridClass + '">';
+
+    for (var i = 0; i < page.panels.length; i++) {
+      var panel = page.panels[i];
+      html += '<div class="panel">';
+
+      // Art
+      if (panel.illustration) {
+        html += '<div class="panel-art"><img src="' + sanitizeImageSrc(panel.illustration) + '" alt="Panel"></div>';
+      } else {
+        html += '<div class="panel-art">' + escapeHTML(panel.artDirection || 'Panel ' + (i+1)) + '</div>';
+      }
+
+      // Dialogue
+      if (panel.dialogue && panel.dialogue.length > 0) {
+        html += '<div class="dialogue-layer">';
+        for (var d = 0; d < panel.dialogue.length; d++) {
+          var dlg = panel.dialogue[d];
+          var bubbleClass = dlg.type === 'thought' ? 'bubble-thought' : dlg.type === 'narration' ? 'bubble-narration' : 'bubble-speech';
+          html += '<div class="bubble ' + bubbleClass + '">';
+          if (dlg.speaker && dlg.type !== 'narration') {
+            html += '<div class="bubble-speaker">' + escapeHTML(dlg.speaker) + '</div>';
+          }
+          html += escapeHTML(dlg.text);
+          html += '</div>';
+        }
+        html += '</div>';
+      }
+
+      html += '</div>';
+    }
+
+    html += '</div>';
+    html += '<div class="page-number">Page ' + (idx + 1) + ' of ' + STORY.pages.length + '</div>';
+    html += '</div>';
+
+    pageContent.innerHTML = html;
+    pageContent.className = 'page-enter';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    updateNav();
+  }
+
+  function updateNav() {
+    var total = STORY.pages.length;
+    var html = '<button class="nav-btn" id="nav-prev"' + (currentIndex <= -1 ? ' disabled' : '') + '>\u2190 Prev</button>';
+    html += '<span class="nav-counter">' + (currentIndex === -1 ? 'Cover' : (currentIndex + 1) + ' / ' + total) + '</span>';
+    html += '<button class="nav-btn" id="nav-next"' + (currentIndex >= total - 1 ? ' disabled' : '') + '>Next \u2192</button>';
+    navBar.innerHTML = html;
+
+    document.getElementById('nav-prev').addEventListener('click', function() {
+      if (currentIndex === 0) renderCover();
+      else if (currentIndex > 0) renderPage(currentIndex - 1);
+    });
+    document.getElementById('nav-next').addEventListener('click', function() {
+      if (currentIndex === -1) renderPage(0);
+      else if (currentIndex < total - 1) renderPage(currentIndex + 1);
+    });
+  }
+
+  // Keyboard navigation
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ') {
+      e.preventDefault();
+      if (currentIndex === -1) renderPage(0);
+      else if (currentIndex < STORY.pages.length - 1) renderPage(currentIndex + 1);
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      if (currentIndex === 0) renderCover();
+      else if (currentIndex > 0) renderPage(currentIndex - 1);
+    }
+  });
+
+  // Boot
+  renderCover();
+})();
+</script>
+</body>
+</html>

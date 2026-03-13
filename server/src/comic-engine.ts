@@ -95,10 +95,21 @@ export function generateComicPreviewHtml(story: ComicStory): string {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: rgba(255,255,255,0.3);
+    color: rgba(255,255,255,0.5);
     font-style: italic;
+    font-size: 0.9rem;
     margin-bottom: 2rem;
-    background: rgba(0,0,0,0.3);
+    background: linear-gradient(135deg, rgba(229,57,53,0.15) 0%, rgba(255,215,0,0.1) 50%, rgba(26,26,46,0.8) 100%);
+    box-shadow: 0 0 40px rgba(229,57,53,0.2), inset 0 0 60px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+  }
+  .cover-art-placeholder::before {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border: 1px solid rgba(255,215,0,0.2);
+    border-radius: 4px;
   }
   .cover-tap {
     font-family: 'Bangers', cursive;
@@ -161,11 +172,20 @@ export function generateComicPreviewHtml(story: ComicStory): string {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #ccc;
+    color: rgba(255,255,255,0.85);
     font-style: italic;
-    font-size: 0.8rem;
-    background: linear-gradient(135deg, #f8f8f8, #e8e8e8);
+    font-size: 0.75rem;
+    line-height: 1.4;
+    padding: 12px;
+    text-align: center;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
   }
+  .panel:nth-child(1) .panel-art { background: linear-gradient(135deg, #2d3436 0%, #636e72 100%); }
+  .panel:nth-child(2) .panel-art { background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); }
+  .panel:nth-child(3) .panel-art { background: linear-gradient(135deg, #2c3e50 0%, #4a69bd 100%); }
+  .panel:nth-child(4) .panel-art { background: linear-gradient(135deg, #341f97 0%, #6c5ce7 100%); }
+  .panel:nth-child(5) .panel-art { background: linear-gradient(135deg, #2d3436 0%, #b2bec3 100%); }
+  .panel:nth-child(6) .panel-art { background: linear-gradient(135deg, #0c2461 0%, #4a69bd 100%); }
   .panel-art img {
     width: 100%;
     height: 100%;
@@ -293,7 +313,7 @@ export function generateComicPreviewHtml(story: ComicStory): string {
     html += '<div class="cover-issue">Issue #' + (STORY.issueNumber || 1) + '</div>';
     html += '<h1 class="cover-title">' + escapeHTML(STORY.title) + '</h1>';
     html += '<div class="cover-subtitle">' + escapeHTML(STORY.subtitle) + '</div>';
-    html += '<div class="cover-art-placeholder">[ Cover Art ]</div>';
+    html += '<div class="cover-art-placeholder">✦ ' + escapeHTML(STORY.title) + ' ✦</div>';
     html += '<div class="cover-tap">Tap to read \\u2192</div>';
     html += '</div>';
     pageContent.innerHTML = html;
