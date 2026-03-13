@@ -39,7 +39,7 @@ export function generateComicPreviewHtml(story: ComicStory): string {
   }
 
   #comic-container {
-    max-width: 780px;
+    max-width: 100%;
     margin: 0 auto;
     padding: 0;
   }
@@ -88,8 +88,9 @@ export function generateComicPreviewHtml(story: ComicStory): string {
     max-width: 500px;
   }
   .cover-art-placeholder {
-    width: 300px;
-    height: 400px;
+    width: 60vw;
+    max-width: 500px;
+    aspect-ratio: 3/4;
     border: 3px solid var(--title-gold);
     border-radius: 8px;
     display: flex;
@@ -122,10 +123,11 @@ export function generateComicPreviewHtml(story: ComicStory): string {
   /* Page */
   .comic-page {
     background: var(--page-bg);
-    margin: 4px 0;
+    margin: 4px auto;
     padding: 12px;
     position: relative;
-    min-height: 80vh;
+    min-height: 90vh;
+    max-width: 900px;
   }
   .page-number {
     position: absolute;
@@ -141,7 +143,7 @@ export function generateComicPreviewHtml(story: ComicStory): string {
     display: grid;
     gap: 6px;
     height: 100%;
-    min-height: 70vh;
+    min-height: 80vh;
   }
   .panel-grid.panels-3 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
   .panel-grid.panels-3 .panel:first-child { grid-column: 1 / -1; }
@@ -161,10 +163,6 @@ export function generateComicPreviewHtml(story: ComicStory): string {
     position: relative;
     overflow: hidden;
     min-height: 120px;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: 8px;
   }
   .panel-art {
     position: absolute;
@@ -192,51 +190,65 @@ export function generateComicPreviewHtml(story: ComicStory): string {
     object-fit: cover;
   }
 
-  /* Dialogue bubbles */
+  /* Dialogue positioning grid — bubbles placed in zones away from characters */
   .dialogue-layer {
-    position: relative;
+    position: absolute;
+    inset: 0;
     z-index: 2;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
+    padding: 6px;
     pointer-events: none;
   }
+  /* Narration: top banner, full width */
+  .bubble-zone-top {
+    align-self: stretch;
+  }
+  /* Speech on left side (speaker is on right) */
+  .bubble-zone-left {
+    align-self: flex-start;
+    max-width: 55%;
+  }
+  /* Speech on right side (speaker is on left) */
+  .bubble-zone-right {
+    align-self: flex-end;
+    max-width: 55%;
+  }
+  /* Center fallback */
+  .bubble-zone-center {
+    align-self: center;
+    max-width: 60%;
+  }
   .bubble {
-    padding: 6px 10px;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    line-height: 1.3;
-    max-width: 85%;
+    padding: 5px 8px;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    line-height: 1.25;
     word-wrap: break-word;
+    opacity: 0.92;
   }
   .bubble-speech {
     background: var(--bubble-bg);
     border: 2px solid var(--bubble-border);
     font-weight: 700;
-    align-self: flex-start;
   }
   .bubble-thought {
     background: var(--thought-bg);
     border: 2px dashed var(--thought-border);
     font-style: italic;
-    align-self: flex-end;
     border-radius: 20px;
   }
   .bubble-narration {
     background: var(--narration-bg);
     border: 1px solid var(--narration-border);
     font-style: italic;
-    font-size: 0.75rem;
-    align-self: stretch;
+    font-size: 0.68rem;
     border-radius: 2px;
     text-align: center;
   }
   .bubble-speaker {
-    font-family: 'Bangers', cursive;
-    font-size: 0.65rem;
-    color: #888;
-    margin-bottom: 1px;
-    font-style: normal;
+    display: none;
   }
 
   /* Navigation */
@@ -360,16 +372,24 @@ export function generateComicPreviewHtml(story: ComicStory): string {
           html += '<div class="panel-art">' + escapeHTML(panel.artDirection || 'Panel ' + (i+1)) + '</div>';
         }
 
-        // Dialogue
+        // Dialogue — positioned in zones based on speakerPosition
         if (panel.dialogue && panel.dialogue.length > 0) {
-          html += '<div class="dialogue-layer">';
+          html += '<div class=\"dialogue-layer\">';
           for (var d = 0; d < panel.dialogue.length; d++) {
             var dlg = panel.dialogue[d];
             var bubbleClass = dlg.type === 'thought' ? 'bubble-thought' : dlg.type === 'narration' ? 'bubble-narration' : 'bubble-speech';
-            html += '<div class="bubble ' + bubbleClass + '">';
-            if (dlg.speaker && dlg.type !== 'narration') {
-              html += '<div class="bubble-speaker">' + escapeHTML(dlg.speaker) + '</div>';
+            // Position bubble OPPOSITE to speaker: speaker left → bubble right, etc.
+            var zoneClass = 'bubble-zone-top';
+            if (dlg.type === 'narration') {
+              zoneClass = 'bubble-zone-top';
+            } else if (dlg.speakerPosition === 'left') {
+              zoneClass = 'bubble-zone-right';
+            } else if (dlg.speakerPosition === 'right') {
+              zoneClass = 'bubble-zone-left';
+            } else {
+              zoneClass = d % 2 === 0 ? 'bubble-zone-left' : 'bubble-zone-right';
             }
+            html += '<div class=\"bubble ' + bubbleClass + ' ' + zoneClass + '\">';
             html += escapeHTML(dlg.text);
             html += '</div>';
           }

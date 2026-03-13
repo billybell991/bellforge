@@ -377,6 +377,53 @@ export async function phaseQA(
     }
   }
 
+  // 5. Verify item gates are reachable AFTER obtaining the item
+  // BFS from page 1, tracking which items we've collected at each state.
+  // If we reach a gate before we can possibly have the item, remove the gate.
+  const itemPages = new Map<string, Set<string>>(); // item → set of page IDs where it's found
+  for (const [pid, page] of Object.entries(pages)) {
+    for (const item of page.items) {
+      if (!itemPages.has(item)) itemPages.set(item, new Set());
+      itemPages.get(item)!.add(pid);
+    }
+  }
+  // BFS collecting items — track the earliest reachable page for each item
+  const itemFirstReachable = new Map<string, number>(); // item → BFS visit order
+  const visitOrder = new Map<string, number>(); // pageId → BFS order
+  const bfsQueue: string[] = ['1'];
+  const bfsVisited = new Set<string>();
+  let bfsOrder = 0;
+  while (bfsQueue.length > 0) {
+    const pid = bfsQueue.shift()!;
+    if (bfsVisited.has(pid)) continue;
+    bfsVisited.add(pid);
+    visitOrder.set(pid, bfsOrder++);
+    const pg = pages[pid];
+    if (!pg) continue;
+    // Record items found at this page
+    for (const item of pg.items) {
+      if (!itemFirstReachable.has(item)) {
+        itemFirstReachable.set(item, visitOrder.get(pid)!);
+      }
+    }
+    // Follow ungated choices first (BFS naturally explores breadth-first)
+    for (const c of pg.choices) {
+      if (!bfsVisited.has(c.page)) bfsQueue.push(c.page);
+    }
+  }
+  // Now check: for each gated choice, is the item obtainable before this page?
+  for (const [pid, page] of Object.entries(pages)) {
+    for (const choice of page.choices) {
+      if (!choice.itemRequired) continue;
+      const gateOrder = visitOrder.get(pid) ?? Infinity;
+      const itemOrder = itemFirstReachable.get(choice.itemRequired) ?? Infinity;
+      if (itemOrder >= gateOrder) {
+        // Item is found at or after the gate — player can't have it yet. Remove gate.
+        delete choice.itemRequired;
+      }
+    }
+  }
+
   story.totalPages = Object.keys(pages).length;
   return story;
 }
@@ -409,9 +456,16 @@ export async function runAdventurePipeline(
 ): Promise<AdventurePipelineResult | null> {
   const t0 = Date.now();
 
-  // Phase 1: Concept
+  // Phase 1: Concept — with heartbeat so progress doesn't freeze
   sendProgress(5, `Designing a ${config.cyoaGenre.name} story with ${config.structure.pageCount} pages...`, 'concept');
+  let conceptPct = 5;
+  const conceptHeartbeat = setInterval(() => {
+    conceptPct = Math.min(conceptPct + 1, 14);
+    const dots = '.'.repeat((conceptPct % 3) + 1);
+    sendProgress(conceptPct, `Gemini is designing the story outline${dots}`, 'outline');
+  }, 3000);
   const concept = await phaseConcept(config, (msg) => sendProgress(10, msg, 'outline'));
+  clearInterval(conceptHeartbeat);
   if (!concept) {
     sendProgress(0, 'Failed to generate concept — Gemini did not return valid JSON');
     return null;
@@ -460,59 +514,53 @@ export async function runAdventurePipeline(
   const themeStr = themeAtmo[config.theme.id] || 'atmospheric, cinematic lighting';
   const ANTI_IMG_TEXT = 'absolutely no text no words no letters no writing no logos no UI no signage no titles no captions';
 
-  // Pick key pages to illustrate: opening, all endings, plus evenly-spaced story pages
-  const pageIds = Object.keys(story.pages);
-  const endingIds = pageIds.filter(id => story.pages[id].isEnding);
-  const nonEndingIds = pageIds.filter(id => !story.pages[id].isEnding && id !== '1');
-  const illustrateIds = new Set<string>(['1', ...endingIds]);
-  // Add ~1/3 of remaining pages, evenly spaced
-  const stride = Math.max(1, Math.floor(nonEndingIds.length / Math.ceil(nonEndingIds.length / 3)));
-  for (let i = 0; i < nonEndingIds.length; i += stride) {
-    illustrateIds.add(nonEndingIds[i]);
-  }
-  // Cap at 8 illustrations to keep build time reasonable
-  const toIllustrate = [...illustrateIds].slice(0, 8);
+  // Illustrate EVERY page — each page gets a small scene illustration
+  const toIllustrate = Object.keys(story.pages);
+  const totalImages = toIllustrate.length + 1; // +1 for cover
 
   // Cover illustration
-  sendProgress(63, 'Painting cover illustration...', 'illustrations');
+  sendProgress(63, `Painting cover illustration (1/${totalImages})...`, 'illustrations');
   const coverPrompt = `${artPrefix} book cover illustration, ${concept.premise}, ${themeStr}, dramatic cinematic composition, ${ANTI_IMG_TEXT}`;
   const coverImg = await generateImage(coverPrompt, '3:4');
   if (coverImg) {
     story.coverIllustration = `data:image/png;base64,${coverImg}`;
   }
 
-  // Interior illustrations
+  // Interior illustrations — every page gets one
+  let imgSuccess = coverImg ? 1 : 0;
   for (let i = 0; i < toIllustrate.length; i++) {
     const pid = toIllustrate[i];
     const page = story.pages[pid];
     if (!page) continue;
-    const pct = 65 + Math.floor((i / toIllustrate.length) * 10);
+    // Progress: 63% to 88% spread across all images
+    const pct = 63 + Math.floor(((i + 1) / totalImages) * 25);
     const pageEntry = concept.page_map.find(p => String(p.id) === pid);
     const setting = pageEntry?.setting || 'a mysterious scene';
     const summary = pageEntry?.summary || '';
-    sendProgress(pct, `Illustrating page ${pid}: ${setting.substring(0, 40)}...`, 'illustrations');
+    sendProgress(pct, `Illustrating page ${pid}/${toIllustrate.length}: ${setting.substring(0, 40)}...`, 'illustrations');
 
-    const prompt = `${artPrefix} book illustration, scene: ${setting}, ${summary}, ${themeStr}, atmospheric scenery, ${ANTI_IMG_TEXT}`;
-    const img = await generateImage(prompt, '16:9');
+    const prompt = `${artPrefix} interior book illustration, scene: ${setting}, ${summary}, ${themeStr}, atmospheric scenery, ${ANTI_IMG_TEXT}`;
+    const img = await generateImage(prompt, '4:3');
     if (img) {
       page.illustration = `data:image/png;base64,${img}`;
       page.illustrationCaption = setting;
+      imgSuccess++;
     }
   }
-  sendProgress(75, `Illustrations complete: ${toIllustrate.length + (coverImg ? 1 : 0)} images generated`, 'illustrations');
+  sendProgress(88, `Illustrations complete: ${imgSuccess}/${totalImages} images generated`, 'illustrations');
 
   // Phase 5: QA & auto-fix
-  sendProgress(75, 'Checking graph integrity...', 'qa_graph');
+  sendProgress(89, 'Checking graph integrity...', 'qa_graph');
   const fixedStory = await phaseQA(story, concept, (msg) => {
     if (msg.includes('item gates')) {
-      sendProgress(82, msg, 'qa_items');
+      sendProgress(93, msg, 'qa_items');
     } else {
-      sendProgress(78, msg, 'qa_graph');
+      sendProgress(91, msg, 'qa_graph');
     }
   });
 
-  sendProgress(88, `QA complete — verifying endings...`, 'qa_endings');
-  sendProgress(92, 'Building interactive viewer...', 'viewer');
+  sendProgress(95, `QA complete — verifying endings...`, 'qa_endings');
+  sendProgress(96, 'Building interactive viewer...', 'viewer');
 
   const elapsed = Math.floor((Date.now() - t0) / 1000);
   sendProgress(98, `Forge complete in ${elapsed}s: "${fixedStory.title}" — ${fixedStory.totalPages} pages, ${endings} endings`, 'complete');

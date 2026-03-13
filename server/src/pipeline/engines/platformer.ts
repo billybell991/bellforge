@@ -142,27 +142,28 @@ function drawTutorial(){
 
 ${endingScreen()}
 
-// ═══════════ PHYSICS ═══════════
-function updatePhysics() {
-  var dt = 1; // fixed timestep
+// ═══════════ PHYSICS (fixed timestep) ═══════════
+var FIXED_DT = 1;
+var MAX_SUBSTEPS = 4;
+function physicsStep() {
   // Horizontal movement
   player.vx = moveDir * MOVE_SPEED;
-  player.x += player.vx * dt;
-  // Clamp to screen
+  player.x += player.vx * FIXED_DT;
   if (player.x < 0.01) player.x = 0.01;
   if (player.x + player.w > 0.99) player.x = 0.99 - player.w;
   if (moveDir !== 0) { player.facing = moveDir; player.frame++; }
 
   // Gravity
-  player.vy += GRAVITY * dt;
-  player.y += player.vy * dt;
+  player.vy += GRAVITY * FIXED_DT;
+  // Clamp max fall speed to prevent tunneling
+  if (player.vy > 0.025) player.vy = 0.025;
+  player.y += player.vy * FIXED_DT;
   player.onGround = false;
 
   // Platform collision
   var plats = levelPlatforms[currentLevel];
   for (var i = 0; i < plats.length; i++) {
     var p = plats[i];
-    // Only collide from above (falling onto platform)
     if (player.vy >= 0 &&
         player.x + player.w > p.x + 0.01 && player.x < p.x + p.w - 0.01 &&
         player.y + player.h >= p.y && player.y + player.h <= p.y + p.h + 0.02) {
@@ -203,6 +204,11 @@ function updatePhysics() {
       player.vy = JUMP_FORCE * 0.6; // small bounce
     }
   }
+
+}
+function updatePhysics() {
+  // Run physics in sub-steps to prevent tunneling through thin platforms
+  for (var ss = 0; ss < MAX_SUBSTEPS; ss++) { physicsStep(); }
 
   // Item pickup
   if (!foundItems.has(currentLevel)) {
@@ -393,11 +399,34 @@ function drawLevel() {
   glowRect(0.02, 0.008, 0.11, 0.038, 8, PALETTE.bg, PALETTE.accent+'55');
   drawT(collectStr, 0.075, 0.027, 10, PALETTE.accent);
 
-  // Touch controls hint (subtle glowing chevrons)
-  ctx.save();ctx.globalAlpha = 0.12;ctx.shadowColor=PALETTE.text;ctx.shadowBlur=4;
-  drawT('\\u25c0', 0.06, 0.82, 24, PALETTE.text);
-  drawT('\\u25b6', 0.94, 0.82, 24, PALETTE.text);
-  drawT('JUMP', 0.5, 0.08, 10, PALETTE.text);
+  // ═══ On-screen touch controls ═══
+  var tcAlpha = (moveDir !== 0 || jumpPressed) ? 0.45 : 0.22;
+
+  // Left button
+  ctx.save(); ctx.globalAlpha = moveDir === -1 ? 0.55 : tcAlpha;
+  ctx.shadowColor = PALETTE.accent; ctx.shadowBlur = moveDir === -1 ? 12 : 4;
+  rRect(0.02, 0.72, 0.10, 0.14, 12, PALETTE.bg + 'cc', PALETTE.accent);
+  drawTB('\u25c0', 0.07, 0.79, 22, PALETTE.accent);
+  ctx.restore();
+
+  // Right button
+  ctx.save(); ctx.globalAlpha = moveDir === 1 ? 0.55 : tcAlpha;
+  ctx.shadowColor = PALETTE.accent; ctx.shadowBlur = moveDir === 1 ? 12 : 4;
+  rRect(0.14, 0.72, 0.10, 0.14, 12, PALETTE.bg + 'cc', PALETTE.accent);
+  drawTB('\u25b6', 0.19, 0.79, 22, PALETTE.accent);
+  ctx.restore();
+
+  // Jump button (right side, larger)
+  ctx.save(); ctx.globalAlpha = jumpPressed ? 0.55 : tcAlpha;
+  ctx.shadowColor = PALETTE.accent; ctx.shadowBlur = jumpPressed ? 14 : 4;
+  ctx.beginPath();
+  ctx.arc(nx(0.88), ny(0.78), nx(0.065), 0, Math.PI * 2);
+  ctx.fillStyle = PALETTE.bg + 'cc'; ctx.fill();
+  ctx.strokeStyle = PALETTE.accent; ctx.lineWidth = 2; ctx.stroke();
+  ctx.restore();
+  ctx.save(); ctx.globalAlpha = jumpPressed ? 0.7 : tcAlpha + 0.1;
+  drawTB('\u25b2', 0.88, 0.76, 18, PALETTE.accent);
+  drawT('JUMP', 0.88, 0.82, 8, PALETTE.accent);
   ctx.restore();
 }
 
@@ -437,11 +466,21 @@ function frame(){
 
 // ═══════════ INPUT ═══════════
 ${inputPreamble()}
-  // Game input — touch controls
+  // Game input — mapped to visible on-screen controls
   moveDir = 0;
-  if(px < 0.25) { moveDir = -1; }
-  else if(px > 0.75) { moveDir = 1; }
-  if(py < 0.30) { jumpPressed = true; }
+  // Left button zone
+  if(px >= 0.02 && px <= 0.12 && py >= 0.72 && py <= 0.86) { moveDir = -1; }
+  // Right button zone
+  else if(px >= 0.14 && px <= 0.24 && py >= 0.72 && py <= 0.86) { moveDir = 1; }
+  // Jump button zone (circle around 0.88, 0.78)
+  var jdx = px - 0.88, jdy = py - 0.78;
+  if(Math.sqrt(jdx*jdx + jdy*jdy) < 0.09) { jumpPressed = true; }
+  // Fallback: left/right halves for movement when not on buttons
+  if(moveDir === 0 && !jumpPressed) {
+    if(px < 0.25 && py > 0.50) { moveDir = -1; }
+    else if(px > 0.75 && py > 0.50) { moveDir = 1; }
+    if(py < 0.30) { jumpPressed = true; }
+  }
 });
 
 // Touch move for continuous movement
@@ -449,9 +488,12 @@ canvas.addEventListener('pointermove', function(e){
   if(screen !== 'game' || showTutorial) return;
   var rect = canvas.getBoundingClientRect();
   var px = (e.clientX - rect.left) / rect.width;
+  var py = (e.clientY - rect.top) / rect.height;
   moveDir = 0;
-  if(px < 0.25) moveDir = -1;
-  else if(px > 0.75) moveDir = 1;
+  if(px >= 0.02 && px <= 0.12 && py >= 0.72 && py <= 0.86) moveDir = -1;
+  else if(px >= 0.14 && px <= 0.24 && py >= 0.72 && py <= 0.86) moveDir = 1;
+  else if(px < 0.25 && py > 0.50) moveDir = -1;
+  else if(px > 0.75 && py > 0.50) moveDir = 1;
 });
 
 canvas.addEventListener('pointerup', function(e){

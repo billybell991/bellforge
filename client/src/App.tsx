@@ -81,6 +81,8 @@ export default function App() {
 
   // Library count for badge display
   const [libraryCount, setLibraryCount] = useState(0);
+  // Library as modal overlay (never interrupts what's behind it)
+  const [showLibrary, setShowLibrary] = useState(false);
 
   const config: GameConfig | null =
     genre && theme && artStyle
@@ -107,89 +109,125 @@ export default function App() {
   }, []);
 
   // ── WebSocket management (lives at App level, survives page changes) ──
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reconnectAttempts = useRef(0);
+  const currentBuildId = useRef<string | null>(null);
+
   const connectWs = useCallback((id: string) => {
     // Close any existing connection
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
     }
+    if (reconnectTimer.current) {
+      clearTimeout(reconnectTimer.current);
+      reconnectTimer.current = null;
+    }
+    currentBuildId.current = id;
+    reconnectAttempts.current = 0;
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const ws = new WebSocket(`${protocol}//${host}/ws?buildId=${encodeURIComponent(id)}`);
-
-    ws.onopen = () => {
-      setBuildActive(true);
-    };
-
-    ws.onclose = () => {
-      // Don't clear buildActive — the build may still be running server-side
-      // We'll clear it only when we get 'complete' or 'error', or on explicit reset
-    };
-
-    ws.onerror = () => {
-      // Will trigger onclose
-    };
-
-    ws.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-
-        if (data.type === 'progress') {
-          const msg = data as WSProgressMessage;
-          setBuildPercent(msg.percent);
-          setBuildStageName(msg.name);
-          setBuildDetail(msg.detail);
-          setBuildLog((prev) => {
-            // If the last entry has the same name, update it in place (heartbeat)
-            if (prev.length > 0 && prev[prev.length - 1].name === msg.name) {
-              return prev.map((e, i) =>
-                i === prev.length - 1 ? { ...e, percent: msg.percent } : e
-              );
-            }
-            const updated = prev.map((e) => ({ ...e, done: true }));
-            return [...updated, { name: msg.name, percent: msg.percent, done: false }];
-          });
-        }
-
-        if (data.type === 'complete' && !buildCompletedRef.current) {
-          buildCompletedRef.current = true;
-          const msg = data as WSCompleteMessage;
-          setBuildPercent(100);
-          setBuildStageName('Build Complete!');
-          setBuildDetail('Your game is ready to deploy!');
-          setBuildLog((prev) => prev.map((e) => ({ ...e, done: true })));
-          setBuildActive(false);
-
-          // Set result info
-          setApkInfo({ path: msg.apkPath, size: msg.apkSize });
-          setPreviewUrl(msg.previewUrl);
-          setQaReport(msg.qaReport || null);
-
-          // Refresh library count (server auto-saved this game)
-          fetchLibraryCount();
-
-          // Navigate to preview after a brief pause
-          setTimeout(() => {
-            setPage('preview');
-          }, 1500);
-        }
-
-        if (data.type === 'error') {
-          setBuildError(data.message);
-          setBuildStageName('Build Failed');
-          setBuildDetail(data.message);
-          setBuildActive(false);
-        }
-      } catch {
-        // ignore malformed messages
+    function doConnect() {
+      // Clear any pending reconnect timer (guard against rapid close/reopen)
+      if (reconnectTimer.current) {
+        clearTimeout(reconnectTimer.current);
+        reconnectTimer.current = null;
       }
-    };
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.host;
+      const ws = new WebSocket(`${protocol}//${host}/ws?buildId=${encodeURIComponent(id)}`);
 
-    wsRef.current = ws;
+      ws.onopen = () => {
+        setBuildActive(true);
+        reconnectAttempts.current = 0;
+      };
+
+      ws.onclose = () => {
+        // Auto-reconnect with exponential backoff if build is still active
+        if (currentBuildId.current === id && !buildCompletedRef.current) {
+          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 16000);
+          reconnectAttempts.current++;
+          if (reconnectAttempts.current <= 8) {
+            setBuildDetail(`Connection lost — reconnecting in ${Math.round(delay / 1000)}s...`);
+            reconnectTimer.current = setTimeout(doConnect, delay);
+          } else {
+            setBuildDetail('Connection lost — please refresh the page.');
+          }
+        }
+      };
+
+      ws.onerror = () => {
+        // Will trigger onclose
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+
+          if (data.type === 'progress') {
+            const msg = data as WSProgressMessage;
+            setBuildPercent(msg.percent);
+            setBuildStageName(msg.name);
+            setBuildDetail(msg.detail);
+            setBuildLog((prev) => {
+              // If the last entry has the same name, update it in place (heartbeat)
+              if (prev.length > 0 && prev[prev.length - 1].name === msg.name) {
+                return prev.map((e, i) =>
+                  i === prev.length - 1 ? { ...e, percent: msg.percent } : e
+                );
+              }
+              const updated = prev.map((e) => ({ ...e, done: true }));
+              return [...updated, { name: msg.name, percent: msg.percent, done: false }];
+            });
+          }
+
+          if (data.type === 'complete' && !buildCompletedRef.current) {
+            buildCompletedRef.current = true;
+            const msg = data as WSCompleteMessage;
+            setBuildPercent(100);
+            setBuildStageName('Build Complete!');
+            setBuildDetail('Your game is ready to deploy!');
+            setBuildLog((prev) => prev.map((e) => ({ ...e, done: true })));
+            setBuildActive(false);
+
+            // Set result info
+            setApkInfo({ path: msg.apkPath, size: msg.apkSize });
+            setPreviewUrl(msg.previewUrl);
+            setQaReport(msg.qaReport || null);
+
+            // Refresh library count (server auto-saved this game)
+            fetchLibraryCount();
+
+            // Navigate to preview after a brief pause
+            setTimeout(() => {
+              setPage('preview');
+            }, 1500);
+          }
+
+          if (data.type === 'error') {
+            buildCompletedRef.current = true; // prevent reconnect on error
+            setBuildError(data.message);
+            setBuildStageName('Build Failed');
+            setBuildDetail(data.message);
+            setBuildActive(false);
+          }
+        } catch {
+          // ignore malformed messages
+        }
+      };
+
+      wsRef.current = ws;
+    }
+
+    buildCompletedRef.current = false;
+    doConnect();
   }, []);
 
   const disconnectWs = useCallback(() => {
+    currentBuildId.current = null;
+    if (reconnectTimer.current) {
+      clearTimeout(reconnectTimer.current);
+      reconnectTimer.current = null;
+    }
     if (wsRef.current) {
       wsRef.current.close();
       wsRef.current = null;
@@ -358,12 +396,8 @@ export default function App() {
   }, []);
 
   const handleGoToLibrary = useCallback(() => {
-    // If build is in progress, remember we came from building
-    if (page === 'building') {
-      preNavPageRef.current = 'building';
-    }
-    setPage('library');
-  }, [page]);
+    setShowLibrary(true);
+  }, []);
 
   const handleViewFromLibrary = useCallback((entry: LibraryEntry) => {
     const c = entry.config;
@@ -395,6 +429,7 @@ export default function App() {
     setBuildId(entry.buildId);
     setApkInfo({ path: '', size: entry.apkSize });
     setPreviewUrl(`/api/preview/${entry.buildId}`);
+    setShowLibrary(false);
     setPage('preview');
   }, []);
 
@@ -429,6 +464,7 @@ export default function App() {
     buildCompletedRef.current = false;
     setBuildId(null);
     preNavPageRef.current = null;
+    setShowLibrary(false);
     setPage('wizard');
   }, []);
 
@@ -459,19 +495,9 @@ export default function App() {
     setQaReport(null);
   }, [disconnectWs]);
 
-  // When navigating back from library while build was active, reconnect WS
   const handleLibraryBack = useCallback(() => {
-    if (buildActive && buildId) {
-      // Build still in progress — reconnect and return to it
-      connectWs(buildId);
-      setPage('building');
-      preNavPageRef.current = null;
-    } else {
-      // Build finished or no build — always go to landing for a fresh start
-      preNavPageRef.current = null;
-      setPage('landing');
-    }
-  }, [buildActive, buildId, connectWs]);
+    setShowLibrary(false);
+  }, []);
 
   // Clicking the "build in progress" indicator in the header
   const handleReturnToBuild = useCallback(() => {
@@ -623,15 +649,21 @@ export default function App() {
           />
         )}
 
-        {page === 'library' && (
-          <Library
-            onBack={handleLibraryBack}
-            onViewPreview={handleViewFromLibrary}
-            onReForge={handleReForgeFromLibrary}
-            onCountChange={setLibraryCount}
-          />
-        )}
       </div>
+
+      {/* Library modal overlay — never interrupts what's behind it */}
+      {showLibrary && (
+        <div className="library-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowLibrary(false); }}>
+          <div className="library-overlay-content">
+            <Library
+              onBack={handleLibraryBack}
+              onViewPreview={handleViewFromLibrary}
+              onReForge={handleReForgeFromLibrary}
+              onCountChange={setLibraryCount}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

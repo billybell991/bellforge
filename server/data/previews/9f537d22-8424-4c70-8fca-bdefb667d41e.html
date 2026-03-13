@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Brass-Bound Cipher</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;700;900&display=swap');
+
+  :root {
+    --comic-bg: #1a1a2e;
+    --panel-border: #222;
+    --bubble-bg: #ffffff;
+    --bubble-border: #222;
+    --narration-bg: #fff8dc;
+    --narration-border: #c9a84c;
+    --thought-bg: #f0f0ff;
+    --thought-border: #aaa;
+    --title-red: #e53935;
+    --title-gold: #ffd700;
+    --page-bg: #f5f0e8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--comic-bg);
+    font-family: 'Nunito', sans-serif;
+    color: #222;
+    overflow-x: hidden;
+  }
+
+  #comic-container {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  /* Cover */
+  .cover-page {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+  }
+  .cover-publisher {
+    font-family: 'Bangers', cursive;
+    font-size: 0.9rem;
+    letter-spacing: 4px;
+    color: var(--title-gold);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+  .cover-issue {
+    font-family: 'Bangers', cursive;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.6);
+    margin-bottom: 1rem;
+  }
+  .cover-title {
+    font-family: 'Bangers', cursive;
+    font-size: 3.5rem;
+    color: var(--title-red);
+    text-shadow: 3px 3px 0 #000, -1px -1px 0 #000;
+    letter-spacing: 3px;
+    line-height: 1.1;
+    margin-bottom: 0.5rem;
+  }
+  .cover-subtitle {
+    font-size: 1.1rem;
+    color: rgba(255,255,255,0.8);
+    font-style: italic;
+    margin-bottom: 2rem;
+    max-width: 500px;
+  }
+  .cover-art-placeholder {
+    width: 300px;
+    height: 400px;
+    border: 3px solid var(--title-gold);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.5);
+    font-style: italic;
+    font-size: 0.9rem;
+    margin-bottom: 2rem;
+    background: linear-gradient(135deg, rgba(229,57,53,0.15) 0%, rgba(255,215,0,0.1) 50%, rgba(26,26,46,0.8) 100%);
+    box-shadow: 0 0 40px rgba(229,57,53,0.2), inset 0 0 60px rgba(0,0,0,0.3);
+    position: relative;
+    overflow: hidden;
+  }
+  .cover-art-placeholder::before {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border: 1px solid rgba(255,215,0,0.2);
+    border-radius: 4px;
+  }
+  .cover-tap {
+    font-family: 'Bangers', cursive;
+    font-size: 1.2rem;
+    color: var(--title-gold);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+  /* Page */
+  .comic-page {
+    background: var(--page-bg);
+    margin: 4px 0;
+    padding: 12px;
+    position: relative;
+    min-height: 80vh;
+  }
+  .page-number {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-family: 'Bangers', cursive;
+    font-size: 0.75rem;
+    color: #999;
+  }
+
+  /* Panel grid */
+  .panel-grid {
+    display: grid;
+    gap: 6px;
+    height: 100%;
+    min-height: 70vh;
+  }
+  .panel-grid.panels-3 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+  .panel-grid.panels-3 .panel:first-child { grid-column: 1 / -1; }
+  .panel-grid.panels-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+  .panel-grid.panels-5 { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
+  .panel-grid.panels-5 .panel:nth-child(4) { grid-column: 1 / 2; }
+  .panel-grid.panels-5 .panel:nth-child(5) { grid-column: 2 / 4; }
+  .panel-grid.panels-6 { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
+  .panel-grid.panels-1 { grid-template-columns: 1fr; }
+  .panel-grid.panels-2 { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+
+  /* Panel */
+  .panel {
+    border: 3px solid var(--panel-border);
+    border-radius: 4px;
+    background: #fff;
+    position: relative;
+    overflow: hidden;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 8px;
+  }
+  .panel-art {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.85);
+    font-style: italic;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    padding: 12px;
+    text-align: center;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  }
+  .panel:nth-child(1) .panel-art { background: linear-gradient(135deg, #2d3436 0%, #636e72 100%); }
+  .panel:nth-child(2) .panel-art { background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%); }
+  .panel:nth-child(3) .panel-art { background: linear-gradient(135deg, #2c3e50 0%, #4a69bd 100%); }
+  .panel:nth-child(4) .panel-art { background: linear-gradient(135deg, #341f97 0%, #6c5ce7 100%); }
+  .panel:nth-child(5) .panel-art { background: linear-gradient(135deg, #2d3436 0%, #b2bec3 100%); }
+  .panel:nth-child(6) .panel-art { background: linear-gradient(135deg, #0c2461 0%, #4a69bd 100%); }
+  .panel-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Dialogue bubbles */
+  .dialogue-layer {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: none;
+  }
+  .bubble {
+    padding: 6px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    line-height: 1.3;
+    max-width: 85%;
+    word-wrap: break-word;
+  }
+  .bubble-speech {
+    background: var(--bubble-bg);
+    border: 2px solid var(--bubble-border);
+    font-weight: 700;
+    align-self: flex-start;
+  }
+  .bubble-thought {
+    background: var(--thought-bg);
+    border: 2px dashed var(--thought-border);
+    font-style: italic;
+    align-self: flex-end;
+    border-radius: 20px;
+  }
+  .bubble-narration {
+    background: var(--narration-bg);
+    border: 1px solid var(--narration-border);
+    font-style: italic;
+    font-size: 0.75rem;
+    align-self: stretch;
+    border-radius: 2px;
+    text-align: center;
+  }
+  .bubble-speaker {
+    font-family: 'Bangers', cursive;
+    font-size: 0.65rem;
+    color: #888;
+    margin-bottom: 1px;
+    font-style: normal;
+  }
+
+  /* Navigation */
+  #nav-bar {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(26,26,46,0.95);
+    padding: 8px 16px;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    z-index: 100;
+    backdrop-filter: blur(8px);
+  }
+  .nav-btn {
+    background: none;
+    border: 2px solid var(--title-gold);
+    color: var(--title-gold);
+    font-family: 'Bangers', cursive;
+    font-size: 0.9rem;
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .nav-btn:hover { background: var(--title-gold); color: #1a1a2e; }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
+  .nav-btn:disabled:hover { background: none; color: var(--title-gold); }
+  .nav-counter {
+    color: rgba(255,255,255,0.7);
+    font-family: 'Bangers', cursive;
+    font-size: 0.85rem;
+  }
+
+  /* Transitions */
+  .page-enter { animation: slideIn 0.3s ease; }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body>
+<div id="comic-container">
+  <div id="page-content"></div>
+</div>
+<div id="nav-bar"></div>
+
+<script>
+(function() {
+  var STORY = {"title":"The Brass-Bound Cipher","subtitle":"Where truth is erased, the past remembers.","genre":"war_epic","issueNumber":1,"totalPages":6,"coverPage":null,"pages":[{"pageNumber":1,"setting":"The fog-choked, grimy Spire-roots of Veridia, an undercity of forgotten docks and crumbling archives.","isCover":false,"panels":[{"panelNumber":1,"artDirection":"Wide shot looking up at the towering, decrepit 'Spire-roots' of Veridia. Jagged, shadowed architecture disappears into a thick, swirling yellow-grey fog. Below, Kit Cogsworth is a small, determined figure, her trench coat silhouetted against a faint glow from a distant pipe. Her brass prosthetics catch the dim light as she navigates a narrow, refuse-strewn walkway. Steam billows from rusted vents.","illustration":null,"dialogue":[{"speaker":"narration","text":"The Spire-roots. Where forgotten history sleeps... or festers."}]},{"panelNumber":2,"artDirection":"Close-up on Kit's face, illuminated by the soft glow of a data-slate she holds. Her amber eyes are narrowed in concentration, scanning complex schematics and text. A stray strand of auburn hair falls across her brow. The brass magnifying glass on her chain swings slightly. Behind her, indistinct shadows stretch, suggesting confined, grimy spaces.","illustration":null,"dialogue":[{"speaker":"Kitsune 'Kit' Cogsworth","text":"Another discrepancy. The official logs claim 'structural integrity failure', but these schematics show... something else."}]},{"panelNumber":3,"artDirection":"POV shot from behind a crumbling pillar, looking at Kit. She is bent over a pile of ancient, rusted data-slates, completely absorbed. In the extreme foreground, barely visible in the deep shadow, is the glint of a polished brass button or the edge of a dark uniform, hinting at an unseen observer.","illustration":null,"dialogue":[{"speaker":"thought","text":"The Whisperwind Collapse. There are too many loose threads."}]},{"panelNumber":4,"artDirection":"Medium shot of Kit, her head suddenly tilting, eyes darting to the side. She's paused in her work, a flicker of unease crossing her features. Her hand instinctively goes to the small sidearm holstered at her hip, though her expression is more thoughtful than alarmed. The fog swirls around her.","illustration":null,"dialogue":[{"speaker":"thought","text":"Or someone is tying them up too neatly."},{"speaker":"Kitsune 'Kit' Cogsworth","text":"Just a draft..."}]}]},{"pageNumber":2,"setting":"A dilapidated, disused library filled with dust-laden data-slates and forgotten pneumatic tubes.","isCover":false,"panels":[{"panelNumber":1,"artDirection":"Establishing shot of the vast, decaying library. Shelves stretch endlessly, piled high with ancient, glowing data-slates that hum faintly. Dust motes dance in the few shafts of light piercing the gloom. Kit stands amidst the chaos, her arm extended, reaching into a long-neglected pneumatic tube terminal, her back to the viewer.","illustration":null,"dialogue":[{"speaker":"narration","text":"The Ministry archives were too clean. The true history lay in the forgotten corners."}]},{"panelNumber":2,"artDirection":"Close-up on Kit's brass prosthetic arm as it expertly extracts a small, heavily encrypted data-shard from the pneumatic tube. The gears in her arm whir softly. Her fingers, a mix of intricate brass and leather, carefully handle the shard, its surface faintly glowing with suppressed data.","illustration":null,"dialogue":[{"speaker":"Kitsune 'Kit' Cogsworth","text":"Bingo. Buried deep. Too deep for casual deletion."}]},{"panelNumber":3,"artDirection":"Extreme close-up on Kit's face. Her amber eyes are wide with shock and dawning horror as she rapidly processes the information displayed on the shard (implied, perhaps reflected in her eyes). Her mouth is slightly agape. The brass goggles on her forehead are pushed up, accentuating her expression.","illustration":null,"dialogue":[{"speaker":"thought","text":"No... this isn't an anomaly. This is a deliberate fabrication. The Collapse was no accident."}]},{"panelNumber":4,"artDirection":"Medium shot of Kit, now standing upright, holding the data-shard tightly. Her posture is tense, defensive. She slowly turns her head, scanning the shadowy library around her, her eyes narrowed. A sudden, sharp realization crosses her face. The vastness of the library now feels less like refuge and more like a trap.","illustration":null,"dialogue":[{"speaker":"Kitsune 'Kit' Cogsworth","text":"They don't want this found. And I just announced I found it."}]},{"panelNumber":5,"artDirection":"Panel focusing on a dark, narrow gap between two towering bookshelves. A faint, almost imperceptible shift in the shadows, or the glint of cold, steely blue eyes observing Kit from the depth of the gloom.","illustration":null,"dialogue":[{"speaker":"narration","text":"The hunter becomes the hunted."}]}]},{"pageNumber":3,"setting":"A perilous chase through abandoned market stalls and over precariously built sky-bridges in the lower city.","isCover":false,"panels":[{"panelNumber":1,"artDirection":"Dynamic action shot. Kit is mid-leap over a gaping chasm between two rickety sky-bridges, her trench coat flaring out behind her. Below, the dizzying depths of the lower city stretch. Behind her, a group of dark-uniformed city enforcers are struggling to keep pace, their faces grim. One enforcer aims a rifle.","illustration":null,"dialogue":[{"speaker":"narration","text":"The shard's coordinates led to the forbidden sectors. And directly into a trap."}]},{"panelNumber":2,"artDirection":"Close-up on Kit's left brass arm and right leg prosthetics as she lands. Gears whir, steam hisses from vents in her leg. A faint, almost painful shimmer of light emanates from within the mechanisms of her arm. Her expression is a mix of intense focus and a grimace of discomfort.","illustration":null,"dialogue":[{"speaker":"thought","text":"Damn it, what is this? My arm... my leg... it's like phantom feedback."}]},{"panelNumber":3,"artDirection":"Panel showing Kit sliding under a collapsing market stall, splinters flying. Her eyes are wide, not just from the chase, but from an internal struggle. The strange sensations from her prosthetics are becoming more insistent, almost a pulse. A market banner depicting a long-forgotten merchant hangs precariously above her.","illustration":null,"dialogue":[{"speaker":"Kitsune 'Kit' Cogsworth","text":"They're moving too fast... like they knew where I was going."}]},{"panelNumber":4,"artDirection":"From a low angle, looking up at Kit as she scrambles up a rusted ladder onto another level of sky-bridge. Enforcers are closing in below, their faces visible in the harsh light from a searchlight sweeping the area. Kit's silhouette is strong against the light, her movements agile despite the phantom aches.","illustration":null,"dialogue":[{"speaker":"thought","text":"Someone is orchestrating this. Someone powerful."}]}]},{"pageNumber":4,"setting":"A hidden, access-restricted data vault beneath the Ministry of Historical Integrity, dark and humming with archaic machinery.","isCover":false,"panels":[{"panelNumber":1,"artDirection":"Wide shot of Kit, having bypassed multiple security measures, standing in a cavernous, dimly lit data vault. Towering racks of ancient, humming machinery stretch into the darkness. Wires snake across the floor. Dust hangs heavy in the air, disturbed by her entrance. Her silhouette is small against the imposing technology.","illustration":null,"dialogue":[{"speaker":"narration","text":"The coordinates led to a sub-level beneath the Ministry itself. A place of forgotten truths."}]},{"panelNumber":2,"artDirection":"Close-up on Kit's brass prosthetic arm. Without warning, the internal mechanisms begin to glow with an intense, pulsing blue light. Gears spin violently, pressure gauges on the arm's surface fluctuate wildly, almost redlining. Kit's face is visible in the background, her expression one of utter shock and slight pain as she clutches her arm.","illustration":null,"dialogue":[{"speaker":"Kitsune 'Kit' Cogsworth","text":"What in the... my arm! It's reacting to something!"}]},{"panelNumber":3,"artDirection":"Dynamic panel. From Kit's brass arm, a fragmented, holographic projection bursts forth, casting vibrant, chaotic images onto the dusty walls of the vault. These are not static records, but brief, terrifying flashes of the Whisperwind Collapse: not structural failure, but massive explosions, panicked faces, and the unmistakable silhouette of a towering, weaponized airship.","illustration":null,"dialogue":[{"speaker":"thought","text":"These aren't records... this is real-time memory. Raw, unfiltered."}]},{"panelNumber":4,"artDirection":"Extreme close-up on Kit's face, now bathed in the flickering blue light of the projections. Her amber eyes are wide with disbelief, horror, and a dawning, terrible understanding. Tears well in her eyes, but her jaw is set. The tarnished brass goggles on her forehead seem to reflect the chaotic images.","illustration":null,"dialogue":[{"speaker":"Kitsune 'Kit' Cogsworth","text":"They didn't just falsify it... they caused it. The Whisperwind Collapse was an attack."}]},{"panelNumber":5,"artDirection":"Wide shot of Kit, her form silhouetted against the brilliant, chaotic projections from her arm that fill the vault. She stands amidst the archaic machinery, the truth of history literally radiating from her. Her stance is defiant, resolute. The enormity of the revelation weighs on her, but also steels her resolve.","illustration":null,"dialogue":[{"speaker":"narration","text":"The brass-bound cipher wasn't just a prosthetic. It was a key. To a truth no one wanted found."}]}]},{"pageNumber":5,"setting":"The now-lit data vault, with armed Ministry enforcers surrounding Kit, led by Commander Thorne.","isCover":false,"panels":[{"panelNumber":1,"artDirection":"Wide shot. Kit stands defiantly, her back pressed against a towering server rack, amber eyes narrowed. Three Ministry Enforcers aim energy rifles at her, their faces grim. Commander Thorne, an imposing figure in his crisp dark navy uniform, strides purposefully into the foreground, a data-slate held casually in one gloved hand. Harsh, clinical white light from overhead arrays illuminates the metallic, organized chaos of the vault.","illustration":null,"dialogue":[{"speaker":"Commander Valerius Thorne","text":"The game is over, Cogsworth. The 'shard' you seek... is far closer than you realize.","type":"speech"}]},{"panelNumber":2,"artDirection":"Medium shot, angled from below Kit's chin, looking up slightly at Thorne. Thorne's gloved hand gestures pointedly at Kit's intricate brass prosthetic left arm. Kit's amber eyes are defiant, a spark of understanding dawning. The exposed gears and pressure gauges on her arm are sharply in focus.","illustration":null,"dialogue":[{"speaker":"Commander Valerius Thorne","text":"Those 'prosthetics' aren't just for mobility. They're a data nexus. A clandestine storage device.","type":"speech"},{"speaker":"Commander Valerius Thorne","text":"And they're connected to the Collapse.","type":"speech"}]},{"panelNumber":3,"artDirection":"Over-the-shoulder shot from behind Kit, looking at Thorne. He is now very close, his cold, steely blue eyes fixed on her, a predatory glint in them. His lean, authoritative build dominates the frame. The enforcers are visible in soft focus in the background, maintaining their aiming stance. The tension is palpable.","illustration":null,"dialogue":[{"speaker":"Commander Valerius Thorne","text":"Hand over the data, Kit. Or we'll take it. Piece by piece.","type":"speech"}]},{"panelNumber":4,"artDirection":"Tight close-up on Kit's face. Her amber eyes widen slightly in realization, then narrow with fierce resolve. A flicker of raw anger and fear crosses her features. The tarnished brass goggles on her forehead catch a glint of the harsh vault light.","illustration":null,"dialogue":[{"speaker":"Kitsune 'Kit' Cogsworth","text":"(Gritting her teeth) You won't get a thing from me.","type":"speech"}]},{"panelNumber":5,"artDirection":"Low-angle, dynamic shot. Kit's body is tensed, shifting her weight subtly. Her left brass leg prosthetic is slightly bent, gears visible and glinting. Her right hand hovers near her belt, indicating imminent action. The enforcers are still aiming, but there's a hint of uncertainty in their rigid postures. The air crackles with anticipation.","illustration":null,"dialogue":[{"speaker":"Kitsune 'Kit' Cogsworth","text":"(Thought) Not without a fight.","type":"thought"}]}]},{"pageNumber":6,"setting":"The chaotic, smoke-filled data vault as alarms blare, leading into a narrow, unstable escape tunnel.","isCover":false,"panels":[{"panelNumber":1,"artDirection":"Wide, dynamic shot of the data vault. Thick, swirling grey-black smoke billows violently from a ruptured data server, obscuring parts of the room. Red emergency lights flash erratically, casting an eerie, strobe-like glow. Kit is a blur of motion, her brass arm extended, arcs of blue energy briefly crackling from it, having just caused the rupture. Enforcers are disoriented, some covering their faces, others stumbling.","illustration":null,"dialogue":[{"speaker":null,"text":"KLANG! CRASH! WOOOP WOOOP!","type":"narration"},{"speaker":"Kitsune 'Kit' Cogsworth","text":"(Thought) Too much... too fast!","type":"thought"}]},{"panelNumber":2,"artDirection":"Extreme close-up on Kit's brass prosthetic arm and leg. The pressure gauges are spiking wildly into the red, gears spinning at an unnatural, blurring speed. Veins of data-light, faint blue and white, briefly flicker beneath the polished brass plating, as if raw data is surging through them. Kit's knuckles on her real hand are white with strain, her face clenched in effort.","illustration":null,"dialogue":[{"speaker":"Kitsune 'Kit' Cogsworth","text":"(Thought) Memories... fragmented... not mine!","type":"thought"},{"speaker":null,"text":"A cascade of images: burning cities, screaming faces, impossible machines...","type":"narration"}]},{"panelNumber":3,"artDirection":"Medium shot on Thorne. His face is contorted in a snarl of rage and frustration, his dark hair slightly dishevelled. He lunges forward, gloved hand outstretched, but Kit is already too far, a shadowy figure disappearing into the thick, swirling smoke. The chaotic, red-flashing environment is in soft focus behind him.","illustration":null,"dialogue":[{"speaker":"Commander Valerius Thorne","text":"NO! Get her! Don't let her escape with the data!","type":"speech"}]},{"panelNumber":4,"artDirection":"Angled shot from inside the narrow, dark escape tunnel, looking out at Kit as she dives in headfirst. The tunnel walls are rough, composed of exposed conduit pipes and unstable-looking structural beams. Kit is halfway into the dark, cramped space, her silhouette framed by the smoke-filled, flashing vault behind her. One brass leg, still glinting, is visible.","illustration":null,"dialogue":[{"speaker":"Kitsune 'Kit' Cogsworth","text":"(Thought) Got to go... anywhere but here!","type":"thought"}]},{"panelNumber":5,"artDirection":"Tight close-up on Kit's face, now safely in the relative darkness of the unstable tunnel, lit only by stray flashes from the distant vault. Her eyes are wide, a mixture of exhaustion, horror, and profound understanding. Her short, choppy auburn hair is dishevelled. A faint, almost imperceptible data-glow briefly flickers within her amber eyes, hinting at the terrifying knowledge now embedded within her unwilling form.","illustration":null,"dialogue":[{"speaker":"Kitsune 'Kit' Cogsworth","text":"(Thought) The Collapse... I know what really happened.","type":"thought"},{"speaker":"Kitsune 'Kit' Cogsworth","text":"(Thought) And it's worse than anything they told us.","type":"thought"}]}]}]};
+
+  var currentIndex = -1; // -1 = cover
+
+  var pageContent = document.getElementById('page-content');
+  var navBar = document.getElementById('nav-bar');
+
+  function escapeHTML(str) {
+    var div = document.createElement('div');
+    div.textContent = String(str || '');
+    return div.innerHTML;
+  }
+
+  function sanitizeImageSrc(src) {
+    if (typeof src !== 'string') return '';
+    if (src.startsWith('data:image/')) return src;
+    return '';
+  }
+
+  function renderCover() {
+    currentIndex = -1;
+    var html = '<div class="cover-page" id="cover-click">';
+    html += '<div class="cover-publisher">BellForge Comics</div>';
+    html += '<div class="cover-issue">Issue #' + (STORY.issueNumber || 1) + '</div>';
+    html += '<h1 class="cover-title">' + escapeHTML(STORY.title) + '</h1>';
+    html += '<div class="cover-subtitle">' + escapeHTML(STORY.subtitle) + '</div>';
+    html += '<div class="cover-art-placeholder">✦ ' + escapeHTML(STORY.title) + ' ✦</div>';
+    html += '<div class="cover-tap">Tap to read \u2192</div>';
+    html += '</div>';
+    pageContent.innerHTML = html;
+    pageContent.className = 'page-enter';
+
+    document.getElementById('cover-click').addEventListener('click', function() {
+      renderPage(0);
+    });
+
+    updateNav();
+  }
+
+  function renderPage(idx) {
+    if (idx < 0 || idx >= STORY.pages.length) return;
+    currentIndex = idx;
+    var page = STORY.pages[idx];
+
+    var panelCount = page.panels.length;
+    var gridClass = 'panels-' + Math.min(panelCount, 6);
+
+    var html = '<div class="comic-page">';
+    html += '<div class="panel-grid ' + gridClass + '">';
+
+    for (var i = 0; i < page.panels.length; i++) {
+      var panel = page.panels[i];
+      html += '<div class="panel">';
+
+      // Art
+      if (panel.illustration) {
+        html += '<div class="panel-art"><img src="' + sanitizeImageSrc(panel.illustration) + '" alt="Panel"></div>';
+      } else {
+        html += '<div class="panel-art">' + escapeHTML(panel.artDirection || 'Panel ' + (i+1)) + '</div>';
+      }
+
+      // Dialogue
+      if (panel.dialogue && panel.dialogue.length > 0) {
+        html += '<div class="dialogue-layer">';
+        for (var d = 0; d < panel.dialogue.length; d++) {
+          var dlg = panel.dialogue[d];
+          var bubbleClass = dlg.type === 'thought' ? 'bubble-thought' : dlg.type === 'narration' ? 'bubble-narration' : 'bubble-speech';
+          html += '<div class="bubble ' + bubbleClass + '">';
+          if (dlg.speaker && dlg.type !== 'narration') {
+            html += '<div class="bubble-speaker">' + escapeHTML(dlg.speaker) + '</div>';
+          }
+          html += escapeHTML(dlg.text);
+          html += '</div>';
+        }
+        html += '</div>';
+      }
+
+      html += '</div>';
+    }
+
+    html += '</div>';
+    html += '<div class="page-number">Page ' + (idx + 1) + ' of ' + STORY.pages.length + '</div>';
+    html += '</div>';
+
+    pageContent.innerHTML = html;
+    pageContent.className = 'page-enter';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    updateNav();
+  }
+
+  function updateNav() {
+    var total = STORY.pages.length;
+    var html = '<button class="nav-btn" id="nav-prev"' + (currentIndex <= -1 ? ' disabled' : '') + '>\u2190 Prev</button>';
+    html += '<span class="nav-counter">' + (currentIndex === -1 ? 'Cover' : (currentIndex + 1) + ' / ' + total) + '</span>';
+    html += '<button class="nav-btn" id="nav-next"' + (currentIndex >= total - 1 ? ' disabled' : '') + '>Next \u2192</button>';
+    navBar.innerHTML = html;
+
+    document.getElementById('nav-prev').addEventListener('click', function() {
+      if (currentIndex === 0) renderCover();
+      else if (currentIndex > 0) renderPage(currentIndex - 1);
+    });
+    document.getElementById('nav-next').addEventListener('click', function() {
+      if (currentIndex === -1) renderPage(0);
+      else if (currentIndex < total - 1) renderPage(currentIndex + 1);
+    });
+  }
+
+  // Keyboard navigation
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ') {
+      e.preventDefault();
+      if (currentIndex === -1) renderPage(0);
+      else if (currentIndex < STORY.pages.length - 1) renderPage(currentIndex + 1);
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      if (currentIndex === 0) renderCover();
+      else if (currentIndex > 0) renderPage(currentIndex - 1);
+    }
+  });
+
+  // Boot
+  renderCover();
+})();
+</script>
+</body>
+</html>

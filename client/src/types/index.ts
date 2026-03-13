@@ -248,7 +248,7 @@ export const COMIC_WIZARD_STEPS: { id: WizardStep; label: string; icon: string }
 
 // ── App Page State ──
 
-export type AppPage = 'landing' | 'wizard' | 'building' | 'preview' | 'deploy' | 'library';
+export type AppPage = 'landing' | 'wizard' | 'building' | 'preview' | 'deploy';
 
 // ── Library ──
 

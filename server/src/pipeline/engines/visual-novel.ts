@@ -70,11 +70,15 @@ for (var si = 0; si < ROOM_COUNT; si++) {
       speaker: 'choice',
       text: 'What do you want to do?',
       options: [
-        { text: 'Investigate further', next: 'continue' },
+        { text: 'Investigate further', next: 'investigate' },
         { text: 'Move on quickly', next: 'skip' }
       ]
     });
-    seq.push({ speaker: CHAR_NAME, text: '"The path forward becomes clearer..."', portrait: 'char' });
+    // Investigate branch: bonus lore + examine text
+    seq.push({ speaker: 'narrator', text: room.examineText || room.description, portrait: null, branch: 'investigate' });
+    seq.push({ speaker: CHAR_NAME, text: room.atmosphere ? '"I notice something important — ' + room.atmosphere + '..."' : '"There\'s more here than meets the eye..."', portrait: 'char', branch: 'investigate' });
+    // Skip branch: brief transition
+    seq.push({ speaker: 'narrator', text: 'You decide to press forward, leaving the details behind.', portrait: null, branch: 'skip' });
   }
 
   // Transition to next scene
@@ -87,6 +91,7 @@ for (var si = 0; si < ROOM_COUNT; si++) {
 
 var dialogueIndex = 0;
 var sceneComplete = false;
+var lastChoiceResult = null; // tracks which branch was chosen
 
 function startScene(idx) {
   currentScene = idx;
@@ -95,6 +100,7 @@ function startScene(idx) {
   textProgress = 0;
   waitingForTap = false;
   choiceActive = false;
+  lastChoiceResult = null;
   transitionAlpha = 1;
   roomNameTimer = 0;
 }
@@ -102,8 +108,16 @@ function startScene(idx) {
 function getCurrentDialogue() {
   if (currentScene >= ROOM_COUNT) return null;
   var seq = sceneDialogues[currentScene];
-  if (dialogueIndex >= seq.length) return null;
-  return seq[dialogueIndex];
+  // Skip dialogue entries that belong to a different branch
+  while (dialogueIndex < seq.length) {
+    var entry = seq[dialogueIndex];
+    if (entry.branch && lastChoiceResult && entry.branch !== lastChoiceResult) {
+      dialogueIndex++;
+      continue;
+    }
+    return entry;
+  }
+  return null;
 }
 
 ${canvasResize()}
@@ -302,6 +316,7 @@ ${inputPreamble()}
     for (var ci = 0; ci < choices.length; ci++) {
       var cy = 0.40 + ci * 0.12;
       if (px > 0.22 && px < 0.78 && py > cy && py < cy + 0.08) {
+        lastChoiceResult = choices[ci].next;
         choiceActive = false;
         choices = [];
         dialogueIndex++;

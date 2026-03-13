@@ -1009,24 +1009,30 @@ IMPORTANT: Only report REAL bugs that would prevent the player from completing t
 Return ONLY this JSON (no fences):
 {"passed":true/false,"issues":["description of each real bug found"],"fixes":["description of what should be fixed"]}`;
 
-  try {
-    const result = await model.generateContent(prompt);
-    const qa = JSON.parse(cleanJson(result.response.text()));
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const result = await model.generateContent(prompt);
+      const qa = JSON.parse(cleanJson(result.response.text()));
 
-    const issues: string[] = Array.isArray(qa.issues) ? qa.issues : [];
-    const fixes: string[] = Array.isArray(qa.fixes) ? qa.fixes : [];
-    const passed = issues.length === 0;
+      const issues: string[] = Array.isArray(qa.issues) ? qa.issues : [];
+      const fixes: string[] = Array.isArray(qa.fixes) ? qa.fixes : [];
+      const passed = issues.length === 0;
 
-    onStatus?.(passed
-      ? '✅ Game code QA passed — no logic bugs found'
-      : `⚠️ Game QA found ${issues.length} potential issue(s)`);
+      onStatus?.(passed
+        ? '✅ Game code QA passed — no logic bugs found'
+        : `⚠️ Game QA found ${issues.length} potential issue(s)`);
 
-    return { passed, issues, fixes };
-  } catch (err) {
-    console.error('[Gemini Game QA] Error:', err);
-    onStatus?.('Game code QA failed — proceeding anyway');
-    return { passed: true, issues: [], fixes: ['Game QA call failed — skipped'] };
+      return { passed, issues, fixes };
+    } catch (err) {
+      console.error(`[Gemini Game QA] Attempt ${attempt + 1} error:`, err);
+      if (attempt < 2) {
+        onStatus?.(`Game QA attempt ${attempt + 1} failed — retrying...`);
+        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));
+      }
+    }
   }
+  onStatus?.('Game code QA failed after 3 attempts — proceeding anyway');
+  return { passed: true, issues: [], fixes: ['Game QA call failed — skipped'] };
 }
 
 // ── Scored QA Report ──
@@ -1120,30 +1126,36 @@ RULES:
 - The summary must be a single sentence.
 - Return exactly ${categories.length} categories in the order given.`;
 
-  try {
-    const result = await model.generateContent(prompt);
-    const qa = JSON.parse(cleanJson(result.response.text()));
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const result = await model.generateContent(prompt);
+      const qa = JSON.parse(cleanJson(result.response.text()));
 
-    const cats: ScoredQACategory[] = Array.isArray(qa.categories)
-      ? qa.categories.map((c: Record<string, unknown>) => ({
-          name: String(c.name || 'Unknown'),
-          score: Math.max(1, Math.min(10, Number(c.score) || 7)),
-          detail: String(c.detail || ''),
-        }))
-      : categories.map(name => ({ name, score: 7, detail: 'Parse error — default score.' }));
+      const cats: ScoredQACategory[] = Array.isArray(qa.categories)
+        ? qa.categories.map((c: Record<string, unknown>) => ({
+            name: String(c.name || 'Unknown'),
+            score: Math.max(1, Math.min(10, Number(c.score) || 7)),
+            detail: String(c.detail || ''),
+          }))
+        : categories.map(name => ({ name, score: 7, detail: 'Parse error — default score.' }));
 
-    const overall = Math.max(1, Math.min(10, Number(qa.overallScore) || Math.round(cats.reduce((s, c) => s + c.score, 0) / cats.length)));
-    const summary = String(qa.summary || 'Build passed QA review.');
+      const overall = Math.max(1, Math.min(10, Number(qa.overallScore) || Math.round(cats.reduce((s, c) => s + c.score, 0) / cats.length)));
+      const summary = String(qa.summary || 'Build passed QA review.');
 
-    onStatus?.(`QA score: ${overall}/10`);
-    return { overallScore: overall, categories: cats, summary };
-  } catch (err) {
-    console.error('[Gemini Scored QA] Error:', err);
-    onStatus?.('Scored QA failed — using default scores');
-    return {
-      overallScore: 7,
-      categories: categories.map(name => ({ name, score: 7, detail: 'QA scoring failed — default score.' })),
-      summary: 'QA scoring encountered an error. Build completed.',
-    };
+      onStatus?.(`QA score: ${overall}/10`);
+      return { overallScore: overall, categories: cats, summary };
+    } catch (err) {
+      console.error(`[Gemini Scored QA] Attempt ${attempt + 1} error:`, err);
+      if (attempt < 2) {
+        onStatus?.(`QA scoring attempt ${attempt + 1} failed — retrying...`);
+        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));
+      }
+    }
   }
+  onStatus?.('Scored QA failed after 3 attempts — using default scores');
+  return {
+    overallScore: 7,
+    categories: categories.map(name => ({ name, score: 7, detail: 'QA scoring failed — default score.' })),
+    summary: 'QA scoring encountered an error. Build completed.',
+  };
 }

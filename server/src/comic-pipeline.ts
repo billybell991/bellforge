@@ -39,7 +39,7 @@ export interface ComicPanelScript {
   panelNumber: number;
   artDirection: string;
   characters: string[];
-  dialogue: { speaker: string; text: string; type: 'speech' | 'thought' | 'narration' }[];
+  dialogue: { speaker: string; text: string; type: 'speech' | 'thought' | 'narration'; speakerPosition?: 'left' | 'right' | 'center' }[];
 }
 
 export interface ComicPage {
@@ -54,7 +54,7 @@ export interface ComicPanel {
   panelNumber: number;
   artDirection: string;
   illustration: string | null;
-  dialogue: { speaker: string; text: string; type: 'speech' | 'thought' | 'narration' }[];
+  dialogue: { speaker: string; text: string; type: 'speech' | 'thought' | 'narration'; speakerPosition?: 'left' | 'right' | 'center' }[];
 }
 
 export interface ComicStory {
@@ -120,15 +120,15 @@ function sleep(ms: number): Promise<void> {
 
 function getArtStylePrefix(artStyleId: string): string {
   const styles: Record<string, string> = {
-    cel_shaded: 'cel-shaded comic book art, bold outlines, flat vibrant colors,',
-    pixel_art: 'pixel art comic panels, retro 16-bit aesthetic, limited color palette,',
-    watercolor: 'watercolor comic illustration, soft flowing brushstrokes, translucent washes,',
-    noir: 'high contrast black and white comic art, heavy inks, dramatic shadows, film noir,',
-    neon: 'neon-lit cyberpunk comic art, glowing edges, synthwave colors,',
-    hand_drawn: 'hand-drawn pen and ink comic art, crosshatching, pencil textures,',
-    low_poly: 'flat geometric comic art, clean lines, minimalist compositions,',
+    cel_shaded: 'cel-shaded comic book illustration, bold black outlines, flat vibrant colors, clean line art,',
+    pixel_art: 'pixel art comic panels, retro 16-bit aesthetic, limited color palette, crisp edges,',
+    watercolor: 'watercolor comic illustration, soft flowing brushstrokes, translucent washes, inked outlines,',
+    noir: 'high contrast black and white comic art, heavy ink shadows, film noir, halftone patterns,',
+    neon: 'neon-lit cyberpunk comic art, glowing edges, synthwave colors, bold black outlines,',
+    hand_drawn: 'hand-drawn pen and ink comic art, crosshatching, pencil textures, clean line art,',
+    low_poly: 'flat geometric comic art, clean lines, minimalist compositions, bold outlines,',
   };
-  return styles[artStyleId] || 'professional comic book art, dynamic composition,';
+  return styles[artStyleId] || 'professional comic book illustration, bold black outlines, clean line art, dynamic composition,';
 }
 
 // ── Phase 1a: Concept & Story Outline (lightweight — no panel scripts) ──
@@ -264,7 +264,7 @@ Output valid JSON array:
         "artDirection": "Detailed visual description of what to draw (camera angle, composition, action, lighting, character poses). Describe the SCENE, not the art style.",
         "characters": ["Character Name"],
         "dialogue": [
-          {"speaker": "Character Name", "text": "Dialogue line", "type": "speech"}
+          {"speaker": "Character Name", "text": "Dialogue line", "type": "speech", "speakerPosition": "left"}
         ]
       }
     ]
@@ -274,6 +274,8 @@ Output valid JSON array:
 RULES:
 - Exactly 3 panels per page: one establishing/wide shot, one mid/action shot, one close-up/reaction shot
 - "speech" for speech bubbles, "thought" for thought bubbles, "narration" for caption boxes
+- speakerPosition: where the speaker is in the panel art ("left", "right", or "center") — bubbles will be placed on the OPPOSITE side
+- In artDirection, position characters on the side matching their speakerPosition (e.g. if speakerPosition is "left", describe the character on the left side of the panel)
 - Keep dialogue punchy — 1-2 short sentences per bubble max
 - Art direction should be vivid and specific about composition, not style
 
@@ -438,6 +440,8 @@ export async function runComicPipeline(
   // HTML viewer handles multi-panel grid layout + dialogue overlays via CSS.
   // Cover: 100% Gemini composition with title text, NO ANTI_TEXT.
   const artPrefix = getArtStylePrefix(config.artStyle.id);
+  // Style anchor — stays identical across every panel for visual consistency
+  const styleAnchor = `${artPrefix} white gutters, cinematic lighting`;
   const charBlock = [
     `${concept.protagonist.name}: ${concept.protagonist.visualDescription}`,
     ...concept.characters.map(c => `${c.name}: ${c.visualDescription}`),
@@ -445,7 +449,7 @@ export async function runComicPipeline(
 
   // 3a: Cover — NO ANTI_TEXT, Gemini renders title + comic book design elements
   sendProgress(35, 'Generating cover artwork...', 'cover_art');
-  const coverPrompt = `${artPrefix} Design this as a complete, professional comic book cover that looks like an authentic published comic book. Include ALL standard comic cover elements: publisher logo box, issue number, barcode, price stamp. The title of the comic is "${concept.title}" — render it prominently. ${concept.protagonist.visualDescription} should dominate the composition in a dramatic pose. The title should NOT cover the hero's face.`;
+  const coverPrompt = `${styleAnchor} Design this as a complete, professional comic book cover that looks like an authentic published comic book. Include ALL standard comic cover elements: publisher logo box, issue number, barcode, price stamp. The title of the comic is "${concept.title}" — render it prominently. ${concept.protagonist.visualDescription} should dominate the composition in a dramatic pose. The title should NOT cover the hero's face.`;
   const coverImg = await generateImage(coverPrompt, '3:4');
   if (coverImg) {
     story.coverIllustration = `data:image/png;base64,${coverImg}`;
@@ -476,7 +480,7 @@ export async function runComicPipeline(
         ? `Characters visible: ${panelCharNames.join(', ')}. ${charBlock}`
         : charBlock;
 
-      const panelPrompt = `${artPrefix} single comic book panel illustration. ${panel.artDirection}. Setting: ${page.setting}. ${charRef}. ${ANTI_TEXT}`;
+      const panelPrompt = `${styleAnchor} single comic book panel illustration. ${panel.artDirection}. Setting: ${page.setting}. ${charRef}. No text, no speech bubbles, no captions. ${ANTI_TEXT}`;
       const panelImg = await generateImage(panelPrompt, '4:3');
       if (panelImg) {
         panel.illustration = `data:image/png;base64,${panelImg}`;
