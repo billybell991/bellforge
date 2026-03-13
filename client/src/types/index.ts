@@ -52,11 +52,12 @@ export interface CYOAGenreOption {
 }
 
 export const CYOA_GENRES: CYOAGenreOption[] = [
-  { id: 'space_opera', name: 'Space Opera', icon: '🚀', description: 'Epic interstellar voyages and alien encounters', tag: 'POPULAR' },
-  { id: 'spooky_mystery', name: 'Spooky Mystery', icon: '👻', description: 'Haunted locales and chilling secrets', tag: 'FLAGSHIP' },
-  { id: 'deep_sea', name: 'Deep Sea', icon: '🌊', description: 'Abyssal trenches and sunken ruins', tag: '' },
-  { id: 'jungle_expedition', name: 'Jungle Expedition', icon: '🌴', description: 'Dense canopy, ancient temples, dangerous wildlife', tag: '' },
-  { id: 'time_travel', name: 'Time Travel', icon: '⏳', description: 'Paradoxes, alternate timelines, and historical leaps', tag: 'NEW' },
+  { id: 'exploration', name: 'Exploration', icon: '🗺️', description: 'Chart the unknown, discover secrets, map new territory', tag: 'FLAGSHIP' },
+  { id: 'survival', name: 'Survival', icon: '🏕️', description: 'Against the elements — stay alive, find resources, endure', tag: 'POPULAR' },
+  { id: 'investigation', name: 'Investigation', icon: '🔎', description: 'Gather clues, interview witnesses, solve the case', tag: '' },
+  { id: 'heist_escape', name: 'Heist / Escape', icon: '🔓', description: 'Break in or break out — stealth, cunning, and timing', tag: '' },
+  { id: 'quest', name: 'Epic Quest', icon: '⚔️', description: 'A grand mission with allies, enemies, and a world to save', tag: '' },
+  { id: 'diplomacy', name: 'Diplomacy / Intrigue', icon: '👑', description: 'Political maneuvering, alliances, betrayal', tag: 'NEW' },
 ];
 
 // ── Comic Config ──
@@ -84,12 +85,12 @@ export interface ComicGenreOption {
 }
 
 export const COMIC_GENRES: ComicGenreOption[] = [
-  { id: 'superhero', name: 'Superhero', icon: '🦸', description: 'Costumed heroes, epic battles, and saving the world', tag: 'FLAGSHIP' },
-  { id: 'horror', name: 'Horror / Dark', icon: '🧛', description: 'Creeping dread, monsters, and body horror', tag: '' },
-  { id: 'scifi', name: 'Sci-Fi', icon: '🛸', description: 'Space stations, alien contact, and cybernetic futures', tag: 'POPULAR' },
-  { id: 'noir', name: 'Noir / Crime', icon: '🔫', description: 'Hard-boiled detectives, femme fatales, rain-slicked streets', tag: '' },
-  { id: 'fantasy', name: 'Fantasy / Epic', icon: '⚔️', description: 'Swords, sorcery, and mythical creatures', tag: '' },
-  { id: 'slice_of_life', name: 'Slice of Life', icon: '☕', description: 'Everyday moments, quiet emotion, human connection', tag: 'NEW' },
+  { id: 'origin_story', name: 'Origin Story', icon: '🌟', description: 'A hero is born — powers discovered, destiny revealed', tag: 'FLAGSHIP' },
+  { id: 'team_up', name: 'Team-Up', icon: '🤝', description: 'Heroes assemble against a common threat', tag: 'POPULAR' },
+  { id: 'heist', name: 'Heist / Caper', icon: '💎', description: 'A daring plan, the perfect crew, the big score', tag: '' },
+  { id: 'revenge', name: 'Revenge / Vendetta', icon: '⚡', description: 'Personal stakes, a wrong that must be righted', tag: '' },
+  { id: 'war_epic', name: 'War Epic', icon: '⚔️', description: 'Large-scale conflict, sacrifice, and the fog of war', tag: '' },
+  { id: 'coming_of_age', name: 'Coming of Age', icon: '🌱', description: 'Growing up, finding identity, first big challenge', tag: 'NEW' },
 ];
 
 // ── Genre ──

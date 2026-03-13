@@ -10,8 +10,8 @@ export function ComicGenreStep({ selected, onSelect }: ComicGenreStepProps) {
   return (
     <div>
       <div className="step-header">
-        <h2 className="step-title">What kind of comic?</h2>
-        <p className="step-subtitle">Pick the genre that sets the tone for your comic book.</p>
+        <h2 className="step-title">What kind of story?</h2>
+        <p className="step-subtitle">Pick the story archetype — the theme step sets the world &amp; atmosphere.</p>
       </div>
 
       <div className="options-grid">

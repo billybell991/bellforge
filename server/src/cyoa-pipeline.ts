@@ -3,6 +3,7 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { AdventureConfig } from './pipeline/types.js';
+import { generateImage } from './imagen.js';
 
 const apiKey = process.env.GEMINI_API_KEY;
 let model: ReturnType<GoogleGenerativeAI['getGenerativeModel']> | null = null;
@@ -116,8 +117,8 @@ export async function phaseConcept(
   onProgress?: (msg: string) => void,
 ): Promise<CYOAConcept | null> {
   const genre = config.cyoaGenre.id;
-  const deadliness = config.structure.deadliness;
-  const pageCount = config.structure.pageCount;
+  const deadliness = config.structure?.deadliness || 'medium';
+  const pageCount = config.structure?.pageCount || 20;
   const storySeed = config.story.description || '';
   const themeName = config.theme.name;
 
@@ -135,7 +136,8 @@ export async function phaseConcept(
 
   const prompt = `You are a master Choose Your Own Adventure book author.
 
-Create a complete story OUTLINE for a ${genre.replace(/_/g, ' ')} CYOA book with exactly ${pageCount} pages.
+Create a complete story OUTLINE for a CYOA book with exactly ${pageCount} pages.
+Adventure type: ${config.cyoaGenre.name}
 Theme/atmosphere: ${themeName}
 Deadliness: ${deadliness} — ${deadlinessDesc[deadliness] || 'moderate'}
 ${seedLine}
@@ -211,7 +213,7 @@ export async function phaseProse(
     premise: concept.premise,
     protagonist: concept.protagonist,
     characters: concept.characters,
-    genre: config.cyoaGenre.id.replace(/_/g, ' '),
+    genre: config.cyoaGenre.name,
     theme: config.theme.name,
   };
 
@@ -442,10 +444,62 @@ export async function runAdventurePipeline(
   const endings = Object.values(story.pages).filter(p => p.isEnding).length;
   sendProgress(60, `Story assembled: ${story.totalPages} pages, ${endings} endings`, 'assembly');
 
-  // Phase 4: Cover illustration
-  sendProgress(65, 'Generating cover illustration...', 'illustrations');
-  // (placeholder for future Imagen cover gen)
-  sendProgress(72, 'Cover artwork ready', 'illustrations');
+  // Phase 4: Imagen illustrations for key pages
+  sendProgress(62, 'Generating illustrations with Imagen...', 'illustrations');
+  const artPrefix = getArtStylePrefix(config.artStyle.id);
+  const themeAtmo: Record<string, string> = {
+    horror: 'dark eerie atmosphere, shadows, dim flickering light',
+    fantasy: 'magical enchanted atmosphere, glowing runes, mystical energy',
+    scifi: 'futuristic sci-fi atmosphere, holographic displays, sleek technology',
+    mystery: 'moody detective atmosphere, warm lamplight, foggy shadows',
+    cozy: 'warm cozy atmosphere, soft golden light, comfortable inviting',
+    cyberpunk: 'neon-lit cyberpunk atmosphere, rain-slicked streets',
+    steampunk: 'Victorian steampunk atmosphere, brass gears, steam pipes',
+    postapoc: 'post-apocalyptic atmosphere, overgrown ruins, muted tones',
+  };
+  const themeStr = themeAtmo[config.theme.id] || 'atmospheric, cinematic lighting';
+  const ANTI_IMG_TEXT = 'absolutely no text no words no letters no writing no logos no UI no signage no titles no captions';
+
+  // Pick key pages to illustrate: opening, all endings, plus evenly-spaced story pages
+  const pageIds = Object.keys(story.pages);
+  const endingIds = pageIds.filter(id => story.pages[id].isEnding);
+  const nonEndingIds = pageIds.filter(id => !story.pages[id].isEnding && id !== '1');
+  const illustrateIds = new Set<string>(['1', ...endingIds]);
+  // Add ~1/3 of remaining pages, evenly spaced
+  const stride = Math.max(1, Math.floor(nonEndingIds.length / Math.ceil(nonEndingIds.length / 3)));
+  for (let i = 0; i < nonEndingIds.length; i += stride) {
+    illustrateIds.add(nonEndingIds[i]);
+  }
+  // Cap at 8 illustrations to keep build time reasonable
+  const toIllustrate = [...illustrateIds].slice(0, 8);
+
+  // Cover illustration
+  sendProgress(63, 'Painting cover illustration...', 'illustrations');
+  const coverPrompt = `${artPrefix} book cover illustration, ${concept.premise}, ${themeStr}, dramatic cinematic composition, ${ANTI_IMG_TEXT}`;
+  const coverImg = await generateImage(coverPrompt, '3:4');
+  if (coverImg) {
+    story.coverIllustration = `data:image/png;base64,${coverImg}`;
+  }
+
+  // Interior illustrations
+  for (let i = 0; i < toIllustrate.length; i++) {
+    const pid = toIllustrate[i];
+    const page = story.pages[pid];
+    if (!page) continue;
+    const pct = 65 + Math.floor((i / toIllustrate.length) * 10);
+    const pageEntry = concept.page_map.find(p => String(p.id) === pid);
+    const setting = pageEntry?.setting || 'a mysterious scene';
+    const summary = pageEntry?.summary || '';
+    sendProgress(pct, `Illustrating page ${pid}: ${setting.substring(0, 40)}...`, 'illustrations');
+
+    const prompt = `${artPrefix} book illustration, scene: ${setting}, ${summary}, ${themeStr}, atmospheric scenery, ${ANTI_IMG_TEXT}`;
+    const img = await generateImage(prompt, '16:9');
+    if (img) {
+      page.illustration = `data:image/png;base64,${img}`;
+      page.illustrationCaption = setting;
+    }
+  }
+  sendProgress(75, `Illustrations complete: ${toIllustrate.length + (coverImg ? 1 : 0)} images generated`, 'illustrations');
 
   // Phase 5: QA & auto-fix
   sendProgress(75, 'Checking graph integrity...', 'qa_graph');

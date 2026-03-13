@@ -125,8 +125,7 @@ export function ComicWizardContainer(props: ComicWizardContainerProps) {
             value={props.story}
             onChange={props.onStoryChange}
             genreHint={props.comicGenre?.name}
-            themeHint={props.theme?.name}
-          />
+            themeHint={props.theme?.name}            entertainmentType="comic"          />
         )}
         {currentStep === 'review' && (
           <ComicReviewStep

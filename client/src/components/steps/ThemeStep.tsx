@@ -11,7 +11,7 @@ export function ThemeStep({ selected, onSelect }: ThemeStepProps) {
     <div>
       <div className="step-header">
         <h2 className="step-title">Set the mood</h2>
-        <p className="step-subtitle">Choose a theme that defines your game's atmosphere.</p>
+        <p className="step-subtitle">Choose a theme that defines the world and atmosphere.</p>
       </div>
 
       <div className="options-grid">

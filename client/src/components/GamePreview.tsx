@@ -46,13 +46,13 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
         ✅ Automatically saved to your library
       </div>
 
-      {/* Comic: direct wide viewer (no phone frame) */}
-      {isComic ? (
+      {/* Non-game types: wide viewer (no phone frame) */}
+      {isNonGame ? (
         <div className={`comic-viewer-frame ${fullscreen ? 'comic-viewer-fullscreen' : ''}`}>
           <iframe
             src={previewUrl}
             className="comic-viewer-screen"
-            title="Comic Preview"
+            title={isComic ? 'Comic Preview' : 'Adventure Preview'}
             sandbox="allow-scripts"
           />
         </div>
@@ -63,7 +63,7 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
           <iframe
             src={previewUrl}
             className="phone-screen"
-            title={isAdventure ? 'Adventure Preview' : 'Game Preview'}
+            title="Game Preview"
             sandbox="allow-scripts"
           />
           <div className="phone-home-bar" />

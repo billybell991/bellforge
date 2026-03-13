@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import type { StoryConfig } from '../../types';
+import type { StoryConfig, EntertainmentType } from '../../types';
 
 interface StoryStepProps {
   value: StoryConfig;
   genreHint?: string;
   themeHint?: string;
+  entertainmentType?: EntertainmentType;
   onChange: (s: StoryConfig) => void;
 }
 
-export function StoryStep({ value, genreHint, themeHint, onChange }: StoryStepProps) {
+export function StoryStep({ value, genreHint, themeHint, entertainmentType, onChange }: StoryStepProps) {
   const [generating, setGenerating] = useState(false);
 
   async function handleSurprise() {
@@ -35,13 +36,13 @@ export function StoryStep({ value, genreHint, themeHint, onChange }: StoryStepPr
       <div className="step-header">
         <h2 className="step-title">Tell your story</h2>
         <p className="step-subtitle">
-          Give your game a name and a soul — or let us surprise you.
+          Give your {entertainmentType === 'comic' ? 'comic' : entertainmentType === 'adventure' ? 'adventure' : 'game'} a name and a soul — or let us surprise you.
         </p>
       </div>
 
       <div className="story-form">
         <div className="input-group">
-          <label className="input-label">Game Title</label>
+          <label className="input-label">{entertainmentType === 'comic' ? 'Comic Title' : entertainmentType === 'adventure' ? 'Book Title' : 'Game Title'}</label>
           <input
             type="text"
             className="forge-input"
@@ -80,7 +81,7 @@ export function StoryStep({ value, genreHint, themeHint, onChange }: StoryStepPr
           <label className="input-label">Brief Description</label>
           <textarea
             className="forge-textarea"
-            placeholder="Describe what the player does, the feel of the game, the goal..."
+            placeholder={entertainmentType === 'comic' ? 'Describe the premise, the conflict, the stakes...' : entertainmentType === 'adventure' ? 'Describe the quest, the world, the stakes...' : 'Describe what the player does, the feel of the game, the goal...'}
             value={value.description}
             onChange={(e) => onChange({ ...value, description: e.target.value })}
             maxLength={500}

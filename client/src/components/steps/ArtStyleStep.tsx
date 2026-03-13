@@ -12,7 +12,7 @@ export function ArtStyleStep({ selected, onSelect }: ArtStyleStepProps) {
       <div className="step-header">
         <h2 className="step-title">Pick your art style</h2>
         <p className="step-subtitle">
-          This drives how the AI Bridge renders every asset in your game.
+          This drives how the AI Bridge renders every visual.
         </p>
       </div>
 

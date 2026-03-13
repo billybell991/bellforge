@@ -23,7 +23,7 @@ const ADVENTURE_FEATURES = [
 ];
 
 const COMIC_FEATURES = [
-  { icon: '💥', title: 'Pick Your Genre', desc: 'Superhero, horror, sci-fi, noir, fantasy, slice of life.' },
+  { icon: '💥', title: 'Pick Your Story', desc: 'Origin story, heist, team-up, revenge, war epic, coming of age.' },
   { icon: '🎨', title: 'AI-Drawn Panels', desc: 'Imagen generates every panel — covers, splash pages, close-ups.' },
   { icon: '💬', title: 'Speech Bubbles', desc: 'Dialogue, thought bubbles, and narration boxes auto-composed.' },
   { icon: '📖', title: 'Read Instantly', desc: 'Full comic viewer right in your browser with page navigation.' },

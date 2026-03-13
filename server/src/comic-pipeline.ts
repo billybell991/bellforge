@@ -139,7 +139,7 @@ export async function phaseConceptOutline(
   config: ComicConfig,
   onProgress?: (msg: string) => void,
 ): Promise<{ concept: ComicConcept; outline: PageOutline[] } | null> {
-  const genre = config.comicGenre.id.replace(/_/g, ' ');
+  const genre = config.comicGenre.name;
   const themeName = config.theme.name;
   const pageCount = config.structure.pageCount;
   const tone = config.structure.tone;
@@ -153,8 +153,9 @@ export async function phaseConceptOutline(
 
   onProgress?.('Designing concept, characters, and story arc...');
 
-  const prompt = `You are a master comic book writer. Design the concept and story outline for a ${genre} comic book.
+  const prompt = `You are a master comic book writer. Design the concept and story outline for a comic book.
 
+Story type: ${genre}
 The comic has exactly ${pageCount} interior pages.
 Theme/atmosphere: ${themeName}
 Tone: ${tone}

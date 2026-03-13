@@ -11,7 +11,7 @@ export function CYOAGenreStep({ selected, onSelect }: CYOAGenreStepProps) {
     <div>
       <div className="step-header">
         <h2 className="step-title">What kind of adventure?</h2>
-        <p className="step-subtitle">Pick the world your reader will explore.</p>
+        <p className="step-subtitle">Pick the adventure type — the theme step sets the world &amp; atmosphere.</p>
       </div>
 
       <div className="options-grid">

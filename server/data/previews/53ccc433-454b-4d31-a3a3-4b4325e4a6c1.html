@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Screaming Shard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
+  :root {
+    --paper-cream: #f4e8c1;
+    --paper-edge: #d4c49a;
+    --ink-brown: #3d2b1f;
+    --ink-light: #5a4a3a;
+    --accent-red: #8b2500;
+    --accent-gold: #c19a49;
+    --bantam-blue: #1a3a5c;
+    --forge-fire: #d4780a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #2a1f14;
+    font-family: 'Crimson Text', Georgia, serif;
+    color: var(--ink-brown);
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  #book-container {
+    background: var(--paper-cream);
+    width: 100%;
+    max-width: 700px;
+    min-height: 100vh;
+    padding: 2rem 2.5rem;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+    position: relative;
+  }
+
+  .page-number {
+    text-align: center;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.8rem;
+    color: var(--ink-light);
+    margin-bottom: 1.5rem;
+    letter-spacing: 2px;
+  }
+
+  .story-text {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    margin-bottom: 1rem;
+    text-indent: 1.5em;
+    color: var(--ink-brown);
+  }
+
+  .story-text.drop-cap::first-letter {
+    float: left;
+    font-size: 3.5em;
+    line-height: 0.8;
+    margin-right: 0.05em;
+    color: var(--accent-red);
+    font-weight: 600;
+  }
+
+  .story-text.flavor-text {
+    font-style: italic;
+    color: var(--ink-light);
+    border-left: 3px solid var(--accent-gold);
+    padding-left: 1em;
+    text-indent: 0;
+  }
+
+  /* Illustration */
+  .illustration-frame {
+    margin: 1.5rem auto;
+    max-width: 90%;
+  }
+  .frame-border {
+    border: 3px solid var(--paper-edge);
+    padding: 4px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .frame-border img {
+    width: 100%;
+    display: block;
+  }
+  .illustration-caption {
+    text-align: center;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.75rem;
+    color: var(--ink-light);
+    margin-top: 0.4rem;
+    font-style: italic;
+  }
+
+  /* Choices */
+  .choices-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--paper-edge);
+  }
+  .choice-link {
+    display: block;
+    padding: 0.8rem 1rem;
+    margin: 0.6rem 0;
+    font-family: 'Special Elite', monospace;
+    font-size: 1rem;
+    color: var(--bantam-blue);
+    text-decoration: none;
+    border: 1px solid var(--paper-edge);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(255,255,255,0.5);
+  }
+  .choice-link:hover {
+    background: var(--bantam-blue);
+    color: var(--paper-cream);
+    border-color: var(--bantam-blue);
+  }
+  .page-ref {
+    float: right;
+    font-size: 0.8rem;
+    opacity: 0.7;
+  }
+
+  /* Ending */
+  .the-end {
+    text-align: center;
+    margin-top: 2rem;
+    padding: 2rem 0;
+  }
+  .the-end .divider {
+    width: 60%;
+    height: 2px;
+    background: var(--accent-gold);
+    margin: 0 auto 1.5rem;
+  }
+  .the-end h2 {
+    font-family: 'Special Elite', monospace;
+    font-size: 1.8rem;
+    color: var(--accent-red);
+    letter-spacing: 4px;
+    margin-bottom: 0.5rem;
+  }
+  .end-flavor {
+    font-style: italic;
+    color: var(--ink-light);
+    margin-bottom: 1.5rem;
+  }
+  .restart-link, .reforge-link {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.9rem;
+    color: var(--forge-fire);
+    text-decoration: underline;
+    cursor: pointer;
+    border: none;
+    background: none;
+  }
+
+  /* Title page */
+  .title-page {
+    text-align: center;
+    padding: 2rem 0;
+  }
+  .series-header {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-bottom: 0.5rem;
+  }
+  .book-number {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.8rem;
+    color: var(--accent-gold);
+    margin-bottom: 1rem;
+  }
+  .book-title {
+    font-family: 'Special Elite', monospace;
+    font-size: 2.2rem;
+    color: var(--accent-red);
+    letter-spacing: 2px;
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+  }
+  .subtitle {
+    font-style: italic;
+    color: var(--ink-light);
+    margin-bottom: 1.5rem;
+    font-size: 1.05rem;
+  }
+  .warning-box {
+    border: 2px solid var(--accent-red);
+    padding: 1.2rem;
+    margin: 1.5rem auto;
+    max-width: 80%;
+    text-align: left;
+  }
+  .warning-box h3 {
+    font-family: 'Special Elite', monospace;
+    color: var(--accent-red);
+    margin-bottom: 0.5rem;
+  }
+  .warning-box p {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--ink-light);
+  }
+  .tagline {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.9rem;
+    color: var(--accent-gold);
+    letter-spacing: 2px;
+    margin: 1rem 0;
+  }
+  .begin-link {
+    display: inline-block;
+    margin-top: 1rem;
+    font-family: 'Special Elite', monospace;
+    font-size: 1.1rem;
+    color: var(--forge-fire);
+    text-decoration: none;
+    cursor: pointer;
+    border: 2px solid var(--forge-fire);
+    padding: 0.6rem 1.5rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+  .begin-link:hover {
+    background: var(--forge-fire);
+    color: var(--paper-cream);
+  }
+
+  /* Inventory bar */
+  #inventory-bar {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink-brown);
+    color: var(--paper-cream);
+    padding: 0.4rem 1rem;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.8rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    border-radius: 6px 6px 0 0;
+    z-index: 100;
+    max-width: 600px;
+  }
+  #inventory-bar.empty { display: none; }
+  .inv-label { color: var(--accent-gold); margin-right: 0.3rem; }
+  .inv-items { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .inv-item {
+    background: rgba(255,255,255,0.15);
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+  }
+
+  /* History bar */
+  #history-bar {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink-brown);
+    color: var(--paper-cream);
+    padding: 0.3rem 0.8rem;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.7rem;
+    display: flex;
+    gap: 0.3rem;
+    align-items: center;
+    border-radius: 0 0 6px 6px;
+    z-index: 100;
+  }
+  .hist-page {
+    cursor: pointer;
+    color: var(--accent-gold);
+    text-decoration: underline;
+  }
+  .hist-sep { opacity: 0.5; }
+  .hist-current { color: #fff; font-weight: bold; }
+
+  /* Page transitions */
+  .page-enter { animation: fadeIn 0.3s ease; }
+  .page-exit { opacity: 0; transition: opacity 0.2s; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  /* Item toast */
+  @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%); } }
+</style>
+</head>
+<body>
+<div id="book-container">
+  <div id="page-content"></div>
+</div>
+<div id="inventory-bar" class="empty"></div>
+<div id="history-bar"></div>
+
+<script>
+(function() {
+  const STORY = {"title":"Screaming Shard","subtitle":"A Descent into Self","genre":"exploration","bookNumber":62,"totalPages":15,"coverIllustration":null,"pages":{"1":{"text":["Your eyes flicker open, but there is no familiar ceiling, no comforting darkness. Instead, a blinding, emerald light pulses from raw, crystalline walls, disorienting you with its sheer intensity. A deep ache resonates through your bones, a phantom memory of splintering that feels both ancient and intimately new.","The cavern entrance shimmers, a living membrane of light and shadow, constantly shifting its contours. Each pulse of light sends shivers down your spine, a cold premonition of the vast, unknowable depths that yawn before you. The air itself feels thin, charged with an alien energy that prickles your skin.","A strange, undeniable compulsion pulls you forward, a silent, insistent whisper urging you deeper into this impossible place. You remember nothing of how you arrived, only this gnawing drive to descend, to unravel the terrible truths hidden within the Shard.","Two paths materialize from the swirling light, each promising a different descent into the unknown. One glows with a faint, melancholic light, beckoning you into a narrow, twisting passage. The other gleams with a curious, almost inviting luminescence, leading into a wider, more open expanse."],"illustration":null,"illustrationCaption":null,"choices":[{"text":"Descend into a dimly lit tunnel, feeling a strange pull deeper into the Shard.","page":"2"},{"text":"Explore a nearby shimmering alcove, hoping for clarity or a safer path.","page":"3"}],"isEnding":false,"endingType":null,"items":[],"flags":["visited_1"],"conditionalText":[]},"2":{"text":["The air grows heavy, thick with an unspoken grief as you descend into the chasm. The flickering light from above becomes a distant memory, replaced by an ethereal glow radiating from the very sorrow that has materialized around you. The scale of this space is immense, humbling, and utterly terrifying.","Above you, from the unseen ceiling, crystalline tears slowly begin to fall. They are not liquid, but solidified droplets of pure anguish, catching the faint light as they drift downward. Each tear resonates with a low, mournful hum, accumulating into shimmering piles on the chasm floor.","From the coalesced sorrow, a form begins to rise – a spectral figure, shimmering and translucent, woven from countless solidified tears. Its movements are slow, burdened by an unbearable sadness, its features a blurred canvas of eternal weeping. This Weeping Apparition regards you with empty, sorrowful eyes.","The entity’s presence fills the chasm with a suffocating wave of despair, yet a strange vulnerability emanates from its form. You could try to offer solace, to approach the manifestation of grief with caution, or you could attempt to slip past its sorrowful vigil, seeking a different path deeper into this abyssal realm."],"illustration":null,"illustrationCaption":null,"choices":[{"text":"Attempt to soothe the weeping apparition, approaching cautiously.","page":"4"},{"text":"Bypass the apparition and continue deeper into the unsettling depths.","page":"5"}],"isEnding":false,"endingType":null,"items":["soul_anchor_fragment"],"flags":["visited_2"],"conditionalText":[]},"3":{"text":["The shimmering alcove closes around you, its boundaries hazy and ephemeral. Here, the air doesn't pulse with raw energy, but hums with a faint, forgotten melody, like a half-remembered lullaby echoing from a distant past. Each note tugs at a thread of memory, just out of reach.","You trace the source of the melancholic tune to a small recess in the crystalline wall. There, nestled amongst shimmering shards, lies a tarnished silver locket, its surface intricately carved with symbols you almost recognize. It feels cold and heavy in your palm, whispering secrets you cannot quite decipher.","As you hold the locket, a fleeting image flickers at the edge of your perception: a child's laugh, a sunlit room, a warmth that feels impossibly distant. The melody intensifies, a siren song calling you deeper into the alcove, promising more fragments of your shattered past. This object feels like a key, unlocking something vital within you.","The locket’s melancholic song draws you further, a faint echo of memory urging you onward. Do you succumb to the siren call, following the melody into the alcove's depths, or does the chilling urgency of the Shard's main path pull you back, demanding your immediate attention?"],"illustration":null,"illustrationCaption":null,"choices":[{"text":"Follow a faint, melancholic melody further into the alcove, seeking its source.","page":"6"},{"text":"Return to the main path, feeling a growing urgency to delve deeper into the Shard.","page":"5"}],"isEnding":false,"endingType":null,"items":["whispering_locket"],"flags":["visited_3"],"conditionalText":[]},"4":{"text":["A fragile calm settles over the chasm as the Weeping Apparition's sobs subside, its crystalline tears ceasing their mournful descent. The oppressive weight in the air lifts, replaced by a quiet, ephemeral peace that seems impossible in this desolate place. The spectral entity shimmers, its form less burdened, almost translucent.","The apparition gestures with a translucent hand, pointing to the shimmering piles of solidified sorrow on the ground. A faint, resonant hum emanates from within them, a subtle energy you now perceive as a nascent understanding. You realize these are fragments of Soul-Anchors, essential to navigating the Shard's treacherous depths.","As the apparition slowly fades, a small, intricate compass materializes where it stood, its needle spinning wildly before settling on an unseen truth. It is forged from solidified sorrow, yet feels strangely warm, radiating a faint, guiding light. This Shard Compass promises to pierce the Shard's illusions, revealing hidden paths.","Empowered by this newfound understanding and the compass, you feel a surge of purpose. You can now seek out hidden passages within the chasm's newly calmed areas, guided by the compass’s subtle pull, or you can return to the main path, proceeding with the apparition's silent warning echoing in your mind."],"illustration":null,"illustrationCaption":null,"choices":[{"text":"With new understanding, search for a hidden path within the chasm's calmer areas.","page":"7"},{"text":"Proceed cautiously, remembering the apparition's words, back to the shifting main path.","page":"8"}],"isEnding":false,"endingType":null,"items":["soul_anchor_fragment","shard_compass"],"flags":["visited_4"],"conditionalText":[]},"5":{"text":["You step into a suffocating embrace of solidified guilt, a twisting labyrinth where the very air feels heavy and viscous. The path ahead is a contorted mass of dark, glistening substance, pressing in from all sides. Each step feels like wading through thick mud, your progress agonizingly slow.","This is no mere rock or ice; it is a tangible manifestation of oppressive regret, its very presence attempting to crush your will. The walls pulse with a dull, sickening ache, radiating a silent condemnation that seeps into your bones, making movement an act of immense defiance. Every breath is a struggle against the oppressive weight.","The labyrinth shifts subtly around you, walls narrowing and expanding, pathways dissolving and reforming with a whispered groan. There is no clear direction, only an overwhelming sense of being lost within a tangible web of your own self-recrimination, trapping you deeper within its coils. You realize the need for something to anchor your resolve.","A dense barrier of this solidified guilt blocks your direct path, an impenetrable wall of self-condemnation. You could attempt to force your way through, relying on sheer will to carve a passage. Alternatively, you could search for a less direct route, hoping to find an opening or a weaker point in the oppressive mass."],"illustration":null,"illustrationCaption":null,"choices":[{"text":"Attempt to push through a barrier of dense, emotional guilt, relying on sheer will.","page":"9"},{"text":"Look for an alternative, less direct route around the solidified guilt.","page":"10"}],"isEnding":false,"endingType":null,"items":["soul_anchor_fragment"],"flags":["visited_5"],"conditionalText":[]},"6":{"text":["The locket, clutched in your hand, throbs with a resonant ache, pulling at something deep within your fragmented memory. The oppressive shadows of the Shard recede, replaced by a swirling vortex of shimmering, indistinct light. You are no longer in the cavern, but adrift in a vision of what once was, a painful echo in the ether.","Shapes coalesce from the haze: a child's laughter, a familiar, weathered face, a sense of loss so profound it steals your breath. The Echo of Self flickers at the periphery of your awareness, a ghost of memory, refusing to fully form, yet its presence is undeniable, a silent witness to a moment you desperately try to grasp. A sharp, piercing sadness lances through your chest.","As the vision shimmers on the brink of fading, a singular object solidifies amidst the spectral debris. It is a handheld mirror, its silvered surface etched with intricate, forgotten symbols, radiating a faint, cold light. You reach for it, a sudden knowing washing over you: this is the Mirror of Recollection, a key to unlock what the Shard has twisted."],"illustration":null,"illustrationCaption":null,"choices":[{"text":"Use the newly found Mirror of Recollection to reflect on the memory further, seeking deeper meaning.","page":"7"},{"text":"Disperse the vision, moving back to the physical Shard, unsettled by the past.","page":"8"}],"isEnding":false,"endingType":null,"items":["mirror_of_recollection"],"flags":["visited_6"],"conditionalText":[]},"7":{"text":["The air shimmers, and the solid walls of the Shard dissolve into a dizzying expanse of shattered glass. You stand in a chamber of broken mirrors, each jagged shard reflecting a distorted piece of yourself. Your image is fractured, grotesque, elongated, or compressed, an endless gallery of twisted 'yous' staring back with vacant, accusing eyes.","This is the Shattered Self, not a singular entity, but a chorus of your own fragmented psyche made manifest. Each reflection whispers a different doubt, a different regret, their silent pleas and accusations a cacophony in your mind. You feel their pain, their anger, their profound sense of incompleteness.","The ground beneath you feels unstable, like walking on a lake of broken ice, each step threatening to shatter more of what remains. The oppressive weight of these myriad selves presses down, challenging you to confront the brokenness, to piece together the fragments that scream in silent agony."],"illustration":null,"illustrationCaption":null,"choices":[{"text":"Attempt to mend a reflection with the Mirror of Recollection, seeking integration.","page":"11","itemRequired":"mirror_of_recollection"},{"text":"Avoid the unsettling reflections and seek an exit from the fragmented chamber.","page":"12"}],"isEnding":false,"endingType":null,"items":[],"flags":["visited_7"],"conditionalText":[]},"8":{"text":["The cavern's oppressive silence settles around you, but it offers no peace. Instead, the air grows heavy, thick with an almost palpable chill. A pervasive, icy mist begins to seep from the very stones, swirling around your ankles, then rising to obscure your vision, a physical manifestation of doubt.","The mist clings to you, its cold tendrils seeping into your bones, whispering insidious questions. You feel your resolve waver, your path forward growing uncertain, shrouded in the shifting, freezing fog. Each breath is shallow, tainted with the metallic tang of apprehension.","Every direction seems equally obscured, equally daunting. The icy tendrils of doubt seek purchase in your mind, threatening to freeze your will, to convince you that every step taken is a mistake, every decision futile. You are adrift in an internal winter, lost in the shiver of hesitation."],"illustration":null,"illustrationCaption":null,"choices":[{"text":"Push through the mist, determined to find a clear way forward.","page":"10"},{"text":"Seek a source of warmth or clarity within the grotto, hoping to dispel the doubt.","page":"9"}],"isEnding":false,"endingType":null,"items":[],"flags":["visited_8"],"conditionalText":[]},"9":{"text":["Emerging from the grotto, you find the Shard's usual gloom inexplicably broken. Before you stretches a corridor bathed in a soft, inviting light, a stark contrast to the oppressive darkness you've grown accustomed to. The air here is warmer, less heavy, carrying a faint, sweet scent that almost feels like home.","The light emanates from an unseen source, a gentle luminescence that highlights intricate, smooth carvings on the corridor walls, unlike the rough, alien textures elsewhere. It feels like a beckoning, a promise of solace and safety in this otherwise hostile realm. A flicker of hope ignites within you.","Yet, an unsettling quality lingers beneath the surface of this newfound warmth. The very perfection of the light feels unnatural, too perfect for the twisted reality of the Shard. A subtle unease prickles at the back of your neck, a quiet warning that such comfort often hides a more profound deception."],"illustration":null,"illustrationCaption":null,"choices":[{"text":"Follow the light, trusting it leads somewhere safe and welcoming.","page":"13"},{"text":"Feel a sense of unease and search for an alternative, less obvious route.","page":"12"}],"isEnding":false,"endingType":null,"items":[],"flags":["visited_9"],"conditionalText":[]},"10":{"text":["The ground beneath your feet ceases abruptly, plunging into an echoing, bottomless chasm that radiates an ancient, bone-deep despair. Its edges are ragged, like torn flesh, and the air here is heavy, thick with the weight of unspoken regrets and solidified self-loathing. You feel a primal urge to recoil, but an unseen force pins you to the precipice.","From the inky blackness below, something stirs. Not merely a shadow, but a profound absence given form, coalescing into the Abyssal Entity. Its eyes, if it has them, are pinpricks of extinguished hope, its very presence a crushing silence that presses down on your will, whispering of futility.","The entity is a maw of cosmic indifference, a manifestation of every doubt and failure you've ever felt, now made real and terrifyingly immense. It guards the path forward, a silent, unmoving testament to the depths of your own internal abyss. Every fiber of your being screams to flee, yet a morbid fascination, a pull toward oblivion, holds you captive."],"illustration":null,"illustrationCaption":null,"choices":[{"text":"Attempt to cross the abyss using carefully crafted Soul-Anchors.","page":"14","itemRequired":"soul_anchor_fragment"},{"text":"Try to find a hidden passage around the edge of the abyss with the aid of a compass.","page":"12","itemRequired":"shard_compass"},{"text":"Surrender to the despair, hoping for release from the constant struggle.","page":"13"}],"isEnding":false,"endingType":null,"items":[],"flags":["visited_10"],"conditionalText":[]},"11":{"text":["You stand at the heart of the Shard, a serene, glowing core pulsing with soft, internal light. It is not cold or alien, but warm, resonating with a melody of acceptance. Around you, the shimmering fragments of your shattered self, once defensive and hostile, now drift closer, drawn by an undeniable force.","They dissolve into you, not with pain, but with a profound sense of return. Each echo of guilt, every solidified sorrow, every fearful reflection merges, weaving themselves into the fabric of your being. You feel a completeness you haven't known, a quiet strength blooming where fractured fear once resided. This is the Integrated Self, not a separate entity, but you, wholly and truly.","The ancient entities that once haunted this cosmic derelict seem to fade, their power diminished by your newfound unity. The Shard’s abyssal depths no longer project terrifying shadows of your subconscious; instead, they reflect a calm, expansive understanding. You breathe, a deep, full breath that settles the storms within, ready to face whatever comes next, not as a victim, but as the architect of your own peace."],"illustration":null,"illustrationCaption":null,"choices":[],"isEnding":true,"endingType":"good","items":[],"flags":["visited_11"],"conditionalText":[]},"12":{"text":["A stable, well-defined path stretches before you, solid beneath your feet, a stark contrast to the Shard’s usual chaotic shifts. The air here is clearer, less burdened by the whispers of materialized sorrow, and the walls hum with a quiet, enduring strength. You move with a purpose born of hard-won understanding, your Soul-Anchors no longer mere tools for navigation, but symbols of your own resilient spirit.","The Shard no longer feels like an oppressive cage, but a landscape of challenges overcome. You carry the weight of your past, yes, but it no longer crushes you; instead, it grounds you, a testament to the battles fought and the truths embraced. Your mind, once a labyrinth of fear, now perceives the subtle currents and hidden meanings within this surreal space with newfound clarity.","Ahead, the path diverges, two distinct directions beckoning in the ethereal glow. One promises a deeper engagement with the Shard's mysteries, a full embrace of its profound lessons. The other whispers of an exit, a yearning for the world beyond this cosmic derelict, a chance to leave its unsettling beauty behind."],"illustration":null,"illustrationCaption":null,"choices":[{"text":"Continue forward, facing the truth of her journey head-on.","page":"15"},{"text":"Seek a way to escape the Shard entirely, longing for the world beyond.","page":"14"}],"isEnding":false,"endingType":null,"items":[],"flags":["visited_12"],"conditionalText":[]},"13":{"text":["The floor beneath you gives way, not to another shifting passage, but to an endless, dark void that swallows all light and sound. You fall, a dizzying descent into pure, unadulterated nothingness, the Shard’s negativity consuming everything in its wake. There is no resistance, no anchor to grasp, only the crushing weight of infinite emptiness.","Your consciousness, once a vibrant flame, sputters and diminishes, each thought a fleeting spark extinguished by the encroaching darkness. Memories, hopes, and fears unravel, losing their form and meaning, dissipating into the silent abyss. You are not dying, not in the traditional sense, but dissolving, your very essence leaching into the void.","The terrifying projections of your shattered subconscious have claimed their final victory. There is no self left to consume, only a growing absence, an echo of what once was, slowly fading into an eternal, unthinking quietude. You are lost, truly and irrevocably, a forgotten whisper in the Shard’s deepest, most horrifying depths."],"illustration":null,"illustrationCaption":null,"choices":[],"isEnding":true,"endingType":"bad","items":[],"flags":["visited_13"],"conditionalText":[]},"14":{"text":["With a final, desperate surge of will, you tear yourself free from the Shard’s suffocating grip, hurtling into a liminal space. It is neither fully within nor entirely outside, a shimmering borderland where the Shard’s chaotic energy still hums faintly against the quietude of nascent reality. The transition is jarring, a disorienting blend of relief and lingering dread.","You gasp, the air outside feeling thin and unfamiliar in your lungs, yet undeniably real. The Shard recedes behind you, its impossible angles and shifting topographies twisting into a distant, crystalline scar on the edge of perception. You have escaped, a ragged survivor from a battle fought not with claws and teeth, but with the shards of your own soul.","But the silence is not entirely peaceful; it is heavy with the echo of internal struggles. The healing process has only just begun, a long, arduous journey stretching before you in the quietude of this new reality. You are free, yes, but the scars run deep, whispering of the work still required to mend the fractured pieces of your weary soul."],"illustration":null,"illustrationCaption":null,"choices":[],"isEnding":true,"endingType":"neutral","items":[],"flags":["visited_14"],"conditionalText":[]},"15":{"text":["You emerge from the Shard’s oppressive shadow, stepping into the gentle caress of a new dawn. The world outside is awash in the warm, golden light of the rising sun, painting the horizon with hues of hope and rebirth. The Shard itself, now behind you, shimmers in the distance, a silent monument to the crucible of your transformation, its hold finally broken.","A profound sense of wholeness settles over you, a quiet triumph that resonates through every fiber of your being. The weight of an unknown past has lifted, replaced by the sturdy foundation of self-understanding and acceptance. You are not merely a survivor; you are transformed, forged anew in the depths of your own subconscious.","The path ahead stretches wide and clear, bathed in the promise of a fresh beginning. The world awaits, not as a place of fear, but as a canvas for your renewed spirit. You carry the lessons of the Shard within you, not as burdens, but as wisdom, ready to embrace the dawn of a life truly lived."],"illustration":null,"illustrationCaption":null,"choices":[],"isEnding":true,"endingType":"good","items":[],"flags":["visited_15"],"conditionalText":[]}}};
+
+  const state = {
+    currentPage: null,
+    history: [],
+    inventory: [],
+    flags: new Set(),
+  };
+
+  const pageContent = document.getElementById('page-content');
+  const inventoryBar = document.getElementById('inventory-bar');
+  const historyBar = document.getElementById('history-bar');
+
+  function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.textContent = String(str);
+    return div.innerHTML;
+  }
+
+  function escapeAttr(str) {
+    return String(str).replace(/[&"'<>]/g, function(c) {
+      return {'&':'&amp;','"':'&quot;',"'":'&#39;','<':'&lt;','>':'&gt;'}[c];
+    });
+  }
+
+  function sanitizeImageSrc(src) {
+    if (typeof src !== 'string') return '';
+    if (src.startsWith('data:image/')) return src;
+    return '';
+  }
+
+  function formatItemName(item) {
+    return item.replace(/_/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+  }
+
+  function showItemToast(item) {
+    var toast = document.createElement('div');
+    toast.textContent = 'Found: ' + formatItemName(item);
+    toast.style.cssText = 'position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:var(--bantam-blue);color:var(--paper-cream);padding:0.5em 1.2em;font-family:Special Elite,monospace;font-size:0.85rem;z-index:200;border-radius:3px;box-shadow:0 3px 10px rgba(0,0,0,0.3);animation:toastIn 0.3s ease';
+    document.body.appendChild(toast);
+    setTimeout(function() { toast.remove(); }, 2000);
+  }
+
+  function renderPage(pageId) {
+    var page = STORY.pages[pageId];
+    if (!page) return;
+
+    if (state.currentPage !== null) state.history.push(state.currentPage);
+    state.currentPage = pageId;
+
+    if (page.items) {
+      page.items.forEach(function(item) {
+        if (state.inventory.indexOf(item) === -1) {
+          state.inventory.push(item);
+          showItemToast(item);
+        }
+      });
+    }
+    if (page.flags) page.flags.forEach(function(f) { state.flags.add(f); });
+
+    pageContent.classList.remove('page-enter');
+    pageContent.classList.add('page-exit');
+
+    setTimeout(function() {
+      var html = '<div class="page-number">' + escapeHTML(pageId) + '</div>';
+
+      if (page.illustration) {
+        html += '<div class="illustration-frame"><div class="frame-border">';
+        html += '<img src="' + sanitizeImageSrc(page.illustration) + '" alt="Illustration">';
+        html += '</div>';
+        if (page.illustrationCaption) html += '<div class="illustration-caption">' + escapeHTML(page.illustrationCaption) + '</div>';
+        html += '</div>';
+      }
+
+      if (page.text) {
+        page.text.forEach(function(para, i) {
+          var cls = (i === 0 && !page.illustration) ? ' drop-cap' : '';
+          html += '<p class="story-text' + cls + '">' + escapeHTML(para) + '</p>';
+        });
+      }
+
+      if (page.conditionalText) {
+        page.conditionalText.forEach(function(ct) {
+          if (state.flags.has(ct.flag) || state.inventory.indexOf(ct.flag) !== -1) {
+            html += '<p class="story-text flavor-text">' + escapeHTML(ct.text) + '</p>';
+          }
+        });
+      }
+
+      if (page.isEnding) {
+        var endLabel = page.endingType === 'good' ? 'A Triumphant End'
+          : page.endingType === 'bad' ? 'A Grim Fate' : 'The End';
+        html += '<div class="the-end"><div class="divider"></div>';
+        html += '<h2>' + endLabel + '</h2>';
+        html += '<p class="end-flavor">Your journey has concluded on page ' + escapeHTML(pageId) + '.</p>';
+        html += '<button class="restart-link" id="restart-btn">Turn back to page 1</button>';
+        html += '</div>';
+      }
+
+      if (page.choices && page.choices.length > 0) {
+        html += '<div class="choices-section">';
+        page.choices.forEach(function(choice) {
+          if (choice.itemRequired && state.inventory.indexOf(choice.itemRequired) === -1) return;
+          html += '<a class="choice-link" href="#" data-page="' + escapeAttr(choice.page) + '">';
+          html += escapeHTML(choice.text);
+          html += '<span class="page-ref">(turn to page ' + escapeHTML(String(choice.page)) + ')</span></a>';
+        });
+        html += '</div>';
+      }
+
+      pageContent.innerHTML = html;
+      pageContent.classList.remove('page-exit');
+      pageContent.classList.add('page-enter');
+
+      pageContent.querySelectorAll('.choice-link').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          renderPage(link.dataset.page);
+        });
+      });
+
+      var restartBtn = document.getElementById('restart-btn');
+      if (restartBtn) {
+        restartBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          resetAndRestart();
+        });
+      }
+
+      updateInventoryBar();
+      updateHistoryBar();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 200);
+  }
+
+  function renderTitlePage() {
+    var coverHtml = STORY.coverIllustration
+      ? '<img src="' + sanitizeImageSrc(STORY.coverIllustration) + '" alt="Cover">'
+      : '<div style="width:100%;height:200px;display:flex;align-items:center;justify-content:center;color:var(--ink-light);font-style:italic">[ Cover Illustration ]</div>';
+
+    pageContent.innerHTML = '<div class="title-page">'
+      + '<div class="series-header">BellForge Presents</div>'
+      + '<div class="book-number">Book #' + (STORY.bookNumber || 1) + '</div>'
+      + '<h1 class="book-title">' + escapeHTML(STORY.title) + '</h1>'
+      + '<div class="subtitle">' + escapeHTML(STORY.subtitle || '') + '</div>'
+      + '<div class="illustration-frame"><div class="frame-border">' + coverHtml + '</div></div>'
+      + '<div class="warning-box"><h3>Warning!</h3><p>Do not read this book straight through from beginning to end! These pages contain many different adventures you can go on. From time to time as you read along, you will be asked to make a choice. Your choice may lead to success or disaster!</p></div>'
+      + '<div class="tagline">You are the hero of this story</div>'
+      + '<a class="begin-link" href="#" id="begin-adventure">Turn to page 1 to begin your adventure\u2026</a>'
+      + '</div>';
+
+    document.getElementById('begin-adventure').addEventListener('click', function(e) {
+      e.preventDefault();
+      renderPage('1');
+    });
+
+    updateInventoryBar();
+    updateHistoryBar();
+  }
+
+  function updateInventoryBar() {
+    if (state.inventory.length === 0) {
+      inventoryBar.className = 'empty';
+      inventoryBar.innerHTML = '';
+      return;
+    }
+    inventoryBar.className = '';
+    var html = '<span class="inv-label">Pack:</span><div class="inv-items">';
+    state.inventory.forEach(function(item) {
+      html += '<span class="inv-item">' + escapeHTML(formatItemName(item)) + '</span>';
+    });
+    html += '</div>';
+    inventoryBar.innerHTML = html;
+  }
+
+  function updateHistoryBar() {
+    if (!state.currentPage) { historyBar.innerHTML = ''; return; }
+    var html = '';
+    var recent = state.history.slice(-8);
+    recent.forEach(function(p) {
+      html += '<span class="hist-page" data-page="' + escapeAttr(p) + '">' + escapeHTML(p) + '</span>';
+      html += '<span class="hist-sep">\u2192</span>';
+    });
+    html += '<span class="hist-current">' + escapeHTML(state.currentPage) + '</span>';
+    historyBar.innerHTML = html;
+
+    historyBar.querySelectorAll('.hist-page').forEach(function(el) {
+      el.addEventListener('click', function() {
+        var target = el.dataset.page;
+        var idx = state.history.lastIndexOf(target);
+        if (idx >= 0) {
+          state.history = state.history.slice(0, idx);
+          state.currentPage = null;
+        }
+        renderPage(target);
+      });
+    });
+  }
+
+  function resetAndRestart() {
+    state.currentPage = null;
+    state.history = [];
+    state.inventory = [];
+    state.flags.clear();
+    renderTitlePage();
+  }
+
+  // Boot
+  renderTitlePage();
+})();
+</script>
+</body>
+</html>

@@ -125,8 +125,7 @@ export function CYOAWizardContainer(props: CYOAWizardContainerProps) {
             value={props.story}
             onChange={props.onStoryChange}
             genreHint={props.cyoaGenre?.name}
-            themeHint={props.theme?.name}
-          />
+            themeHint={props.theme?.name}            entertainmentType="adventure"          />
         )}
         {currentStep === 'review' && (
           <CYOAReviewStep

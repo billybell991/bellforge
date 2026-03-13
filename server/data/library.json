@@ -1,1 +1,85 @@
-[]
+[
+  {
+    "id": "dfc5974d-68c4-4c2b-94c5-44cd39aa9d10",
+    "name": "The Broken Echo Protocol",
+    "rating": 0,
+    "config": {
+      "cyoaGenre": {
+        "id": "space_opera",
+        "name": "Space Opera",
+        "icon": "🚀",
+        "description": "Epic interstellar voyages and alien encounters",
+        "tag": "POPULAR"
+      },
+      "theme": {
+        "id": "cyberpunk",
+        "name": "Cyberpunk / Neon",
+        "icon": "🌃",
+        "description": "High-tech dystopia, neon-soaked streets",
+        "color": "#e040fb"
+      },
+      "artStyle": {
+        "id": "neon",
+        "name": "Neon / Synthwave",
+        "icon": "💫",
+        "description": "Glowing lights, retro-futuristic vibes"
+      },
+      "structure": {
+        "roomCount": 6,
+        "difficulty": "challenging",
+        "puzzleDensity": "heavy"
+      },
+      "story": {
+        "title": "The Broken Echo Protocol",
+        "characterName": "Patch",
+        "setting": "The Undersprawl, a labyrinthine urban decay clinging to the rusted, inverted belly of defunct corporate sky-spires, perpetually showered by acidic nanite rain that reflects the distant, obscured neon above.",
+        "description": "You are Patch, a personality construct flickering at the edge of erasure, believing your physical body is merely 'offline' in a city that’s forgotten true ground. To uncover the truth of your existence and the decaying data-network that defines it, you must navigate a 'null-space' within the Undersprawl's digital architecture, where conventional logic breaks down and reality can be rewritten by its own non-existence."
+      }
+    },
+    "buildId": "2863bc3c-e76c-44d8-9f8b-ef3aa640bcfe",
+    "apkSize": "75 KB",
+    "createdAt": "2026-03-13T09:57:21.339Z"
+  },
+  {
+    "id": "2450b08d-923f-43da-a4ce-b75ae2d14860",
+    "name": "Screaming Shard",
+    "rating": 0,
+    "config": {
+      "cyoaGenre": {
+        "id": "exploration",
+        "name": "Exploration",
+        "icon": "🗺️",
+        "description": "Chart the unknown, discover secrets, map new territory",
+        "tag": "FLAGSHIP"
+      },
+      "theme": {
+        "id": "horror",
+        "name": "Horror / Supernatural",
+        "icon": "👻",
+        "description": "Dark atmospheres and spine-tingling mysteries",
+        "color": "#ff3d00"
+      },
+      "artStyle": {
+        "id": "cel_shaded",
+        "name": "Cel-Shaded / Toonish",
+        "icon": "🎨",
+        "description": "Bold outlines, flat colors, cartoon charm",
+        "recommended": true
+      },
+      "structure": {
+        "pageCount": 15,
+        "deadliness": "medium",
+        "branchDensity": "forking"
+      },
+      "story": {
+        "title": "Screaming Shard",
+        "characterName": "Threnody",
+        "setting": "The Screaming Shard is a colossal, drifting splinter of a dead god, its obsidian surface weeping existential dread as it carves a path through the Dream-Vastness, a cosmic ocean of fractured nightmares.",
+        "description": "As Threnody, you must delve into the Shard's ever-shifting topography, crafting Soul-Anchors from materialized sorrow and solidified guilt to navigate its treacherous, mind-bending catacombs. The looming mystery isn't the ancient entities that haunt this cosmic derelict, but the growing realization that the Shard’s abyssal depths and its terrifying inhabitants are horrifying projections of your own shattered subconscious, threatening to consume you whole."
+      }
+    },
+    "buildId": "53ccc433-454b-4d31-a3a3-4b4325e4a6c1",
+    "apkSize": "35 KB",
+    "createdAt": "2026-03-13T10:21:43.837Z"
+  }
+]

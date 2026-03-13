@@ -1,0 +1,12 @@
+{
+  "page": "preview",
+  "entertainmentType": "adventure",
+  "buildPercent": 100,
+  "buildStageName": "Build Complete!",
+  "url": "http://localhost:3000/",
+  "viewport": {
+    "width": 1523,
+    "height": 786
+  },
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36"
+}
