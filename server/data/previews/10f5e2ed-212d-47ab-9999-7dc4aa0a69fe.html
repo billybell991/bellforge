@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Somnus Strain</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
+  :root {
+    --paper-cream: #f4e8c1;
+    --paper-edge: #d4c49a;
+    --ink-brown: #3d2b1f;
+    --ink-light: #5a4a3a;
+    --accent-red: #8b2500;
+    --accent-gold: #c19a49;
+    --bantam-blue: #1a3a5c;
+    --forge-fire: #d4780a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #2a1f14;
+    font-family: 'Crimson Text', Georgia, serif;
+    color: var(--ink-brown);
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  #book-container {
+    background: var(--paper-cream);
+    width: 100%;
+    max-width: 700px;
+    min-height: 100vh;
+    padding: 2rem 2.5rem;
+    box-shadow: 0 0 40px rgba(0,0,0,0.5);
+    position: relative;
+  }
+
+  .page-number {
+    text-align: center;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.8rem;
+    color: var(--ink-light);
+    margin-bottom: 1.5rem;
+    letter-spacing: 2px;
+  }
+
+  .story-text {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    margin-bottom: 1rem;
+    text-indent: 1.5em;
+    color: var(--ink-brown);
+  }
+
+  .story-text.drop-cap::first-letter {
+    float: left;
+    font-size: 3.5em;
+    line-height: 0.8;
+    margin-right: 0.05em;
+    color: var(--accent-red);
+    font-weight: 600;
+  }
+
+  .story-text.flavor-text {
+    font-style: italic;
+    color: var(--ink-light);
+    border-left: 3px solid var(--accent-gold);
+    padding-left: 1em;
+    text-indent: 0;
+  }
+
+  /* Illustration */
+  .illustration-frame {
+    margin: 1.5rem auto;
+    max-width: 90%;
+  }
+  .frame-border {
+    border: 3px solid var(--paper-edge);
+    padding: 4px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .frame-border img {
+    width: 100%;
+    display: block;
+  }
+  .illustration-caption {
+    text-align: center;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.75rem;
+    color: var(--ink-light);
+    margin-top: 0.4rem;
+    font-style: italic;
+  }
+
+  /* Choices */
+  .choices-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--paper-edge);
+  }
+  .choice-link {
+    display: block;
+    padding: 0.8rem 1rem;
+    margin: 0.6rem 0;
+    font-family: 'Special Elite', monospace;
+    font-size: 1rem;
+    color: var(--bantam-blue);
+    text-decoration: none;
+    border: 1px solid var(--paper-edge);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(255,255,255,0.5);
+  }
+  .choice-link:hover {
+    background: var(--bantam-blue);
+    color: var(--paper-cream);
+    border-color: var(--bantam-blue);
+  }
+  .page-ref {
+    float: right;
+    font-size: 0.8rem;
+    opacity: 0.7;
+  }
+
+  /* Ending */
+  .the-end {
+    text-align: center;
+    margin-top: 2rem;
+    padding: 2rem 0;
+  }
+  .the-end .divider {
+    width: 60%;
+    height: 2px;
+    background: var(--accent-gold);
+    margin: 0 auto 1.5rem;
+  }
+  .the-end h2 {
+    font-family: 'Special Elite', monospace;
+    font-size: 1.8rem;
+    color: var(--accent-red);
+    letter-spacing: 4px;
+    margin-bottom: 0.5rem;
+  }
+  .end-flavor {
+    font-style: italic;
+    color: var(--ink-light);
+    margin-bottom: 1.5rem;
+  }
+  .restart-link, .reforge-link {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.9rem;
+    color: var(--forge-fire);
+    text-decoration: underline;
+    cursor: pointer;
+    border: none;
+    background: none;
+  }
+
+  /* Title page */
+  .title-page {
+    text-align: center;
+    padding: 2rem 0;
+  }
+  .series-header {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.85rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--ink-light);
+    margin-bottom: 0.5rem;
+  }
+  .book-number {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.8rem;
+    color: var(--accent-gold);
+    margin-bottom: 1rem;
+  }
+  .book-title {
+    font-family: 'Special Elite', monospace;
+    font-size: 2.2rem;
+    color: var(--accent-red);
+    letter-spacing: 2px;
+    margin-bottom: 0.5rem;
+    line-height: 1.2;
+  }
+  .subtitle {
+    font-style: italic;
+    color: var(--ink-light);
+    margin-bottom: 1.5rem;
+    font-size: 1.05rem;
+  }
+  .warning-box {
+    border: 2px solid var(--accent-red);
+    padding: 1.2rem;
+    margin: 1.5rem auto;
+    max-width: 80%;
+    text-align: left;
+  }
+  .warning-box h3 {
+    font-family: 'Special Elite', monospace;
+    color: var(--accent-red);
+    margin-bottom: 0.5rem;
+  }
+  .warning-box p {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--ink-light);
+  }
+  .tagline {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.9rem;
+    color: var(--accent-gold);
+    letter-spacing: 2px;
+    margin: 1rem 0;
+  }
+  .begin-link {
+    display: inline-block;
+    margin-top: 1rem;
+    font-family: 'Special Elite', monospace;
+    font-size: 1.1rem;
+    color: var(--forge-fire);
+    text-decoration: none;
+    cursor: pointer;
+    border: 2px solid var(--forge-fire);
+    padding: 0.6rem 1.5rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+  .begin-link:hover {
+    background: var(--forge-fire);
+    color: var(--paper-cream);
+  }
+
+  /* Inventory bar */
+  #inventory-bar {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink-brown);
+    color: var(--paper-cream);
+    padding: 0.4rem 1rem;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.8rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    border-radius: 6px 6px 0 0;
+    z-index: 100;
+    max-width: 600px;
+  }
+  #inventory-bar.empty { display: none; }
+  .inv-label { color: var(--accent-gold); margin-right: 0.3rem; }
+  .inv-items { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .inv-item {
+    background: rgba(255,255,255,0.15);
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+  }
+
+  /* History bar */
+  #history-bar {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink-brown);
+    color: var(--paper-cream);
+    padding: 0.3rem 0.8rem;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.7rem;
+    display: flex;
+    gap: 0.3rem;
+    align-items: center;
+    border-radius: 0 0 6px 6px;
+    z-index: 100;
+  }
+  .hist-page {
+    cursor: pointer;
+    color: var(--accent-gold);
+    text-decoration: underline;
+  }
+  .hist-sep { opacity: 0.5; }
+  .hist-current { color: #fff; font-weight: bold; }
+
+  /* Page transitions */
+  .page-enter { animation: fadeIn 0.3s ease; }
+  .page-exit { opacity: 0; transition: opacity 0.2s; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  /* Item toast */
+  @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%); } }
+</style>
+</head>
+<body>
+<div id="book-container">
+  <div id="page-content"></div>
+</div>
+<div id="inventory-bar" class="empty"></div>
+<div id="history-bar"></div>
+
+<script>
+(function() {
+  const STORY = {"title":"The Somnus Strain","subtitle":"Navigating the Dreams of a Colossal, Living City","genre":"exploration","bookNumber":78,"totalPages":15,"coverIllustration":null,"pages":{"1":{"text":["The city's crumbling edge gives way to the abyss, a gaping maw of living flesh that pulsates with a slow, infernal rhythm. Below you, the Somnus Maw yawns, a chasm of organic architecture that defies all reason, its breath a humid, coppery exhalation that chills you to the bone. Your sinew-harp feels heavy in your grasp, a fragile instrument against such colossal power.","This is where the city ends and the leviathan begins, a treacherous boundary you've crossed countless times in your dreams, but never in waking flesh. The air hums with the Maw's low thrum, a sound that resonates deep within your chest, a lullaby of impending doom. Tendrils of phosphorescent mist drift from its depths, swirling like spectral guardians.","You stand on the precipice, a solitary figure against the monumental indifference of the Somnus Maw. Your task is clear: to delve into its dreams, to coax its flesh into new forms, to uncover the truths etched into its bone. The path ahead promises either understanding or annihilation, and both beckon with equal, terrifying allure."],"illustration":null,"illustrationCaption":null,"choices":[{"text":"Descend directly into the gaping maw's main entrance, embracing the perilous unknown of its gullet.","page":"2"},{"text":"Seek a less obvious, hidden sinew-tunnel along the Maw's periphery, hoping for a quieter entry.","page":"3"}],"isEnding":false,"endingType":null,"items":[],"flags":["visited_1"],"conditionalText":[]},"2":{"text":["You plunge into the Maw's main gullet, the entrance snapping shut behind you with a wet thud that reverberates through your very bones. The air here is thick with a cloying, acrid scent, and the walls weep viscous, digestive fluids that shimmer with an unsettling, iridescent glow. Every step on the slick membrane is a gamble, your boots struggling for purchase.","The gullet is a cavernous, echoing chamber, its vastness punctuated by the sickening grind of internal organs shifting deeper within the leviathan. It sounds like mountains of bone being crushed, a constant, low rumble that threatens to deafen you. Rivulets of acidic liquid flow past, carving temporary paths through the fleshy floor, threatening to drag you into unknown depths.","Your skin prickles, sensing the immense, slow processes of the Maw's digestive system at work all around you. This is not merely a passage; it is a stomach, a place of dissolution and transformation. The sheer scale of it is overwhelming, reminding you of your own fragile mortality within this living, breathing labyrinth."],"illustration":null,"illustrationCaption":null,"choices":[{"text":"Attempt to soothe the grinding contractions with a mournful, rhythmic melody on your sinew-harp.","page":"4"},{"text":"Search for a precarious path along the chamber's upper ridges, avoiding the direct flow of fluids.","page":"5"}],"isEnding":false,"endingType":null,"items":[],"flags":["visited_2"],"conditionalText":[]},"3":{"text":["Instead of the gullet's churning horror, a narrow sinew-tunnel greets you, its walls encrusted with crystalline growths that hum with a faint, inner light. The air here is still and cold, carrying the faint scent of minerals and something ancient, long dormant. This path feels less like an entrance and more like a secret vein, a forgotten artery leading deeper into the leviathan's hidden anatomy.","The passage winds like a serpent, its calcified membranes creating intricate patterns that glow softly in the gloom. You trace a finger over the cool, smooth surface of a crystalline deposit, feeling a faint tremor beneath. This is a place of slow, deliberate growth, where the Maw's essence has coalesced into strange and beautiful forms.","Nestled within a particularly dense cluster of bone-like minerals, you spot it: a tool of impossible age, a bone chisel, perfectly preserved. Its handle is smooth from countless hands, its tip honed to a razor-sharp edge. It seems to hum with a subtle resonance, a silent echo of its previous wielder's purpose.","This discovery feels significant, a forgotten relic in the heart of a living world. You grasp the chisel, its weight familiar in your palm, and consider the implications of its presence. What secrets might it unlock, what calcified barriers might it breach within the Maw's ancient interior?"],"illustration":null,"illustrationCaption":null,"choices":[{"text":"Follow the faint, pulsating bioluminescence deeper into the vein's mysteries.","page":"6"},{"text":"Use your newfound bone chisel to attempt to pry open a sealed, calcified fissure in the wall.","page":"7","itemRequired":"bone_chisel"}],"isEnding":false,"endingType":null,"items":["bone_chisel"],"flags":["visited_3"],"conditionalText":[]},"4":{"text":["The mournful vibrato of your sinew-harp echoes through the gullet, and the grinding contractions falter, then cease, replaced by an eerie stillness. The viscous fluids recede, clinging to the walls like melted glass, and the fleshy membranes begin to shimmer with a new, ethereal light. Your melody has found purchase, a soothing balm to the Maw's colossal distress.","The walls of the gullet, once menacing, now undulate softly, their surface rippling like disturbed water. As your music continues, a section of the shimmering wall begins to pull apart, slowly, gracefully. It opens like a flower blooming in reverse, revealing a void passage beyond, a space that seems to absorb the very light around it.","This new pathway is unlike anything you've encountered, a shimmering emptiness that beckons with an almost hypnotic allure. It hums with a quiet energy, a silent promise of deeper mysteries. The Maw has responded, not with aggression, but with revelation, a gift coaxed from its slumbering mind.","The air around you feels charged, the silence profound now that the gullet's chaotic sounds have ceased. You stand at the precipice of a new frontier, your music having reshaped reality within the leviathan's flesh. The path ahead is born of your composition, a direct consequence of your influence."],"illustration":null,"illustrationCaption":null,"choices":[{"text":"Venture into the newly opened, shimmering void, drawn by its strange, ethereal allure.","page":"8"},{"text":"Continue to play your harp, hoping to uncover more subtle hidden pathways within this pacified region.","page":"9"}],"isEnding":false,"endingType":null,"items":[],"flags":["visited_4"],"conditionalText":[]},"5":{"text":["You cling to the precarious sinew-ridge, wind screaming past your ears as it whips through massive, fleshy vents that yawn open below. From this dizzying height, the Maw’s true scale reveals itself, a vast, complex landscape of pulsating organs and rivers of vital fluid far beneath you. Vertigo threatens to pull you into the abyss.","The air here is thin and sharp, carrying the metallic tang of blood and the faint, sweet scent of internal flora. You can see the main gullet far below, a tiny, distant funnel in the immense architecture of the leviathan. It is a terrifying, magnificent vista, revealing the sheer, overwhelming power of the Somnus Maw.","Glimmers of distant light emanate from deep within the leviathan's core, hinting at chambers and pathways yet unknown. The wind howls through the vents, a mournful song that seems to be the very breath of the Maw itself, carrying whispers of its vast, unknowable dreams. You feel exposed, a tiny speck on the hide of a god.","The ridge beneath your feet is narrow and slick, offering little security against the churning emptiness below. Every movement is deliberate, every breath measured. From this vantage, you are an observer, granted a terrifying glimpse into the heart of the beast, but also dangerously vulnerable."],"illustration":null,"illustrationCaption":null,"choices":[{"text":"Use the whisper lens to peer into the pulsing core below, seeking hidden truths and energy flows.","page":"10","itemRequired":"whisper_lens"},{"text":"Descend cautiously down a slippery sinew-ladder towards a glowing chamber further below.","page":"11"}],"isEnding":false,"endingType":null,"items":["whisper_lens"],"flags":["visited_5"],"conditionalText":[]},"6":{"text":["You step into a vast expanse where the very air shimmers with an otherworldly glow. Strands of solidified dreams, like luminous mist, drift languidly around you, coalescing into fleeting shapes – a child's forgotten toy, a lover's whispered promise, a warrior's ancient fear. The bioluminescence pulses softly, painting the chamber in hues of amethyst and ghostly silver.","Each ethereal wisp hums with a silent, resonating energy, a fragment of the Somnus Maw's slumbering mind made tangible. They brush against your skin, cold and ephemeral, yet leaving a lingering sense of profound, alien emotion. You feel the weight of countless eons of dreams pressing in, a silent symphony of the leviathan's subconscious.","Your dream phial, a delicate glass vessel crafted for this very purpose, feels suddenly heavy in your hand. This chamber is a nexus, a confluence of the Maw's inner world, and you hold the means to capture its essence, or perhaps, to stir it from its deep, dream-woven sleep."],"illustration":null,"illustrationCaption":null,"choices":[{"text":"Attempt to capture a fragment of the Maw's dreaming essence into your dream phial.","page":"12","itemRequired":"dream_phial"},{"text":"Play a rousing, awakening melody, hoping to stir the Maw's deeper consciousness and memories.","page":"13"}],"isEnding":false,"endingType":null,"items":["dream_phial"],"flags":["visited_6"],"conditionalText":[]},"7":{"text":["A chilling silence greets you as you enter the vast, cavernous hall. Towering bone tablets, calcified and ancient, line the immense space like forgotten monoliths, their surfaces intricately carved with symbols that predate recorded history. The air is thick with the dust of ages, a heavy, reverent stillness that seems to absorb all sound.","Each colossal tablet whispers of a time long past, of the Maw's initial awakenings, its slow, titanic growth, and perhaps, the secrets of its true nature. Intricate bone structures branch and interlock overhead, forming a skeletal canopy that seems to press down on you, amplifying the hall's ancient aura. You are a trespasser in a library of forgotten titans.","Your fingers trace the cold, smooth surface of one such tablet, feeling the deep grooves of its arcane script. The bone chisel at your belt feels sharp and eager, a tool that could unlock these petrified memories. Yet, the sheer scale of the hall also suggests hidden depths, other pathways concealed within its ancient framework."],"illustration":null,"illustrationCaption":null,"choices":[{"text":"Use your bone chisel to carefully extract an ancient bone tablet, hoping to decipher its secrets.","page":"14","itemRequired":"bone_chisel"},{"text":"Search for a hidden passage or a structural weakness in the surrounding bone walls.","page":"15","itemRequired":"bone_chisel"}],"isEnding":false,"endingType":null,"items":[],"flags":["visited_7"],"conditionalText":[]},"8":{"text":["The path before you dissolves into a maelstrom of light and shadow, a swirling vortex within the very flesh of the Maw. The ground beneath your feet ceases to be solid, instead becoming a churning mass that shifts and undulates, threatening to swallow you whole. Internal currents, like unseen hands, tug at your cloak, pulling you deeper into the disorienting spiral.","Colors bleed into one another, formless and dizzying, as the air crackles with an unknown energy. You feel a profound sense of disorientation, your sense of direction utterly lost in the relentless churn. The Maw is not merely a path here; it is an active force, a living current that seeks to guide or consume you.","Your sinew-harp feels like a fragile anchor in this chaos. Its strings, usually a source of control, now vibrate sympathetically with the Maw's internal turbulence. You could try to impose order, to weave a melody that grounds you against the impossible shifts, or you could release your grip, allowing the leviathan's will to carry you wherever its depths may lead."],"illustration":null,"illustrationCaption":null,"choices":[{"text":"Compose a stabilizing harmony to anchor yourself against the disorienting shifts, seeking control.","page":"14"},{"text":"Yield to the currents, allowing the Maw to guide your path, wherever its depths may lead.","page":"11"}],"isEnding":false,"endingType":null,"items":[],"flags":["visited_8"],"conditionalText":[]},"9":{"text":["The main passage abruptly branches into a labyrinthine network of smaller, interconnected sinew-tunnels. The air here is warmer, cloying, and the walls are slick with a viscous, glistening secretion that catches the faint, internal light. Each tunnel seems to pulse with a subtle, biological rhythm, a silent invitation to explore the Maw's hidden intricacies.","You press your palm against the yielding surface of a tunnel wall, feeling a faint, deep vibration beneath the warmth. This place feels more alive, more actively functional, than previous chambers, a testament to the leviathan's complex internal workings. The sheer number of choices is overwhelming, each opening promising a different revelation or a fresh danger.","One tunnel pulses with a distinct, rhythmic thrum, a steady beat that resonates through your bones, suggesting proximity to a vital organ. Another, wider and seemingly more stable, bears the subtle signs of previous passage, perhaps offering a less perilous, though potentially less significant, route through the tangled anatomy."],"illustration":null,"illustrationCaption":null,"choices":[{"text":"Choose the path that pulses with a faint, rhythmic vibration, suggesting a core activity.","page":"10"},{"text":"Select the widest, most well-trodden tunnel, hoping for a clearer, safer route through the labyrinth.","page":"13"}],"isEnding":false,"endingType":null,"items":[],"flags":["visited_9"],"conditionalText":[]},"10":{"text":["You emerge into a vast, circular chamber dominated by a single, colossal organ that pulses with an intense, mesmerizing bioluminescence. It is the very heart of the Somnus Maw, a vibrant, throbbing mass of muscle and sinew, radiating immense power. Its rhythm is a deep, resonant boom that vibrates through the very ground, through your bones, through the air you breathe.","The light it casts bathes the chamber in a warm, crimson glow, illuminating the intricate network of veins and arteries that feed into and out of this incredible engine of life. You feel an overwhelming sense of awe and vulnerability in its presence; this is the core, the very essence of the leviathan's existence, laid bare before you.","The sinew-harp in your hands feels attuned to its beat, the strings humming in sympathetic resonance. You could attempt to join this profound rhythm, to weave your own melody into the Maw's vital song, hoping to influence its deepest state. Or, the sheer scale of the organ hints at passages beyond, deeper into the leviathan's unknown anatomy, promising even greater understanding."],"illustration":null,"illustrationCaption":null,"choices":[{"text":"Use your sinew-harp to harmonize with the core's rhythm, seeking to influence its deepest state.","page":"15"},{"text":"Attempt to find a passage beyond the core, into the Maw's deeper, unknown anatomy, seeking greater understanding.","page":"12"}],"isEnding":false,"endingType":null,"items":[],"flags":["visited_10"],"conditionalText":[]},"11":{"text":["The air grows thick, not with a mere fog, but a dense, living mist that chokes the breath from your lungs. It tastes of brine and decay, stinging your eyes and coating your sinew-harp in a slick, viscous film. Every inhale feels like swallowing ash, every exhale a struggle against a force determined to claim your very essence.","This is no ordinary vapor; it is the Maw's corrosive sigh, a hostile exhalation that begins to dissolve the frayed edges of your resolve. Your skin prickles, then burns, as the mist gnaws at the delicate fabric of your explorer's suit, then at the skin beneath. The boundaries between your body and the Maw's nebulous anatomy blur, a terrifying communion you never sought.","Your vision fades, replaced by swirling patterns of bioluminescent agony. The sinew-harp slips from your weakening grasp, its mournful hum lost in the cacophony of your failing senses. You are not simply succumbing; you are being unmade, becoming one with the Maw's indifferent, consuming vastness, a final, horrifying note in its endless, silent symphony."],"illustration":null,"illustrationCaption":null,"choices":[],"isEnding":true,"endingType":"bad","items":[],"flags":["visited_11"],"conditionalText":[]},"12":{"text":["Suddenly, a clarity pierces the ever-present gloom, not external, but within the chambers of your own mind. It is a map, intricate and ethereal, shimmering into existence with the subtle luminescence of captured dreams. These aren't just visions; they are pathways, etched into the very fabric of the Maw's subconscious, visible only to you.","The internal landscape of the leviathan unfolds before your mind's eye: vast, pulsating chambers, labyrinthine arteries, and the dormant nerve clusters that dictate its monumental moods. Each detail is imbued with the resonance of a dream you once wrestled from its depths, a memory of intention, a whisper of a potential future. This is the Maw's true interior, laid bare.","You stand at a crossroads of the mind, the dream-map offering two distinct trajectories through the colossal entity's hidden architecture. One path promises a deeper journey into its established consciousness, a surrender to its existing currents. The other tempts with the audacious prospect of altering those currents, of weaving your own will into the very fabric of the leviathan's slumber.","What will you do?\n\nFollow the path revealed by the dream, trusting in its ethereal guidance through the Maw's anatomy.\n\nTry to project your own will onto the Maw's dream, subtly altering its course and destiny."],"illustration":null,"illustrationCaption":null,"choices":[{"text":"Follow the path revealed by the dream, trusting in its ethereal guidance through the Maw's anatomy.","page":"14"},{"text":"Try to project your own will onto the Maw's dream, subtly altering its course and destiny.","page":"15"}],"isEnding":false,"endingType":null,"items":[],"flags":["visited_12"],"conditionalText":[]},"13":{"text":["A deep, guttural thrum reverberates through the very bones of the Maw, a sound that isn't merely heard, but felt deep within your own marrow. The leviathan shudders, a violent, convulsive spasm that sends tremors tearing through its colossal anatomy. Your actions have pierced its slumber, rousing an ancient, primal anger that threatens to consume everything.","Loose fragments of ossified tissue rain down from the cavernous ceiling, sharp and lethal, as the very walls around you begin to constrict and buckle. The Maw is actively trying to expel you, its labyrinthine pathways becoming a deathtrap of shifting flesh and crushing bone. You scramble, desperately seeking any upward route, any fissure leading towards the distant, implied surface.","You claw your way upwards, breath burning in your throat, the Maw's furious contractions threatening to seal you within its depths forever. Finally, bursting through a last, constricted opening, you collapse onto the familiar, solid ground of the city's outskirts, gasping for air. You have escaped, but the Maw's anger is now a palpable threat, its secrets still shrouded, its true nature more elusive than ever."],"illustration":null,"illustrationCaption":null,"choices":[],"isEnding":true,"endingType":"neutral","items":[],"flags":["visited_13"],"conditionalText":[]},"14":{"text":["You arrive at a central chamber unlike any you have encountered, a vast, pulsating expanse of pure, living light. The oppressive weight of the Maw's anatomy lifts, replaced by an astonishing sense of serene clarity. Here, the usual chaotic whispers of its subconscious fall silent, revealing an ancient, profound truth.","Before you, not etched in stone or flesh, but within the very shimmering air, are the Maw's true memories. You witness its genesis, its aeons of silent migration through the cosmic dark, its accidental anchoring beneath your city. You understand its purpose, not as a threat, but as a colossal, dreaming entity, a silent guardian whose existence simply is.","A profound sense of peace washes over you, mingling with a triumphant understanding that transcends mere knowledge. You have deciphered the Maw's true nature, not through battle or manipulation, but through empathy and profound insight. Its secrets are now your own, and the future of your city, once precariously balanced, now rests on this newfound, enlightened harmony."],"illustration":null,"illustrationCaption":null,"choices":[],"isEnding":true,"endingType":"good","items":[],"flags":["visited_14"],"conditionalText":[]},"15":{"text":["The boundary between your consciousness and the Maw's colossal being dissolves, not in a terrifying consumption, but in an embrace of profound unity. You are no longer merely exploring its depths; you are floating within its very heart, a new, vital consciousness now intricately woven into its vast, pulsating existence. Your sinew-harp, once an instrument of guidance, now resonates with the Maw's own eternal song.","The leviathan's immense, sprawling anatomy becomes an extension of your own senses, its dreams your thoughts, its silent hum your heartbeat. You perceive the city above, not as a separate entity, but as delicate lichen clinging to the back of a colossal, slumbering titan. The full scope of its vast, ancient mind is now accessible, a tapestry of cosmic memory and future potential.","With a gentle, knowing touch, you begin to guide its dreams, not forcing, but suggesting, like a master harpist coaxing a melody from an ancient instrument. You influence its future, not through control, but through a shared destiny, ensuring its gentle slumber protects the city, and that its awakening, when it comes, is a benevolent one. You have become the Maw's conscience, its guide, its quiet, eternal shepherd."],"illustration":null,"illustrationCaption":null,"choices":[],"isEnding":true,"endingType":"good","items":[],"flags":["visited_15"],"conditionalText":[]}}};
+
+  const state = {
+    currentPage: null,
+    history: [],
+    inventory: [],
+    flags: new Set(),
+  };
+
+  const pageContent = document.getElementById('page-content');
+  const inventoryBar = document.getElementById('inventory-bar');
+  const historyBar = document.getElementById('history-bar');
+
+  function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.textContent = String(str);
+    return div.innerHTML;
+  }
+
+  function escapeAttr(str) {
+    return String(str).replace(/[&"'<>]/g, function(c) {
+      return {'&':'&amp;','"':'&quot;',"'":'&#39;','<':'&lt;','>':'&gt;'}[c];
+    });
+  }
+
+  function sanitizeImageSrc(src) {
+    if (typeof src !== 'string') return '';
+    if (src.startsWith('data:image/')) return src;
+    return '';
+  }
+
+  function formatItemName(item) {
+    return item.replace(/_/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+  }
+
+  function showItemToast(item) {
+    var toast = document.createElement('div');
+    toast.textContent = 'Found: ' + formatItemName(item);
+    toast.style.cssText = 'position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:var(--bantam-blue);color:var(--paper-cream);padding:0.5em 1.2em;font-family:Special Elite,monospace;font-size:0.85rem;z-index:200;border-radius:3px;box-shadow:0 3px 10px rgba(0,0,0,0.3);animation:toastIn 0.3s ease';
+    document.body.appendChild(toast);
+    setTimeout(function() { toast.remove(); }, 2000);
+  }
+
+  function renderPage(pageId) {
+    var page = STORY.pages[pageId];
+    if (!page) return;
+
+    if (state.currentPage !== null) state.history.push(state.currentPage);
+    state.currentPage = pageId;
+
+    if (page.items) {
+      page.items.forEach(function(item) {
+        if (state.inventory.indexOf(item) === -1) {
+          state.inventory.push(item);
+          showItemToast(item);
+        }
+      });
+    }
+    if (page.flags) page.flags.forEach(function(f) { state.flags.add(f); });
+
+    pageContent.classList.remove('page-enter');
+    pageContent.classList.add('page-exit');
+
+    setTimeout(function() {
+      var html = '<div class="page-number">' + escapeHTML(pageId) + '</div>';
+
+      if (page.illustration) {
+        html += '<div class="illustration-frame"><div class="frame-border">';
+        html += '<img src="' + sanitizeImageSrc(page.illustration) + '" alt="Illustration">';
+        html += '</div>';
+        if (page.illustrationCaption) html += '<div class="illustration-caption">' + escapeHTML(page.illustrationCaption) + '</div>';
+        html += '</div>';
+      }
+
+      if (page.text) {
+        page.text.forEach(function(para, i) {
+          var cls = (i === 0 && !page.illustration) ? ' drop-cap' : '';
+          html += '<p class="story-text' + cls + '">' + escapeHTML(para) + '</p>';
+        });
+      }
+
+      if (page.conditionalText) {
+        page.conditionalText.forEach(function(ct) {
+          if (state.flags.has(ct.flag) || state.inventory.indexOf(ct.flag) !== -1) {
+            html += '<p class="story-text flavor-text">' + escapeHTML(ct.text) + '</p>';
+          }
+        });
+      }
+
+      if (page.isEnding) {
+        var endLabel = page.endingType === 'good' ? 'A Triumphant End'
+          : page.endingType === 'bad' ? 'A Grim Fate' : 'The End';
+        html += '<div class="the-end"><div class="divider"></div>';
+        html += '<h2>' + endLabel + '</h2>';
+        html += '<p class="end-flavor">Your journey has concluded on page ' + escapeHTML(pageId) + '.</p>';
+        html += '<button class="restart-link" id="restart-btn">Turn back to page 1</button>';
+        html += '</div>';
+      }
+
+      if (page.choices && page.choices.length > 0) {
+        html += '<div class="choices-section">';
+        page.choices.forEach(function(choice) {
+          if (choice.itemRequired && state.inventory.indexOf(choice.itemRequired) === -1) return;
+          html += '<a class="choice-link" href="#" data-page="' + escapeAttr(choice.page) + '">';
+          html += escapeHTML(choice.text);
+          html += '<span class="page-ref">(turn to page ' + escapeHTML(String(choice.page)) + ')</span></a>';
+        });
+        html += '</div>';
+      }
+
+      pageContent.innerHTML = html;
+      pageContent.classList.remove('page-exit');
+      pageContent.classList.add('page-enter');
+
+      pageContent.querySelectorAll('.choice-link').forEach(function(link) {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          renderPage(link.dataset.page);
+        });
+      });
+
+      var restartBtn = document.getElementById('restart-btn');
+      if (restartBtn) {
+        restartBtn.addEventListener('click', function(e) {
+          e.preventDefault();
+          resetAndRestart();
+        });
+      }
+
+      updateInventoryBar();
+      updateHistoryBar();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 200);
+  }
+
+  function renderTitlePage() {
+    var coverHtml = STORY.coverIllustration
+      ? '<img src="' + sanitizeImageSrc(STORY.coverIllustration) + '" alt="Cover">'
+      : '<div style="width:100%;height:200px;display:flex;align-items:center;justify-content:center;color:var(--ink-light);font-style:italic">[ Cover Illustration ]</div>';
+
+    pageContent.innerHTML = '<div class="title-page">'
+      + '<div class="series-header">BellForge Presents</div>'
+      + '<div class="book-number">Book #' + (STORY.bookNumber || 1) + '</div>'
+      + '<h1 class="book-title">' + escapeHTML(STORY.title) + '</h1>'
+      + '<div class="subtitle">' + escapeHTML(STORY.subtitle || '') + '</div>'
+      + '<div class="illustration-frame"><div class="frame-border">' + coverHtml + '</div></div>'
+      + '<div class="warning-box"><h3>Warning!</h3><p>Do not read this book straight through from beginning to end! These pages contain many different adventures you can go on. From time to time as you read along, you will be asked to make a choice. Your choice may lead to success or disaster!</p></div>'
+      + '<div class="tagline">You are the hero of this story</div>'
+      + '<a class="begin-link" href="#" id="begin-adventure">Turn to page 1 to begin your adventure\u2026</a>'
+      + '</div>';
+
+    document.getElementById('begin-adventure').addEventListener('click', function(e) {
+      e.preventDefault();
+      renderPage('1');
+    });
+
+    updateInventoryBar();
+    updateHistoryBar();
+  }
+
+  function updateInventoryBar() {
+    if (state.inventory.length === 0) {
+      inventoryBar.className = 'empty';
+      inventoryBar.innerHTML = '';
+      return;
+    }
+    inventoryBar.className = '';
+    var html = '<span class="inv-label">Pack:</span><div class="inv-items">';
+    state.inventory.forEach(function(item) {
+      html += '<span class="inv-item">' + escapeHTML(formatItemName(item)) + '</span>';
+    });
+    html += '</div>';
+    inventoryBar.innerHTML = html;
+  }
+
+  function updateHistoryBar() {
+    if (!state.currentPage) { historyBar.innerHTML = ''; return; }
+    var html = '';
+    var recent = state.history.slice(-8);
+    recent.forEach(function(p) {
+      html += '<span class="hist-page" data-page="' + escapeAttr(p) + '">' + escapeHTML(p) + '</span>';
+      html += '<span class="hist-sep">\u2192</span>';
+    });
+    html += '<span class="hist-current">' + escapeHTML(state.currentPage) + '</span>';
+    historyBar.innerHTML = html;
+
+    historyBar.querySelectorAll('.hist-page').forEach(function(el) {
+      el.addEventListener('click', function() {
+        var target = el.dataset.page;
+        var idx = state.history.lastIndexOf(target);
+        if (idx >= 0) {
+          state.history = state.history.slice(0, idx);
+          state.currentPage = null;
+        }
+        renderPage(target);
+      });
+    });
+  }
+
+  function resetAndRestart() {
+    state.currentPage = null;
+    state.history = [];
+    state.inventory = [];
+    state.flags.clear();
+    renderTitlePage();
+  }
+
+  // Boot
+  renderTitlePage();
+})();
+</script>
+</body>
+</html>

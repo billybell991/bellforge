@@ -52,6 +52,7 @@ interface LibraryEntry {
   id: string;
   name: string;
   rating: number; // 0-5 stars
+  entertainmentType: 'game' | 'adventure' | 'comic';
   config: unknown;
   buildId: string;
   apkSize: string;
@@ -432,17 +433,28 @@ app.post('/api/library', (req, res) => {
     return;
   }
 
+  const entryName = name || (build.config as Record<string, Record<string, string>>)?.story?.title || 'Untitled Game';
+  // Determine entertainment type from config shape
+  const cfg = build.config as Record<string, unknown>;
+  const entType: 'game' | 'adventure' | 'comic' = 'cyoaGenre' in cfg ? 'adventure' : 'comicGenre' in cfg ? 'comic' : 'game';
+  const existing = library.findIndex((e) => e.name === entryName);
+
   const entry: LibraryEntry = {
-    id: uuidv4(),
-    name: name || (build.config as Record<string, Record<string, string>>)?.story?.title || 'Untitled Game',
-    rating: 0,
+    id: existing >= 0 ? library[existing].id : uuidv4(),
+    name: entryName,
+    rating: existing >= 0 ? library[existing].rating : 0,
+    entertainmentType: entType,
     config: build.config,
     buildId,
     apkSize: build.apkPath ? '~10 MB' : '0',
     createdAt: new Date().toISOString(),
   };
 
-  library.push(entry);
+  if (existing >= 0) {
+    library[existing] = entry;
+  } else {
+    library.push(entry);
+  }
   saveLibrary(library);
   res.json({ entry });
 });
@@ -883,18 +895,26 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
   // Auto-save to library so the user never loses a game
   const apkSizeStr = `${(8 + Math.random() * 12).toFixed(1)} MB`;
   if (!library.some((e) => e.buildId === buildId)) {
+    const gameName = (config.story as Record<string, string>)?.title || 'Untitled Game';
+    const existing = library.findIndex((e) => e.name === gameName);
     const entry: LibraryEntry = {
-      id: uuidv4(),
-      name: (config.story as Record<string, string>)?.title || 'Untitled Game',
-      rating: 0,
+      id: existing >= 0 ? library[existing].id : uuidv4(),
+      name: gameName,
+      rating: existing >= 0 ? library[existing].rating : 0,
+      entertainmentType: 'game',
       config: config,
       buildId,
       apkSize: apkSizeStr,
       createdAt: new Date().toISOString(),
     };
-    library.push(entry);
+    if (existing >= 0) {
+      library[existing] = entry;
+      console.log(`  📚 Updated "${entry.name}" in library (replaced previous build)`);
+    } else {
+      library.push(entry);
+      console.log(`  📚 Auto-saved "${entry.name}" to library`);
+    }
     saveLibrary(library);
-    console.log(`  📚 Auto-saved "${entry.name}" to library`);
   }
 
   sendProgress(buildId, {
@@ -945,21 +965,28 @@ async function runAdventureBuild(buildId: string, config: AdventureConfig) {
   // Persist preview HTML so it survives server restarts
   try { savePreviewHtml(buildId, previewHtml); } catch (err) { console.error('Failed to save CYOA preview:', err); }
 
-  // Auto-save to library
+  // Auto-save to library (replace existing entry with same name to avoid duplicates)
   const title = config.story.title || result.story.title || 'Untitled Adventure';
   if (!library.some((e) => e.buildId === buildId)) {
+    const existing = library.findIndex((e) => e.name === title);
     const entry: LibraryEntry = {
-      id: uuidv4(),
+      id: existing >= 0 ? library[existing].id : uuidv4(),
       name: title,
-      rating: 0,
+      rating: existing >= 0 ? library[existing].rating : 0,
+      entertainmentType: 'adventure',
       config: config,
       buildId,
       apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
       createdAt: new Date().toISOString(),
     };
-    library.push(entry);
+    if (existing >= 0) {
+      library[existing] = entry;
+      console.log(`  📚 Updated adventure "${entry.name}" in library (replaced previous build)`);
+    } else {
+      library.push(entry);
+      console.log(`  📚 Auto-saved adventure "${entry.name}" to library`);
+    }
     saveLibrary(library);
-    console.log(`  📚 Auto-saved adventure "${entry.name}" to library`);
   }
 
   sendProgress(buildId, {
@@ -1020,18 +1047,25 @@ async function runComicBuild(buildId: string, config: ComicConfig) {
 
   const title = config.story.title || result.story.title || 'Untitled Comic';
   if (!library.some((e) => e.buildId === buildId)) {
+    const existing = library.findIndex((e) => e.name === title);
     const entry: LibraryEntry = {
-      id: uuidv4(),
+      id: existing >= 0 ? library[existing].id : uuidv4(),
       name: title,
-      rating: 0,
+      rating: existing >= 0 ? library[existing].rating : 0,
+      entertainmentType: 'comic',
       config: config,
       buildId,
       apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
       createdAt: new Date().toISOString(),
     };
-    library.push(entry);
+    if (existing >= 0) {
+      library[existing] = entry;
+      console.log(`  📚 Updated comic "${entry.name}" in library (replaced previous build)`);
+    } else {
+      library.push(entry);
+      console.log(`  📚 Auto-saved comic "${entry.name}" to library`);
+    }
     saveLibrary(library);
-    console.log(`  📚 Auto-saved comic "${entry.name}" to library`);
   }
 
   sendProgress(buildId, {

@@ -38,7 +38,8 @@
     },
     "buildId": "2863bc3c-e76c-44d8-9f8b-ef3aa640bcfe",
     "apkSize": "75 KB",
-    "createdAt": "2026-03-13T09:57:21.339Z"
+    "createdAt": "2026-03-13T09:57:21.339Z",
+    "entertainmentType": "adventure"
   },
   {
     "id": "2450b08d-923f-43da-a4ce-b75ae2d14860",
@@ -80,6 +81,49 @@
     },
     "buildId": "53ccc433-454b-4d31-a3a3-4b4325e4a6c1",
     "apkSize": "35 KB",
-    "createdAt": "2026-03-13T10:21:43.837Z"
+    "createdAt": "2026-03-13T10:21:43.837Z",
+    "entertainmentType": "adventure"
+  },
+  {
+    "id": "1c1a96be-a39d-4fb4-a9df-ee0cc1e90215",
+    "name": "The Somnus Strain",
+    "rating": 0,
+    "config": {
+      "cyoaGenre": {
+        "id": "exploration",
+        "name": "Exploration",
+        "icon": "🗺️",
+        "description": "Chart the unknown, discover secrets, map new territory",
+        "tag": "FLAGSHIP"
+      },
+      "theme": {
+        "id": "horror",
+        "name": "Horror / Supernatural",
+        "icon": "👻",
+        "description": "Dark atmospheres and spine-tingling mysteries",
+        "color": "#ff3d00"
+      },
+      "artStyle": {
+        "id": "watercolor",
+        "name": "Watercolor / Painterly",
+        "icon": "🖌️",
+        "description": "Soft, flowing, artistic brushstrokes"
+      },
+      "structure": {
+        "pageCount": 15,
+        "deadliness": "medium",
+        "branchDensity": "forking"
+      },
+      "story": {
+        "title": "The Somnus Strain",
+        "characterName": "Threnody",
+        "setting": "Marrow-Port is a cyclopean settlement carved into the gnarled, colossal heartwood of the Somnus Maw, a dormant elder entity whose nightmare-breath permeates every shadowed alley and cavernous ventricle.",
+        "description": "As Threnody, you must navigate the treacherous, shifting anatomy of the Somnus Maw, a living leviathan that is both your city's foundation and its greatest threat. Using your sinew-harp, you compose mournful melodies that don't merely guide your exploration, but subtly influence the colossal entity's dreams, causing its very flesh to reconfigure, its moods to shift from passive slumber to active hostility, or even reveal hidden truths etched into its bone."
+      }
+    },
+    "buildId": "10f5e2ed-212d-47ab-9999-7dc4aa0a69fe",
+    "apkSize": "36 KB",
+    "createdAt": "2026-03-13T10:49:30.831Z",
+    "entertainmentType": "adventure"
   }
 ]
