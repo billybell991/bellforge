@@ -22,6 +22,13 @@ const ADVENTURE_FEATURES = [
   { icon: '📖', title: 'Instant Play', desc: 'Your adventure loads right in the browser — no install needed.' },
 ];
 
+const COMIC_FEATURES = [
+  { icon: '💥', title: 'Pick Your Genre', desc: 'Superhero, horror, sci-fi, noir, fantasy, slice of life.' },
+  { icon: '🎨', title: 'AI-Drawn Panels', desc: 'Imagen generates every panel — covers, splash pages, close-ups.' },
+  { icon: '💬', title: 'Speech Bubbles', desc: 'Dialogue, thought bubbles, and narration boxes auto-composed.' },
+  { icon: '📖', title: 'Read Instantly', desc: 'Full comic viewer right in your browser with page navigation.' },
+];
+
 export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: LandingProps) {
   const [taglineVisible, setTaglineVisible] = useState(false);
   const [geminiStatus, setGeminiStatus] = useState<{ available: boolean; hint: string } | null>(null);
@@ -36,9 +43,13 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
     return () => clearTimeout(timer);
   }, []);
 
-  const features = entertainmentType === 'adventure' ? ADVENTURE_FEATURES : GAME_FEATURES;
+  const features = entertainmentType === 'adventure' ? ADVENTURE_FEATURES
+    : entertainmentType === 'comic' ? COMIC_FEATURES
+    : GAME_FEATURES;
   const tagline = entertainmentType === 'adventure'
     ? 'Forge Your Adventure. You Are the Hero.'
+    : entertainmentType === 'comic'
+    ? 'Forge Your Comic. Every Panel AI-Drawn.'
     : 'Forge Your Game. No Code Required.';
 
   return (
@@ -71,6 +82,11 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
               <h3 className="entertainment-card-title">Choose Your Own Adventure</h3>
               <p className="entertainment-card-desc">A branching illustrated storybook — you make the choices.</p>
             </div>
+            <div className="entertainment-card" onClick={() => setEntertainmentType('comic')}>
+              <span className="entertainment-card-icon">💥</span>
+              <h3 className="entertainment-card-title">AI Comic Book</h3>
+              <p className="entertainment-card-desc">A full comic book — every panel AI-drawn, dialogue auto-placed.</p>
+            </div>
           </div>
         </div>
       )}
@@ -96,6 +112,8 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
               <span className="forge-btn-tooltip">
                 {entertainmentType === 'adventure'
                   ? 'Walk through each step — you pick the genre, theme, art style, and story seed'
+                  : entertainmentType === 'comic'
+                  ? 'Walk through each step — you pick the genre, theme, art style, and story'
                   : 'Walk through each step — you pick the genre, theme, art style, and story'}
               </span>
             </div>
@@ -104,13 +122,13 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
                 🤖 FORGE FOR ME
               </button>
               <span className="forge-btn-tooltip">
-                Let Gemini AI choose everything and build you a surprise {entertainmentType === 'adventure' ? 'adventure' : 'game'}
+                Let Gemini AI choose everything and build you a surprise {entertainmentType === 'adventure' ? 'adventure' : entertainmentType === 'comic' ? 'comic' : 'game'}
               </span>
             </div>
           </div>
 
           <button className="landing-type-switch" onClick={() => setEntertainmentType(null)}>
-            ← Switch to {entertainmentType === 'game' ? 'Adventure' : 'Game'}
+            ← Choose a different type
           </button>
         </>
       )}

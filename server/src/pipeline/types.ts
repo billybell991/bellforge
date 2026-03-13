@@ -16,6 +16,14 @@ export interface AdventureConfig {
   story: { title: string; description: string; characterName: string; setting: string };
 }
 
+export interface ComicConfig {
+  comicGenre: { id: string; name: string };
+  theme: { id: string; name: string };
+  artStyle: { id: string; name: string };
+  structure: { pageCount: number; panelStyle: string; tone: string };
+  story: { title: string; description: string; characterName: string; setting: string };
+}
+
 export interface PipelineContext {
   buildId: string;
   config: GameConfig;

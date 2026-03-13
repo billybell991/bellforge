@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { LibraryEntry, GameConfig, AdventureConfig } from '../types';
+import type { LibraryEntry, GameConfig, AdventureConfig, ComicConfig } from '../types';
 
 function getEntryGenreDisplay(entry: LibraryEntry): { icon: string; name: string } {
   const c = entry.config;
   if ('cyoaGenre' in c) {
     return { icon: (c as AdventureConfig).cyoaGenre.icon, name: (c as AdventureConfig).cyoaGenre.name };
+  }
+  if ('comicGenre' in c) {
+    return { icon: (c as ComicConfig).comicGenre.icon, name: (c as ComicConfig).comicGenre.name };
   }
   const gc = c as GameConfig;
   return { icon: gc.genre?.icon || '🎮', name: gc.genre?.name || 'Game' };

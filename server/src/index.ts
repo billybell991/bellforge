@@ -14,8 +14,11 @@ import { generateStory, generateAutoConfig, generateCreativeBrief, generateBrief
 import { generateGameImages } from './imagen.js';
 import type { GameConfig } from './pipeline/types.js';
 import type { AdventureConfig } from './pipeline/types.js';
+import type { ComicConfig } from './pipeline/types.js';
 import { runAdventurePipeline } from './cyoa-pipeline.js';
 import { generateCYOAPreviewHtml } from './cyoa-engine.js';
+import { runComicPipeline } from './comic-pipeline.js';
+import { generateComicPreviewHtml } from './comic-engine.js';
 import type { CreativeBrief, CreativePalette, CreativeRoom, CreativeItem, PuzzleConnection } from './gemini.js';
 
 const execFileAsync = promisify(execFile);
@@ -234,6 +237,17 @@ app.post('/api/forge/adventure', async (req, res) => {
   res.json({ buildId });
 
   waitForClient(buildId, 5000).then(() => runAdventureBuild(buildId, config));
+});
+
+// Start a Comic build
+app.post('/api/forge/comic', async (req, res) => {
+  const config = req.body as ComicConfig;
+  const buildId = uuidv4();
+
+  builds.set(buildId, { config, status: 'queued', progress: 0 });
+  res.json({ buildId });
+
+  waitForClient(buildId, 5000).then(() => runComicBuild(buildId, config));
 });
 
 // Get build status
@@ -934,6 +948,78 @@ async function runAdventureBuild(buildId: string, config: AdventureConfig) {
       images: null,
       config: {
         genre: config.cyoaGenre.name,
+        theme: config.theme.name,
+        artStyle: config.artStyle.name,
+        roomCount: config.structure.pageCount,
+        title,
+      },
+      timing: { startedAt: Date.now(), completedAt: Date.now() },
+    },
+  });
+}
+
+// ── Comic Build Pipeline ──
+
+async function runComicBuild(buildId: string, config: ComicConfig) {
+  const record = builds.get(buildId)!;
+  record.status = 'building';
+
+  const result = await runComicPipeline(config, (pct, msg, stage) => {
+    sendProgress(buildId, {
+      type: 'progress',
+      stage: stage || 'comic',
+      name: msg,
+      percent: pct,
+      detail: '',
+      timestamp: Date.now(),
+    });
+  });
+
+  if (!result) {
+    sendProgress(buildId, {
+      type: 'error',
+      message: 'Comic generation failed — Gemini could not produce a valid story.',
+    });
+    record.status = 'error';
+    return;
+  }
+
+  const previewHtml = generateComicPreviewHtml(result.story);
+  record.status = 'complete';
+  record.progress = 100;
+  record.previewHtml = previewHtml;
+
+  try { savePreviewHtml(buildId, previewHtml); } catch (err) { console.error('Failed to save comic preview:', err); }
+
+  const title = config.story.title || result.story.title || 'Untitled Comic';
+  if (!library.some((e) => e.buildId === buildId)) {
+    const entry: LibraryEntry = {
+      id: uuidv4(),
+      name: title,
+      rating: 0,
+      config: config,
+      buildId,
+      apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
+      createdAt: new Date().toISOString(),
+    };
+    library.push(entry);
+    saveLibrary(library);
+    console.log(`  📚 Auto-saved comic "${entry.name}" to library`);
+  }
+
+  sendProgress(buildId, {
+    type: 'complete',
+    percent: 100,
+    apkPath: '',
+    apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
+    previewUrl: `/api/preview/${buildId}`,
+    qaReport: {
+      overallScore: 0,
+      categories: [],
+      summary: '',
+      images: null,
+      config: {
+        genre: config.comicGenre.name,
         theme: config.theme.name,
         artStyle: config.artStyle.name,
         roomCount: config.structure.pageCount,

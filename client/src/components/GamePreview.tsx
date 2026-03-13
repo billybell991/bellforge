@@ -18,12 +18,22 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
   const [fullscreen, setFullscreen] = useState(false);
   const isLandscape = true;
   const isAdventure = entertainmentType === 'adventure';
+  const isComic = entertainmentType === 'comic';
+  const isNonGame = isAdventure || isComic;
+
+  const titleLabel = isAdventure ? '📚 Your Adventure is Ready!'
+    : isComic ? '💥 Your Comic is Ready!'
+    : '🎮 Your Game is Ready!';
+
+  const subtitleLabel = isAdventure ? 'Your adventure book awaits — dive in and explore every path.'
+    : isComic ? 'Your comic book is hot off the press — start reading!'
+    : 'Review the report, then play-test it right here.';
 
   return (
     <div className="preview-screen">
-      <h1 className="preview-title">{isAdventure ? '📚 Your Adventure is Ready!' : '🎮 Your Game is Ready!'}</h1>
+      <h1 className="preview-title">{titleLabel}</h1>
       <p className="preview-subtitle">
-        {isAdventure ? 'Your adventure book awaits — dive in and explore every path.' : 'Review the report, then play-test it right here.'}
+        {subtitleLabel}
       </p>
 
       {/* QA Report — shown prominently before the preview */}
@@ -42,7 +52,7 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
         <iframe
           src={previewUrl}
           className="phone-screen"
-          title={isAdventure ? 'Adventure Preview' : 'Game Preview'}
+          title={isAdventure ? 'Adventure Preview' : isComic ? 'Comic Preview' : 'Game Preview'}
           sandbox="allow-scripts"
         />
         <div className="phone-home-bar" />
@@ -56,7 +66,7 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
         >
           {fullscreen ? '📱 Phone Size' : '🖥️ Fullscreen'}
         </button>
-        {!isAdventure && (
+        {!isNonGame && (
           <button className="preview-btn preview-btn-primary preview-btn-disabled" disabled title="Real APK pipeline coming soon">
             📲 Push to Phone — Coming Soon
           </button>
@@ -64,7 +74,7 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
       </div>
 
       {/* Info */}
-      {!isAdventure && (
+      {!isNonGame && (
         <div className="preview-info">
           <span className="preview-info-item">📦 APK: {apkSize}</span>
           <span className="preview-info-item">📁 {apkPath.split('\\').pop()}</span>
@@ -78,7 +88,7 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
           </button>
         )}
         <button className="preview-forge-another" onClick={onStartOver}>
-          ⚒️ Forge Another {isAdventure ? 'Adventure' : 'Game'}
+          ⚒️ Forge Another {isAdventure ? 'Adventure' : isComic ? 'Comic' : 'Game'}
         </button>
       </div>
     </div>

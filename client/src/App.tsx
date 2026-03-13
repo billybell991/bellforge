@@ -1,9 +1,10 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import type { AppPage, GameConfig, AdventureConfig, EntertainmentType, GenreOption, ThemeOption, ArtStyleOption, StructureConfig, StoryConfig, CYOAGenreOption, CYOAStructureConfig, LibraryEntry, WSProgressMessage, WSCompleteMessage, QAReport } from './types';
-import { GENRES, THEMES, ART_STYLES, CYOA_GENRES } from './types';
+import type { AppPage, GameConfig, AdventureConfig, ComicConfig, EntertainmentType, GenreOption, ThemeOption, ArtStyleOption, StructureConfig, StoryConfig, CYOAGenreOption, CYOAStructureConfig, ComicGenreOption, ComicStructureConfig, LibraryEntry, WSProgressMessage, WSCompleteMessage, QAReport } from './types';
+import { GENRES, THEMES, ART_STYLES, CYOA_GENRES, COMIC_GENRES } from './types';
 import { Landing } from './components/Landing';
 import { WizardContainer } from './components/WizardContainer';
 import { CYOAWizardContainer } from './components/CYOAWizardContainer';
+import { ComicWizardContainer } from './components/ComicWizardContainer';
 import { BuildProgress } from './components/BuildProgress';
 import { GamePreview } from './components/GamePreview';
 import { DeployGuide } from './components/DeployGuide';
@@ -29,6 +30,12 @@ const defaultCYOAStructure: CYOAStructureConfig = {
   branchDensity: 'forking',
 };
 
+const defaultComicStructure: ComicStructureConfig = {
+  pageCount: 10,
+  panelStyle: 'classic',
+  tone: 'action',
+};
+
 // ── Build log entry for the progress display ──
 interface BuildLogEntry {
   name: string;
@@ -47,6 +54,9 @@ export default function App() {
   // CYOA-specific state
   const [cyoaGenre, setCyoaGenre] = useState<CYOAGenreOption | null>(null);
   const [cyoaStructure, setCyoaStructure] = useState<CYOAStructureConfig>(defaultCYOAStructure);
+  // Comic-specific state
+  const [comicGenre, setComicGenre] = useState<ComicGenreOption | null>(null);
+  const [comicStructure, setComicStructure] = useState<ComicStructureConfig>(defaultComicStructure);
   const [buildId, setBuildId] = useState<string | null>(null);
   const [apkInfo, setApkInfo] = useState<{ path: string; size: string } | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -79,6 +89,11 @@ export default function App() {
   const adventureConfig: AdventureConfig | null =
     cyoaGenre && theme && artStyle
       ? { cyoaGenre, theme, artStyle, structure: cyoaStructure, story }
+      : null;
+
+  const comicConfig: ComicConfig | null =
+    comicGenre && theme && artStyle
+      ? { comicGenre, theme, artStyle, structure: comicStructure, story }
       : null;
 
   // ── Library count fetcher ──
@@ -232,7 +247,6 @@ export default function App() {
       const ac = result.config as Record<string, unknown>;
 
       if (type === 'adventure') {
-        // CYOA auto-forge
         const cg = CYOA_GENRES.find((x) => x.id === (ac.cyoaGenreId as string)) || CYOA_GENRES[0];
         const t = THEMES.find((x) => x.id === (ac.themeId as string)) || THEMES[0];
         const a = ART_STYLES.find((x) => x.id === (ac.artStyleId as string)) || ART_STYLES[0];
@@ -240,6 +254,15 @@ export default function App() {
         setTheme(t);
         setArtStyle(a);
         setCyoaStructure(ac.structure as CYOAStructureConfig || defaultCYOAStructure);
+        setStory(ac.story as StoryConfig);
+      } else if (type === 'comic') {
+        const cg = COMIC_GENRES.find((x) => x.id === (ac.comicGenreId as string)) || COMIC_GENRES[0];
+        const t = THEMES.find((x) => x.id === (ac.themeId as string)) || THEMES[0];
+        const a = ART_STYLES.find((x) => x.id === (ac.artStyleId as string)) || ART_STYLES[0];
+        setComicGenre(cg);
+        setTheme(t);
+        setArtStyle(a);
+        setComicStructure(ac.structure as ComicStructureConfig || defaultComicStructure);
         setStory(ac.story as StoryConfig);
       } else {
         const g = GENRES.find((x) => x.id === (ac.genreId as string)) || GENRES[0];
@@ -262,6 +285,15 @@ export default function App() {
         setArtStyle(a);
         setCyoaStructure({ pageCount: 15 + Math.floor(Math.random() * 31), deadliness: 'medium', branchDensity: 'forking' });
         setStory({ title: '', description: '', characterName: '', setting: '' });
+      } else if (type === 'comic') {
+        const cg = COMIC_GENRES[Math.floor(Math.random() * COMIC_GENRES.length)];
+        const t = THEMES[Math.floor(Math.random() * THEMES.length)];
+        const a = ART_STYLES[Math.floor(Math.random() * ART_STYLES.length)];
+        setComicGenre(cg);
+        setTheme(t);
+        setArtStyle(a);
+        setComicStructure({ pageCount: 4 + Math.floor(Math.random() * 13), panelStyle: 'classic', tone: 'action' });
+        setStory({ title: '', description: '', characterName: '', setting: '' });
       } else {
         const g = GENRES[Math.floor(Math.random() * GENRES.length)];
         const t = THEMES[Math.floor(Math.random() * THEMES.length)];
@@ -279,12 +311,15 @@ export default function App() {
   }, []);
 
   const handleForgeIt = useCallback(async () => {
-    const isAdventure = entertainmentType === 'adventure';
-    const payload = isAdventure ? adventureConfig : config;
+    const payload = entertainmentType === 'adventure' ? adventureConfig
+      : entertainmentType === 'comic' ? comicConfig
+      : config;
     if (!payload) return;
 
     try {
-      const endpoint = isAdventure ? '/api/forge/adventure' : '/api/forge';
+      const endpoint = entertainmentType === 'adventure' ? '/api/forge/adventure'
+        : entertainmentType === 'comic' ? '/api/forge/comic'
+        : '/api/forge';
       const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -309,7 +344,7 @@ export default function App() {
     } catch {
       alert('The forge server is not running here — this is a static demo.\n\nTo forge real games, clone the repo and run it locally:\n  git clone → npm run install:all → npm run dev');
     }
-  }, [config, adventureConfig, entertainmentType, connectWs]);
+  }, [config, adventureConfig, comicConfig, entertainmentType, connectWs]);
 
   const handleBuildComplete = useCallback((apkPath: string, apkSize: string, previewUrlPath: string) => {
     setApkInfo({ path: apkPath, size: apkSize });
@@ -331,8 +366,7 @@ export default function App() {
 
   const handleViewFromLibrary = useCallback((entry: LibraryEntry) => {
     const c = entry.config;
-    const isAdv = 'cyoaGenre' in c;
-    if (isAdv) {
+    if ('cyoaGenre' in c) {
       const ac = c as AdventureConfig;
       setEntertainmentType('adventure');
       setCyoaGenre(ac.cyoaGenre);
@@ -340,6 +374,14 @@ export default function App() {
       setArtStyle(ac.artStyle);
       setCyoaStructure(ac.structure);
       setStory(ac.story);
+    } else if ('comicGenre' in c) {
+      const cc = c as ComicConfig;
+      setEntertainmentType('comic');
+      setComicGenre(cc.comicGenre);
+      setTheme(cc.theme);
+      setArtStyle(cc.artStyle);
+      setComicStructure(cc.structure);
+      setStory(cc.story);
     } else {
       const gc = c as GameConfig;
       setEntertainmentType('game');
@@ -357,8 +399,7 @@ export default function App() {
 
   const handleReForgeFromLibrary = useCallback((entry: LibraryEntry) => {
     const c = entry.config;
-    const isAdv = 'cyoaGenre' in c;
-    if (isAdv) {
+    if ('cyoaGenre' in c) {
       const ac = c as AdventureConfig;
       setEntertainmentType('adventure');
       setCyoaGenre(ac.cyoaGenre);
@@ -366,6 +407,14 @@ export default function App() {
       setArtStyle(ac.artStyle);
       setCyoaStructure(ac.structure);
       setStory(ac.story);
+    } else if ('comicGenre' in c) {
+      const cc = c as ComicConfig;
+      setEntertainmentType('comic');
+      setComicGenre(cc.comicGenre);
+      setTheme(cc.theme);
+      setArtStyle(cc.artStyle);
+      setComicStructure(cc.structure);
+      setStory(cc.story);
     } else {
       const gc = c as GameConfig;
       setEntertainmentType('game');
@@ -402,6 +451,8 @@ export default function App() {
     setStory(defaultStory);
     setCyoaGenre(null);
     setCyoaStructure(defaultCYOAStructure);
+    setComicGenre(null);
+    setComicStructure(defaultComicStructure);
     setApkInfo(null);
     setPreviewUrl(null);
     setQaReport(null);
@@ -523,6 +574,23 @@ export default function App() {
           />
         )}
 
+        {page === 'wizard' && entertainmentType === 'comic' && (
+          <ComicWizardContainer
+            comicGenre={comicGenre}
+            theme={theme}
+            artStyle={artStyle}
+            structure={comicStructure}
+            story={story}
+            onGenreChange={setComicGenre}
+            onThemeChange={setTheme}
+            onArtStyleChange={setArtStyle}
+            onStructureChange={setComicStructure}
+            onStoryChange={setStory}
+            onForge={handleForgeIt}
+            onBack={() => setPage('landing')}
+          />
+        )}
+
         {page === 'building' && buildId && (
           <BuildProgress
             percent={buildPercent}
@@ -539,7 +607,7 @@ export default function App() {
             previewUrl={previewUrl}
             apkPath={apkInfo?.path ?? ''}
             apkSize={apkInfo?.size ?? ''}
-            orientation={entertainmentType === 'adventure' ? 'landscape' : (genre?.orientation ?? 'landscape')}
+            orientation={(entertainmentType === 'adventure' || entertainmentType === 'comic') ? 'landscape' : (genre?.orientation ?? 'landscape')}
             onDeploy={handleGoToDeploy}
             onStartOver={handleStartOver}
             onReForge={() => { setBuildActive(false); buildCompletedRef.current = false; setPage('wizard'); }}

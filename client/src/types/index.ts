@@ -4,7 +4,7 @@
 
 // ── Entertainment Type ──
 
-export type EntertainmentType = 'game' | 'adventure';
+export type EntertainmentType = 'game' | 'adventure' | 'comic';
 
 export interface GameConfig {
   genre: GenreOption;
@@ -57,6 +57,39 @@ export const CYOA_GENRES: CYOAGenreOption[] = [
   { id: 'deep_sea', name: 'Deep Sea', icon: '🌊', description: 'Abyssal trenches and sunken ruins', tag: '' },
   { id: 'jungle_expedition', name: 'Jungle Expedition', icon: '🌴', description: 'Dense canopy, ancient temples, dangerous wildlife', tag: '' },
   { id: 'time_travel', name: 'Time Travel', icon: '⏳', description: 'Paradoxes, alternate timelines, and historical leaps', tag: 'NEW' },
+];
+
+// ── Comic Config ──
+
+export interface ComicConfig {
+  comicGenre: ComicGenreOption;
+  theme: ThemeOption;
+  artStyle: ArtStyleOption;
+  structure: ComicStructureConfig;
+  story: StoryConfig;
+}
+
+export interface ComicStructureConfig {
+  pageCount: number;
+  panelStyle: 'classic' | 'manga' | 'strip';
+  tone: 'action' | 'dramatic' | 'comedic' | 'horror';
+}
+
+export interface ComicGenreOption {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  tag: string;
+}
+
+export const COMIC_GENRES: ComicGenreOption[] = [
+  { id: 'superhero', name: 'Superhero', icon: '🦸', description: 'Costumed heroes, epic battles, and saving the world', tag: 'FLAGSHIP' },
+  { id: 'horror', name: 'Horror / Dark', icon: '🧛', description: 'Creeping dread, monsters, and body horror', tag: '' },
+  { id: 'scifi', name: 'Sci-Fi', icon: '🛸', description: 'Space stations, alien contact, and cybernetic futures', tag: 'POPULAR' },
+  { id: 'noir', name: 'Noir / Crime', icon: '🔫', description: 'Hard-boiled detectives, femme fatales, rain-slicked streets', tag: '' },
+  { id: 'fantasy', name: 'Fantasy / Epic', icon: '⚔️', description: 'Swords, sorcery, and mythical creatures', tag: '' },
+  { id: 'slice_of_life', name: 'Slice of Life', icon: '☕', description: 'Everyday moments, quiet emotion, human connection', tag: 'NEW' },
 ];
 
 // ── Genre ──
@@ -165,6 +198,21 @@ export const ADVENTURE_BUILD_STAGES: BuildStage[] = [
   { id: 'complete', name: 'Adventure Complete!', percent: 100, icon: '🎉' },
 ];
 
+export const COMIC_BUILD_STAGES: BuildStage[] = [
+  { id: 'story', name: 'Crafting Story Beats', percent: 5, icon: '📝' },
+  { id: 'script', name: 'Writing Panel Scripts', percent: 15, icon: '✍️' },
+  { id: 'layouts', name: 'Designing Page Layouts', percent: 25, icon: '📐' },
+  { id: 'cover_art', name: 'AI Bridge → Generating Cover', percent: 35, icon: '🎨' },
+  { id: 'panel_art', name: 'AI Bridge → Drawing Panels', percent: 45, icon: '🖼️' },
+  { id: 'panel_art_mid', name: 'AI Bridge → Interior Pages', percent: 55, icon: '✨' },
+  { id: 'panel_art_final', name: 'AI Bridge → Final Pages', percent: 65, icon: '🎭' },
+  { id: 'text_overlay', name: 'Rendering Speech Bubbles', percent: 75, icon: '💬' },
+  { id: 'qa_panels', name: 'QA — Panel Continuity', percent: 82, icon: '🔍' },
+  { id: 'qa_story', name: 'QA — Story Flow', percent: 88, icon: '📖' },
+  { id: 'viewer', name: 'Assembling Comic Viewer', percent: 95, icon: '📱' },
+  { id: 'complete', name: 'Comic Complete!', percent: 100, icon: '🎉' },
+];
+
 // ── Wizard State ──
 
 export type WizardStep = 'genre' | 'theme' | 'artStyle' | 'structure' | 'story' | 'review';
@@ -188,6 +236,15 @@ export const CYOA_WIZARD_STEPS: { id: WizardStep; label: string; icon: string }[
   { id: 'review', label: 'Review', icon: '✅' },
 ];
 
+export const COMIC_WIZARD_STEPS: { id: WizardStep; label: string; icon: string }[] = [
+  { id: 'genre', label: 'Genre', icon: '💥' },
+  { id: 'theme', label: 'Theme', icon: '🎭' },
+  { id: 'artStyle', label: 'Art Style', icon: '🎨' },
+  { id: 'structure', label: 'Structure', icon: '📐' },
+  { id: 'story', label: 'Story', icon: '📝' },
+  { id: 'review', label: 'Review', icon: '✅' },
+];
+
 // ── App Page State ──
 
 export type AppPage = 'landing' | 'wizard' | 'building' | 'preview' | 'deploy' | 'library';
@@ -198,7 +255,7 @@ export interface LibraryEntry {
   id: string;
   name: string;
   rating: number;
-  config: GameConfig | AdventureConfig;
+  config: GameConfig | AdventureConfig | ComicConfig;
   entertainmentType?: EntertainmentType;
   buildId: string;
   apkSize: string;
