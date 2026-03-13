@@ -226,29 +226,35 @@ export async function generateStory(genreHint?: string, themeHint?: string): Pro
       const avoidNames = randomPicks(STORY_BANK, 5).map(s => s.characterName);
       const timestamp = Date.now(); // unique per call
 
-      const prompt = `You are a wildly creative game designer who NEVER repeats yourself. Seed: ${timestamp}
+      const prompt = `You are a wildly creative storyteller who NEVER repeats yourself. Seed: ${timestamp}
 
-═══ THE #1 RULE: THE THEME IS ${(themeHint || 'mystery').toUpperCase()} ═══
-Every element of this story MUST be rooted in the "${themeHint || 'mystery'}" theme — the setting, characters, mood, vocabulary, and plot.
-DO NOT drift into generic sci-fi, space, or fantasy UNLESS "${themeHint}" explicitly IS one of those.
-If the theme is Horror — make it HORRIFYING. If Cozy — make it WARM. If Steampunk — BRASS AND STEAM. If Cyberpunk — NEON AND RAIN.
+Generate a completely original, surprising story concept for a "${genreHint || 'point-and-click adventure'}".
 
-CREATIVE DIRECTION — use these as INSPIRATION (warp them to fit the ${themeHint || 'mystery'} theme, don't use them literally):
+CREATIVE SPARKS — use these loosely as INSPIRATION ONLY. Do NOT use them literally. WARP them to match the required theme below:
 - Setting spark: "${settingSeed}"
-- Character spark: "${charSeed}"  
+- Character spark: "${charSeed}"
 - Plot twist spark: "${twistSeed}"
 
-Generate a completely original, surprising story for a ${genreHint || 'point-and-click adventure'} game.
+═══ ABSOLUTE #1 RULE: THE THEME IS ${(themeHint || 'mystery').toUpperCase()} ═══
+EVERY element — setting, characters, mood, vocabulary, plot — MUST be rooted in "${themeHint || 'mystery'}".
+DO NOT drift into sci-fi, space, or futuristic territory UNLESS the theme explicitly calls for it.
+If the theme is Horror — make it HORRIFYING with dread and darkness.
+If Cozy — make it WARM and comforting.
+If Steampunk — BRASS AND STEAM.
+If Cyberpunk — NEON AND RAIN.
+If Fantasy — SWORDS AND SORCERY.
+If Mystery — CLUES AND SUSPENSE.
+The creativity sparks above are ONLY starting points — they MUST be transformed to fit ${themeHint || 'mystery'}.
 
 MANDATORY RULES:
 - The title must be UNIQUE, unexpected, and THEMED to ${themeHint || 'mystery'}
 - The character name must be memorable and unusual — NEVER use: ${avoidNames.join(', ')}, Anya, Kael, Elara, Luna, or any other overused fantasy names
 - The setting must feel specific, lived-in, and DRENCHED in ${themeHint || 'mystery'} atmosphere
 - The description must hint at a surprising twist or unusual mechanic
-- BE WEIRD. BE BOLD. Surprise me. No safe choices. But STAY IN THEME.
+- BE WEIRD. BE BOLD. Surprise me. But STAY IN THEME.
 
 Return EXACTLY this JSON (no markdown, no code fences, just raw JSON):
-{"title":"2-5 word evocative title","characterName":"single memorable protagonist name","setting":"one vivid sentence describing the location","description":"2-3 sentences about what the player does, the mystery, and the stakes"}`;
+{"title":"2-5 word evocative title","characterName":"single memorable protagonist name","setting":"one vivid sentence describing the location","description":"2-3 sentences about the premise and the stakes"}`;
 
       const result = await model.generateContent(prompt);
       const text = result.response.text().trim();
