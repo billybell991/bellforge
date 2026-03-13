@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { BUILD_STAGES } from '../types';
+import { BUILD_STAGES, ADVENTURE_BUILD_STAGES, type EntertainmentType } from '../types';
 
 interface LogEntry {
   name: string;
@@ -13,9 +13,10 @@ interface BuildProgressProps {
   detail: string;
   error: string | null;
   log: LogEntry[];
+  entertainmentType?: EntertainmentType;
 }
 
-export function BuildProgress({ percent, stageName, detail, error, log }: BuildProgressProps) {
+export function BuildProgress({ percent, stageName, detail, error, log, entertainmentType = 'game' }: BuildProgressProps) {
   const logEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -24,7 +25,7 @@ export function BuildProgress({ percent, stageName, detail, error, log }: BuildP
 
   return (
     <div className="build-screen">
-      <h1 className="build-title">⚒️ Forging Your Game</h1>
+      <h1 className="build-title">⚒️ Forging Your {entertainmentType === 'adventure' ? 'Adventure' : 'Game'}</h1>
       <p className="build-subtitle">
         Sit back — the forge is hot and the hammers are swinging.
       </p>
@@ -69,7 +70,9 @@ export function BuildProgress({ percent, stageName, detail, error, log }: BuildP
       {/* Pipeline Overview */}
       <div style={{ marginTop: '24px', textAlign: 'center' }}>
         <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontFamily: 'JetBrains Mono, monospace' }}>
-          {BUILD_STAGES.length} stages · Kotlin/Canvas · Gemini AI Bridge · Gradle Build
+          {entertainmentType === 'adventure'
+            ? `${ADVENTURE_BUILD_STAGES.length} stages · Interactive Fiction · Gemini AI Bridge`
+            : `${BUILD_STAGES.length} stages · Kotlin/Canvas · Gemini AI Bridge · Gradle Build`}
         </p>
       </div>
     </div>

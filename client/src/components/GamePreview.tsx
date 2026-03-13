@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Orientation, QAReport } from '../types';
+import type { Orientation, QAReport, EntertainmentType } from '../types';
 import { QAPanel } from './QAPanel';
 
 interface GamePreviewProps {
@@ -11,17 +11,19 @@ interface GamePreviewProps {
   onStartOver: () => void;
   onReForge?: () => void;
   qaReport?: QAReport | null;
+  entertainmentType?: EntertainmentType;
 }
 
-export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeploy, onStartOver, onReForge, qaReport }: GamePreviewProps) {
+export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeploy, onStartOver, onReForge, qaReport, entertainmentType = 'game' }: GamePreviewProps) {
   const [fullscreen, setFullscreen] = useState(false);
-  const isLandscape = true; // games always render in 16:9 landscape
+  const isLandscape = true;
+  const isAdventure = entertainmentType === 'adventure';
 
   return (
     <div className="preview-screen">
-      <h1 className="preview-title">🎮 Your Game is Ready!</h1>
+      <h1 className="preview-title">{isAdventure ? '📚 Your Adventure is Ready!' : '🎮 Your Game is Ready!'}</h1>
       <p className="preview-subtitle">
-        Review the report, then play-test it right here.
+        {isAdventure ? 'Your adventure book awaits — dive in and explore every path.' : 'Review the report, then play-test it right here.'}
       </p>
 
       {/* QA Report — shown prominently before the preview */}
@@ -40,7 +42,7 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
         <iframe
           src={previewUrl}
           className="phone-screen"
-          title="Game Preview"
+          title={isAdventure ? 'Adventure Preview' : 'Game Preview'}
           sandbox="allow-scripts"
         />
         <div className="phone-home-bar" />
@@ -54,16 +56,20 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
         >
           {fullscreen ? '📱 Phone Size' : '🖥️ Fullscreen'}
         </button>
-        <button className="preview-btn preview-btn-primary preview-btn-disabled" disabled title="Real APK pipeline coming soon">
-          📲 Push to Phone — Coming Soon
-        </button>
+        {!isAdventure && (
+          <button className="preview-btn preview-btn-primary preview-btn-disabled" disabled title="Real APK pipeline coming soon">
+            📲 Push to Phone — Coming Soon
+          </button>
+        )}
       </div>
 
       {/* Info */}
-      <div className="preview-info">
-        <span className="preview-info-item">📦 APK: {apkSize}</span>
-        <span className="preview-info-item">📁 {apkPath.split('\\').pop()}</span>
-      </div>
+      {!isAdventure && (
+        <div className="preview-info">
+          <span className="preview-info-item">📦 APK: {apkSize}</span>
+          <span className="preview-info-item">📁 {apkPath.split('\\').pop()}</span>
+        </div>
+      )}
 
       <div className="preview-bottom-actions">
         {onReForge && (
@@ -72,7 +78,7 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
           </button>
         )}
         <button className="preview-forge-another" onClick={onStartOver}>
-          ⚒️ Forge Another Game
+          ⚒️ Forge Another {isAdventure ? 'Adventure' : 'Game'}
         </button>
       </div>
     </div>

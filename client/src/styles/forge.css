@@ -2403,3 +2403,80 @@ body {
 .qa-stat {
   white-space: nowrap;
 }
+
+/* ── Entertainment Type Selector ── */
+
+.entertainment-selector {
+  text-align: center;
+  margin: 32px 0 16px;
+}
+
+.entertainment-prompt {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 24px;
+  letter-spacing: 1px;
+}
+
+.entertainment-cards {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.entertainment-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  width: 260px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+}
+
+.entertainment-card:hover {
+  border-color: var(--forge-amber);
+  background: rgba(255, 107, 53, 0.06);
+  box-shadow: 0 0 20px rgba(255, 107, 53, 0.15);
+  transform: translateY(-4px);
+}
+
+.entertainment-card-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.entertainment-card-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--forge-amber);
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+.entertainment-card-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.landing-type-switch {
+  margin-top: 16px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: color 0.2s;
+  padding: 8px 16px;
+}
+
+.landing-type-switch:hover {
+  color: var(--cyan);
+}

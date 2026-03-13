@@ -8,6 +8,14 @@ export interface GameConfig {
   story: { title: string; description: string; characterName: string; setting: string };
 }
 
+export interface AdventureConfig {
+  cyoaGenre: { id: string; name: string };
+  theme: { id: string; name: string };
+  artStyle: { id: string; name: string };
+  structure: { pageCount: number; deadliness: string; branchDensity: string };
+  story: { title: string; description: string; characterName: string; setting: string };
+}
+
 export interface PipelineContext {
   buildId: string;
   config: GameConfig;

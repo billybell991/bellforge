@@ -2,6 +2,10 @@
 // BellForge Types — shared type definitions for wizard & pipeline
 // ─────────────────────────────────────────────────────────────
 
+// ── Entertainment Type ──
+
+export type EntertainmentType = 'game' | 'adventure';
+
 export interface GameConfig {
   genre: GenreOption;
   theme: ThemeOption;
@@ -22,6 +26,38 @@ export interface StoryConfig {
   characterName: string;
   setting: string;
 }
+
+// ── CYOA Adventure Config ──
+
+export interface AdventureConfig {
+  cyoaGenre: CYOAGenreOption;
+  theme: ThemeOption;
+  artStyle: ArtStyleOption;
+  structure: CYOAStructureConfig;
+  story: StoryConfig;
+}
+
+export interface CYOAStructureConfig {
+  pageCount: number;
+  deadliness: 'low' | 'medium' | 'high' | 'brutal';
+  branchDensity: 'linear' | 'forking' | 'web';
+}
+
+export interface CYOAGenreOption {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  tag: string;
+}
+
+export const CYOA_GENRES: CYOAGenreOption[] = [
+  { id: 'space_opera', name: 'Space Opera', icon: '🚀', description: 'Epic interstellar voyages and alien encounters', tag: 'POPULAR' },
+  { id: 'spooky_mystery', name: 'Spooky Mystery', icon: '👻', description: 'Haunted locales and chilling secrets', tag: 'FLAGSHIP' },
+  { id: 'deep_sea', name: 'Deep Sea', icon: '🌊', description: 'Abyssal trenches and sunken ruins', tag: '' },
+  { id: 'jungle_expedition', name: 'Jungle Expedition', icon: '🌴', description: 'Dense canopy, ancient temples, dangerous wildlife', tag: '' },
+  { id: 'time_travel', name: 'Time Travel', icon: '⏳', description: 'Paradoxes, alternate timelines, and historical leaps', tag: 'NEW' },
+];
 
 // ── Genre ──
 
@@ -114,6 +150,21 @@ export const BUILD_STAGES: BuildStage[] = [
   { id: 'complete', name: 'Build Complete!', percent: 100, icon: '🎉' },
 ];
 
+export const ADVENTURE_BUILD_STAGES: BuildStage[] = [
+  { id: 'concept', name: 'Designing Story Concept', percent: 5, icon: '📝' },
+  { id: 'outline', name: 'Building Story Outline', percent: 12, icon: '🗺️' },
+  { id: 'prose', name: 'Writing Adventure Prose', percent: 20, icon: '✍️' },
+  { id: 'prose_mid', name: 'Expanding Narrative Branches', percent: 35, icon: '🌿' },
+  { id: 'prose_final', name: 'Polishing Page Prose', percent: 45, icon: '📖' },
+  { id: 'assembly', name: 'Assembling Story Graph', percent: 55, icon: '🔗' },
+  { id: 'illustrations', name: 'AI Bridge → Cover Art', percent: 65, icon: '🎨' },
+  { id: 'qa_graph', name: 'QA — Verifying Graph Integrity', percent: 75, icon: '🔍' },
+  { id: 'qa_items', name: 'QA — Validating Item Gates', percent: 82, icon: '🔑' },
+  { id: 'qa_endings', name: 'QA — Checking Endings', percent: 88, icon: '🏁' },
+  { id: 'viewer', name: 'Building Interactive Viewer', percent: 95, icon: '📱' },
+  { id: 'complete', name: 'Adventure Complete!', percent: 100, icon: '🎉' },
+];
+
 // ── Wizard State ──
 
 export type WizardStep = 'genre' | 'theme' | 'artStyle' | 'structure' | 'story' | 'review';
@@ -123,6 +174,16 @@ export const WIZARD_STEPS: { id: WizardStep; label: string; icon: string }[] = [
   { id: 'theme', label: 'Theme', icon: '🎭' },
   { id: 'artStyle', label: 'Art Style', icon: '🎨' },
   { id: 'structure', label: 'Structure', icon: '🏗️' },
+  { id: 'story', label: 'Story', icon: '📝' },
+  { id: 'review', label: 'Review', icon: '✅' },
+];
+
+// CYOA wizard reuses the same WizardStep type but with different labels
+export const CYOA_WIZARD_STEPS: { id: WizardStep; label: string; icon: string }[] = [
+  { id: 'genre', label: 'Genre', icon: '📚' },
+  { id: 'theme', label: 'Theme', icon: '🎭' },
+  { id: 'artStyle', label: 'Art Style', icon: '🎨' },
+  { id: 'structure', label: 'Structure', icon: '📖' },
   { id: 'story', label: 'Story', icon: '📝' },
   { id: 'review', label: 'Review', icon: '✅' },
 ];
@@ -137,7 +198,8 @@ export interface LibraryEntry {
   id: string;
   name: string;
   rating: number;
-  config: GameConfig;
+  config: GameConfig | AdventureConfig;
+  entertainmentType?: EntertainmentType;
   buildId: string;
   apkSize: string;
   createdAt: string;

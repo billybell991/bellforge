@@ -13,6 +13,9 @@ import type { GameImages } from './pipeline/preview-gen.js';
 import { generateStory, generateAutoConfig, generateCreativeBrief, generateBriefPalette, generateBriefRooms, generateBriefItems, generateBriefHints, qaCreativeBrief, qaGameCode, qaScoredReport, isGeminiAvailable } from './gemini.js';
 import { generateGameImages } from './imagen.js';
 import type { GameConfig } from './pipeline/types.js';
+import type { AdventureConfig } from './pipeline/types.js';
+import { runAdventurePipeline } from './cyoa-pipeline.js';
+import { generateCYOAPreviewHtml } from './cyoa-engine.js';
 import type { CreativeBrief, CreativePalette, CreativeRoom, CreativeItem, PuzzleConnection } from './gemini.js';
 
 const execFileAsync = promisify(execFile);
@@ -220,6 +223,17 @@ app.post('/api/forge', async (req, res) => {
 
   // Wait for WebSocket connection before starting pipeline
   waitForClient(buildId, 5000).then(() => runPipeline(buildId, config));
+});
+
+// Start a CYOA adventure build
+app.post('/api/forge/adventure', async (req, res) => {
+  const config = req.body as AdventureConfig;
+  const buildId = uuidv4();
+
+  builds.set(buildId, { config, status: 'queued', progress: 0 });
+  res.json({ buildId });
+
+  waitForClient(buildId, 5000).then(() => runAdventureBuild(buildId, config));
 });
 
 // Get build status
@@ -851,6 +865,81 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
     qaReport: {
       ...qaReport,
       timing: { ...qaReport.timing, completedAt: Date.now() },
+    },
+  });
+}
+
+// ── CYOA Adventure Build Pipeline ──
+
+async function runAdventureBuild(buildId: string, config: AdventureConfig) {
+  const record = builds.get(buildId)!;
+  record.status = 'building';
+
+  const result = await runAdventurePipeline(config, (pct, msg, stage) => {
+    sendProgress(buildId, {
+      type: 'progress',
+      stage: stage || 'cyoa',
+      name: msg,
+      percent: pct,
+      detail: '',
+      timestamp: Date.now(),
+    });
+  });
+
+  if (!result) {
+    sendProgress(buildId, {
+      type: 'error',
+      message: 'Adventure generation failed — Gemini could not produce a valid story.',
+    });
+    record.status = 'error';
+    return;
+  }
+
+  // Generate the self-contained HTML viewer
+  const previewHtml = generateCYOAPreviewHtml(result.story);
+  record.status = 'complete';
+  record.progress = 100;
+  record.previewHtml = previewHtml;
+
+  // Persist preview HTML so it survives server restarts
+  try { savePreviewHtml(buildId, previewHtml); } catch (err) { console.error('Failed to save CYOA preview:', err); }
+
+  // Auto-save to library
+  const title = config.story.title || result.story.title || 'Untitled Adventure';
+  if (!library.some((e) => e.buildId === buildId)) {
+    const entry: LibraryEntry = {
+      id: uuidv4(),
+      name: title,
+      rating: 0,
+      config: config,
+      buildId,
+      apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
+      createdAt: new Date().toISOString(),
+    };
+    library.push(entry);
+    saveLibrary(library);
+    console.log(`  📚 Auto-saved adventure "${entry.name}" to library`);
+  }
+
+  sendProgress(buildId, {
+    type: 'complete',
+    percent: 100,
+    apkPath: '',
+    apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
+    previewUrl: `/api/preview/${buildId}`,
+    qaReport: {
+      overallScore: 0,
+      categories: [],
+      summary: '',
+      images: null,
+      config: {
+        genre: config.cyoaGenre.name,
+        theme: config.theme.name,
+        artStyle: config.artStyle.name,
+        roomCount: config.structure.pageCount,
+        title,
+      },
+      timing: { startedAt: Date.now(), completedAt: Date.now() },
     },
   });
 }
