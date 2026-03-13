@@ -67,13 +67,13 @@ export function StoryStep({ value, genreHint, themeHint, entertainmentType, onCh
 
         <div className="input-group full-width">
           <label className="input-label">Setting</label>
-          <input
-            type="text"
-            className="forge-input"
+          <textarea
+            className="forge-textarea"
             placeholder="e.g. An abandoned Victorian mansion on a fog-covered cliff"
             value={value.setting}
             onChange={(e) => onChange({ ...value, setting: e.target.value })}
-            maxLength={200}
+            maxLength={500}
+            rows={2}
           />
         </div>
 
