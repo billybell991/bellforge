@@ -1,5 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { LibraryEntry, GameConfig, AdventureConfig, ComicConfig } from '../types';
+import type { LibraryEntry, GameConfig, AdventureConfig, ComicConfig, EntertainmentType } from '../types';
+
+function getEntryType(entry: LibraryEntry): EntertainmentType {
+  if (entry.entertainmentType) return entry.entertainmentType;
+  if ('cyoaGenre' in entry.config) return 'adventure';
+  if ('comicGenre' in entry.config) return 'comic';
+  return 'game';
+}
+
+const TYPE_BADGES: Record<EntertainmentType, { icon: string; label: string; color: string }> = {
+  game: { icon: '🎮', label: 'Game', color: '#00e5ff' },
+  adventure: { icon: '📚', label: 'Adventure', color: '#ffa726' },
+  comic: { icon: '💥', label: 'Comic', color: '#ff5252' },
+};
 
 function getEntryGenreDisplay(entry: LibraryEntry): { icon: string; name: string } {
   const c = entry.config;
@@ -89,15 +102,15 @@ export function Library({ onBack, onViewPreview, onReForge, onCountChange }: Lib
     <div className="library-screen">
       <h1 className="library-title">📚 Your Forge Library</h1>
       <p className="library-subtitle">
-        All your forged games in one place. Rate, rename, download, or revisit.
+        All your forged creations in one place. Rate, rename, download, or revisit.
       </p>
 
       {entries.length === 0 ? (
         <div className="library-empty">
           <span className="library-empty-icon">🗃️</span>
-          <p>No games saved yet.</p>
+          <p>No creations saved yet.</p>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-            Forge a game, then save it from the preview screen.
+            Forge a game, adventure, or comic, and it will appear here automatically.
           </p>
         </div>
       ) : (
@@ -105,6 +118,15 @@ export function Library({ onBack, onViewPreview, onReForge, onCountChange }: Lib
           {entries.map((entry) => (
             <div key={entry.id} className="library-card">
               <div className="library-card-header">
+                {/* Type badge */}
+                {(() => {
+                  const badge = TYPE_BADGES[getEntryType(entry)];
+                  return (
+                    <span className="library-type-badge" style={{ background: badge.color }}>
+                      {badge.icon} {badge.label}
+                    </span>
+                  );
+                })()}
                 {editingId === entry.id ? (
                   <div className="library-rename">
                     <input
@@ -154,13 +176,13 @@ export function Library({ onBack, onViewPreview, onReForge, onCountChange }: Lib
 
               {/* Actions */}
               <div className="library-card-actions">
-                <button className="library-action-btn" onClick={() => onViewPreview(entry)} title="Play in browser">
-                  🎮 Play
+                <button className="library-action-btn" onClick={() => onViewPreview(entry)} title={getEntryType(entry) === 'game' ? 'Play in browser' : 'Open in viewer'}>
+                  {getEntryType(entry) === 'game' ? '🎮 Play' : getEntryType(entry) === 'adventure' ? '📖 Read' : '📖 Read'}
                 </button>
                 <button className="library-action-btn library-action-reforge" onClick={() => onReForge(entry)} title="Load settings into the forge and rebuild with latest improvements">
                   🔄 Re-Forge
                 </button>
-                <button className="library-action-btn" onClick={() => handleDownload(entry)} title="Download HTML game file">
+                <button className="library-action-btn" onClick={() => handleDownload(entry)} title="Download HTML file">
                   💾 Download
                 </button>
                 <button className="library-action-btn library-action-delete" onClick={() => handleDelete(entry.id)} title="Remove from library">

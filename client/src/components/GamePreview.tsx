@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import type { Orientation, QAReport, EntertainmentType } from '../types';
 import { QAPanel } from './QAPanel';
 
@@ -16,6 +16,7 @@ interface GamePreviewProps {
 
 export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeploy, onStartOver, onReForge, qaReport, entertainmentType = 'game' }: GamePreviewProps) {
   const [fullscreen, setFullscreen] = useState(false);
+  const viewerRef = useRef<HTMLDivElement>(null);
   const isLandscape = true;
   const isAdventure = entertainmentType === 'adventure';
   const isComic = entertainmentType === 'comic';
@@ -28,6 +29,23 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
   const subtitleLabel = isAdventure ? 'Your adventure book awaits — dive in and explore every path.'
     : isComic ? 'Your comic book is hot off the press — start reading!'
     : 'Review the report, then play-test it right here.';
+
+  // Sync fullscreen state with browser Fullscreen API events
+  useEffect(() => {
+    const handleChange = () => {
+      setFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleChange);
+    return () => document.removeEventListener('fullscreenchange', handleChange);
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else if (viewerRef.current) {
+      viewerRef.current.requestFullscreen();
+    }
+  }, []);
 
   return (
     <div className="preview-screen">
@@ -48,17 +66,20 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
 
       {/* Non-game types: wide viewer (no phone frame) */}
       {isNonGame ? (
-        <div className={`comic-viewer-frame ${fullscreen ? 'comic-viewer-fullscreen' : ''}`}>
+        <div ref={viewerRef} className={`comic-viewer-frame ${fullscreen ? 'comic-viewer-fullscreen' : ''}`}>
           <iframe
             src={previewUrl}
             className="comic-viewer-screen"
             title={isComic ? 'Comic Preview' : 'Adventure Preview'}
             sandbox="allow-scripts"
           />
+          {fullscreen && (
+            <div className="fullscreen-hint">Press <kbd>Esc</kbd> to exit fullscreen</div>
+          )}
         </div>
       ) : (
         /* Phone frame with iframe */
-        <div className={`phone-frame ${isLandscape ? 'phone-landscape' : ''} ${fullscreen ? 'phone-fullscreen' : ''}`}>
+        <div ref={viewerRef} className={`phone-frame ${isLandscape ? 'phone-landscape' : ''} ${fullscreen ? 'phone-fullscreen' : ''}`}>
           <div className="phone-notch" />
           <iframe
             src={previewUrl}
@@ -67,6 +88,9 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
             sandbox="allow-scripts"
           />
           <div className="phone-home-bar" />
+          {fullscreen && (
+            <div className="fullscreen-hint">Press <kbd>Esc</kbd> to exit fullscreen</div>
+          )}
         </div>
       )}
 
@@ -74,9 +98,9 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
       <div className="preview-controls">
         <button
           className="preview-btn preview-btn-secondary"
-          onClick={() => setFullscreen((f) => !f)}
+          onClick={toggleFullscreen}
         >
-          {fullscreen ? '📱 Phone Size' : '🖥️ Fullscreen'}
+          {fullscreen ? '✖️ Exit Fullscreen' : '🖥️ Fullscreen'}
         </button>
         {!isNonGame && (
           <button className="preview-btn preview-btn-primary preview-btn-disabled" disabled title="Real APK pipeline coming soon">

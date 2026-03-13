@@ -204,23 +204,7 @@ export function generateCYOAPreviewHtml(story: CYOAStory): string {
     margin-bottom: 1.5rem;
     font-size: 1.05rem;
   }
-  .warning-box {
-    border: 2px solid var(--accent-red);
-    padding: 1.2rem;
-    margin: 1.5rem auto;
-    max-width: 80%;
-    text-align: left;
-  }
-  .warning-box h3 {
-    font-family: 'Special Elite', monospace;
-    color: var(--accent-red);
-    margin-bottom: 0.5rem;
-  }
-  .warning-box p {
-    font-size: 0.9rem;
-    line-height: 1.5;
-    color: var(--ink-light);
-  }
+
   .tagline {
     font-family: 'Special Elite', monospace;
     font-size: 0.9rem;
@@ -463,7 +447,6 @@ export function generateCYOAPreviewHtml(story: CYOAStory): string {
       + '<h1 class="book-title">' + escapeHTML(STORY.title) + '</h1>'
       + '<div class="subtitle">' + escapeHTML(STORY.subtitle || '') + '</div>'
       + '<div class="illustration-frame"><div class="frame-border">' + coverHtml + '</div></div>'
-      + '<div class="warning-box"><h3>Warning!</h3><p>Do not read this book straight through from beginning to end! These pages contain many different adventures you can go on. From time to time as you read along, you will be asked to make a choice. Your choice may lead to success or disaster!</p></div>'
       + '<div class="tagline">You are the hero of this story</div>'
       + '<a class="begin-link" href="#" id="begin-adventure">Turn to page 1 to begin your adventure\\u2026</a>'
       + '</div>';
