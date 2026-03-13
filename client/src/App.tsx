@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import type { AppPage, GameConfig, GenreOption, ThemeOption, ArtStyleOption, StructureConfig, StoryConfig, LibraryEntry, WSProgressMessage, WSCompleteMessage } from './types';
+import type { AppPage, GameConfig, GenreOption, ThemeOption, ArtStyleOption, StructureConfig, StoryConfig, LibraryEntry, WSProgressMessage, WSCompleteMessage, QAReport } from './types';
 import { GENRES, THEMES, ART_STYLES } from './types';
 import { Landing } from './components/Landing';
 import { WizardContainer } from './components/WizardContainer';
@@ -39,6 +39,7 @@ export default function App() {
   const [buildId, setBuildId] = useState<string | null>(null);
   const [apkInfo, setApkInfo] = useState<{ path: string; size: string } | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [qaReport, setQaReport] = useState<QAReport | null>(null);
   const [autoForging, setAutoForging] = useState(false);
   const [autoForgePercent, setAutoForgePercent] = useState(0);
   const [autoForgeStep, setAutoForgeStep] = useState('Warming up the forge...');
@@ -131,6 +132,7 @@ export default function App() {
           // Set result info
           setApkInfo({ path: msg.apkPath, size: msg.apkSize });
           setPreviewUrl(msg.previewUrl);
+          setQaReport(msg.qaReport || null);
 
           // Refresh library count (server auto-saved this game)
           fetchLibraryCount();
@@ -327,6 +329,7 @@ export default function App() {
     setStory(defaultStory);
     setApkInfo(null);
     setPreviewUrl(null);
+    setQaReport(null);
   }, [disconnectWs]);
 
   // When navigating back from library while build was active, reconnect WS
@@ -447,6 +450,7 @@ export default function App() {
             onDeploy={handleGoToDeploy}
             onStartOver={handleStartOver}
             onReForge={() => { setBuildActive(false); buildCompletedRef.current = false; setPage('wizard'); }}
+            qaReport={qaReport}
           />
         )}
 

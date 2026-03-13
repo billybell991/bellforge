@@ -2284,3 +2284,122 @@ body {
 .has-header {
   padding-top: 60px;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   QA Scored Panel — Gemini QA Report
+   ═══════════════════════════════════════════════════════════ */
+
+.qa-scored-panel {
+  max-width: 700px;
+  margin: 1.5rem auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--bg-card);
+  padding: 1.5rem;
+}
+
+.qa-scored-header {
+  text-align: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.qa-scored-icon {
+  margin-right: 0.4rem;
+}
+
+/* Overall Score */
+.qa-overall {
+  text-align: center;
+  margin-bottom: 1.25rem;
+}
+
+.qa-overall-score {
+  font-size: 3rem;
+  font-weight: 900;
+  line-height: 1;
+  margin-bottom: 0.15rem;
+}
+
+.qa-overall-label {
+  font-size: 0.72rem;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+/* Category Grid */
+.qa-category-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.qa-category-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.qa-category-name {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+.qa-category-score {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 0.2rem;
+}
+
+.qa-category-detail {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  line-height: 1.3;
+}
+
+/* Summary */
+.qa-summary-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 0.65rem 0.85rem;
+  margin-bottom: 0.6rem;
+}
+
+.qa-summary-bullet {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+.qa-summary-text {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+/* Stats row */
+.qa-stats-row {
+  display: flex;
+  justify-content: center;
+  gap: 1.2rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.qa-stat {
+  white-space: nowrap;
+}

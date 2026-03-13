@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import type { Orientation } from '../types';
+import type { Orientation, QAReport } from '../types';
+import { QAPanel } from './QAPanel';
 
 interface GamePreviewProps {
   previewUrl: string;
@@ -9,9 +10,10 @@ interface GamePreviewProps {
   onDeploy: () => void;
   onStartOver: () => void;
   onReForge?: () => void;
+  qaReport?: QAReport | null;
 }
 
-export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeploy, onStartOver, onReForge }: GamePreviewProps) {
+export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeploy, onStartOver, onReForge, qaReport }: GamePreviewProps) {
   const [fullscreen, setFullscreen] = useState(false);
   const isLandscape = true; // games always render in 16:9 landscape
 
@@ -19,8 +21,13 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
     <div className="preview-screen">
       <h1 className="preview-title">🎮 Your Game is Ready!</h1>
       <p className="preview-subtitle">
-        Play-test it right here, then push to your phone when you're happy.
+        Review the report, then play-test it right here.
       </p>
+
+      {/* QA Report — shown prominently before the preview */}
+      {qaReport && qaReport.overallScore > 0 && (
+        <QAPanel report={qaReport} />
+      )}
 
       {/* Auto-saved indicator */}
       <div className="preview-auto-saved">

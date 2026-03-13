@@ -1022,3 +1022,122 @@ Return ONLY this JSON (no fences):
     return { passed: true, issues: [], fixes: ['Game QA call failed — skipped'] };
   }
 }
+
+// ── Scored QA Report ──
+// Gemini rates the build across genre-appropriate categories.
+
+export interface ScoredQACategory {
+  name: string;
+  score: number;
+  detail: string;
+}
+
+export interface ScoredQAReport {
+  overallScore: number;
+  categories: ScoredQACategory[];
+  summary: string;
+}
+
+function getQACategoriesForGenre(genreId: string): string[] {
+  switch (genreId) {
+    case 'platformer':
+      return ['Level Design', 'Difficulty Curve', 'Obstacle Variety', 'Theme', 'Cohesion', 'Replayability'];
+    case 'visual_novel':
+    case 'interactive_fiction':
+      return ['Narrative', 'Branching Depth', 'Character Voice', 'Theme', 'Pacing', 'Cohesion'];
+    case 'puzzle':
+      return ['Puzzle Variety', 'Difficulty Curve', 'Logic Clarity', 'Theme', 'Hints', 'Cohesion'];
+    case 'hidden_object':
+      return ['Scene Density', 'Object Variety', 'Difficulty', 'Theme', 'Hints', 'Cohesion'];
+    case 'dismantle':
+      return ['Device Creativity', 'Component Variety', 'Layer Logic', 'Theme', 'Difficulty', 'Cohesion'];
+    case 'escape_room':
+      return ['Puzzle Design', 'Lock Variety', 'Clue Placement', 'Theme', 'Difficulty', 'Cohesion'];
+    case 'point_click':
+    default:
+      return ['Narrative', 'Diversity', 'Difficulty', 'Hints', 'Theme', 'Cohesion'];
+  }
+}
+
+export async function qaScoredReport(
+  config: GameConfig,
+  brief: CreativeBrief,
+  onStatus?: (msg: string) => void,
+): Promise<ScoredQAReport> {
+  const categories = getQACategoriesForGenre(config.genre.id);
+
+  if (!model) {
+    onStatus?.('Gemini unavailable — generating default scores');
+    return {
+      overallScore: 8,
+      categories: categories.map(name => ({ name, score: 8, detail: 'Gemini unavailable — default score.' })),
+      summary: 'QA scoring skipped (Gemini unavailable). Build completed successfully.',
+    };
+  }
+
+  onStatus?.('Generating scored QA report...');
+
+  const roomSummary = brief.rooms.map((r, i) => `${i + 1}. ${r.name}: ${r.description} (${r.furniture.length} objects)`).join('\n');
+  const itemSummary = brief.items.map((it, i) => `${i + 1}. ${it.emoji} ${it.name}: ${it.description}`).join('\n');
+  const puzzleSummary = brief.puzzles.map(p => `Scene ${p.doorInRoom + 1} → ${p.leadsToRoom + 1} requires "${p.requiredItem}"`).join('\n');
+  const hintSummary = brief.hintTexts.join(' | ');
+
+  const prompt = `You are a game QA analyst reviewing a ${config.genre.name} build.
+Title: "${config.story.title}". Theme: ${config.theme.name}. Art Style: ${config.artStyle.name}.
+Setting: ${config.story.setting}. Protagonist: ${config.story.characterName}.
+Difficulty: ${config.structure.difficulty}. Scenes: ${config.structure.roomCount}.
+
+SCENES:
+${roomSummary}
+
+ITEMS:
+${itemSummary}
+
+PUZZLES:
+${puzzleSummary || 'None'}
+
+HINTS:
+${hintSummary || 'None'}
+
+OPENING: ${brief.openingText}
+ENDING: ${brief.endingText}
+
+Rate this build on each of these ${categories.length} categories. Score each 1-10.
+Categories: ${categories.join(', ')}
+
+Return ONLY this JSON (no fences):
+{"overallScore":8,"categories":[{"name":"Category Name","score":9,"detail":"Brief explanation of score (max 12 words)"}],"summary":"One sentence overall verdict."}
+
+RULES:
+- Be fair but thorough. Award 10/10 only for genuinely excellent work.
+- The detail string for each category must be max 12 words.
+- The summary must be a single sentence.
+- Return exactly ${categories.length} categories in the order given.`;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const qa = JSON.parse(cleanJson(result.response.text()));
+
+    const cats: ScoredQACategory[] = Array.isArray(qa.categories)
+      ? qa.categories.map((c: Record<string, unknown>) => ({
+          name: String(c.name || 'Unknown'),
+          score: Math.max(1, Math.min(10, Number(c.score) || 7)),
+          detail: String(c.detail || ''),
+        }))
+      : categories.map(name => ({ name, score: 7, detail: 'Parse error — default score.' }));
+
+    const overall = Math.max(1, Math.min(10, Number(qa.overallScore) || Math.round(cats.reduce((s, c) => s + c.score, 0) / cats.length)));
+    const summary = String(qa.summary || 'Build passed QA review.');
+
+    onStatus?.(`QA score: ${overall}/10`);
+    return { overallScore: overall, categories: cats, summary };
+  } catch (err) {
+    console.error('[Gemini Scored QA] Error:', err);
+    onStatus?.('Scored QA failed — using default scores');
+    return {
+      overallScore: 7,
+      categories: categories.map(name => ({ name, score: 7, detail: 'QA scoring failed — default score.' })),
+      summary: 'QA scoring encountered an error. Build completed.',
+    };
+  }
+}

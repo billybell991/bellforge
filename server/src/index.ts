@@ -10,7 +10,7 @@ import { join } from 'path';
 import 'dotenv/config';
 import { generatePreviewHtml } from './pipeline/preview-gen.js';
 import type { GameImages } from './pipeline/preview-gen.js';
-import { generateStory, generateAutoConfig, generateCreativeBrief, generateBriefPalette, generateBriefRooms, generateBriefItems, generateBriefHints, qaCreativeBrief, qaGameCode, isGeminiAvailable } from './gemini.js';
+import { generateStory, generateAutoConfig, generateCreativeBrief, generateBriefPalette, generateBriefRooms, generateBriefItems, generateBriefHints, qaCreativeBrief, qaGameCode, qaScoredReport, isGeminiAvailable } from './gemini.js';
 import { generateGameImages } from './imagen.js';
 import type { GameConfig } from './pipeline/types.js';
 import type { CreativeBrief, CreativePalette, CreativeRoom, CreativeItem, PuzzleConnection } from './gemini.js';
@@ -455,6 +455,23 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
   let gameImages: GameImages = { titleBg: null, roomBgs: [], character: null, itemImages: [], packIcon: null };
   let previewHtml: string | null = null;
 
+  // QA report accumulator — sent to client on completion
+  const qaReport: {
+    overallScore: number;
+    categories: Array<{ name: string; score: number; detail: string }>;
+    summary: string;
+    images: { title: boolean; character: boolean; packIcon: boolean; rooms: boolean[]; items: boolean[] } | null;
+    config: { genre: string; theme: string; artStyle: string; roomCount: number; title: string } | null;
+    timing: { startedAt: number; completedAt?: number };
+  } = {
+    overallScore: 0,
+    categories: [],
+    summary: '',
+    images: null,
+    config: null,
+    timing: { startedAt: Date.now() },
+  };
+
   // Intermediate chunk results (assembled into creativeBrief after all 4 chunks)
   let briefPalette: CreativePalette | null = null;
   let briefVibe: string | null = null;
@@ -472,6 +489,14 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
     artStyle: config.artStyle as GameConfig['artStyle'],
     structure: config.structure as GameConfig['structure'],
     story: config.story as GameConfig['story'],
+  };
+
+  qaReport.config = {
+    genre: gameConfig.genre.name,
+    theme: gameConfig.theme.name,
+    artStyle: gameConfig.artStyle.name,
+    roomCount: gameConfig.structure.roomCount,
+    title: gameConfig.story.title,
   };
 
   const t = genreTerms(gameConfig.genre.id);
@@ -661,6 +686,13 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
             detail: `Title: ${gameImages.titleBg ? '✓' : '✗'}, Character: ${gameImages.character ? '✓' : '✗'}, ${t.Scenes}: ${gameImages.roomBgs.filter(Boolean).length}/${gameImages.roomBgs.length}, Items: ${gameImages.itemImages.filter(Boolean).length}`,
             timestamp: Date.now(),
           });
+          qaReport.images = {
+            title: !!gameImages.titleBg,
+            character: !!gameImages.character,
+            packIcon: !!gameImages.packIcon,
+            rooms: gameImages.roomBgs.map(b => !!b),
+            items: gameImages.itemImages.map(b => !!b),
+          };
         } catch (err) {
           console.error('[Pipeline] Image generation error:', err);
           sendProgress(buildId, {
@@ -743,6 +775,17 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
         sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: `⚠️ Game QA: ${gameQaResult.issues.length} potential issue(s)`, percent: stage.percent + 4, detail: `${issueList}`, timestamp: Date.now() });
         console.log(`  ⚠️ Game QA issues for ${buildId}:`, gameQaResult.issues);
       }
+
+      // Run scored QA report (Gemini rates the build across genre-specific categories)
+      if (creativeBrief) {
+        sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: '📊 Generating scored QA report...', percent: stage.percent + 5, detail: 'Gemini is rating your build across multiple categories...', timestamp: Date.now() });
+        const scored = await qaScoredReport(gameConfig, creativeBrief, (msg) => {
+          sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: `📊 ${msg}`, percent: stage.percent + 6, detail: 'Analyzing narrative, theme, difficulty, and cohesion...', timestamp: Date.now() });
+        });
+        qaReport.overallScore = scored.overallScore;
+        qaReport.categories = scored.categories;
+        qaReport.summary = scored.summary;
+      }
     } else if (stage.id === 'complete') {
       await sleep(300);
     } else {
@@ -805,6 +848,10 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
     apkPath,
     apkSize: apkSizeStr,
     previewUrl: `/api/preview/${buildId}`,
+    qaReport: {
+      ...qaReport,
+      timing: { ...qaReport.timing, completedAt: Date.now() },
+    },
   });
 }
 

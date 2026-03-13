@@ -160,6 +160,22 @@ export interface WSCompleteMessage {
   apkPath: string;
   apkSize: string;
   previewUrl: string;
+  qaReport?: QAReport;
+}
+
+export interface QAReport {
+  overallScore: number;
+  categories: QACategory[];
+  summary: string;
+  images: { title: boolean; character: boolean; packIcon: boolean; rooms: boolean[]; items: boolean[] } | null;
+  config: { genre: string; theme: string; artStyle: string; roomCount: number; title: string } | null;
+  timing: { startedAt: number; completedAt?: number };
+}
+
+export interface QACategory {
+  name: string;
+  score: number;
+  detail: string;
 }
 
 export interface WSErrorMessage {
