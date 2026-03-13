@@ -44,6 +44,7 @@ export const GENRES: GenreOption[] = [
   { id: 'hidden_object', name: 'Hidden Object', icon: '🔍', description: 'Find concealed items in detailed scenes', tag: '', orientation: 'landscape' },
   { id: 'escape_room', name: 'Escape Room', icon: '🚪', description: 'Crack clues to escape locked rooms', tag: 'POPULAR', orientation: 'landscape' },
   { id: 'interactive_fiction', name: 'Interactive Fiction', icon: '🗺️', description: 'Text-heavy adventures with rich narratives', tag: '', orientation: 'portrait' },
+  { id: 'dismantle', name: 'Dismantling', icon: '🔧', description: 'Take apart machines, devices, and contraptions piece by piece', tag: 'NEW', orientation: 'landscape' },
 ];
 
 // ── Theme ──

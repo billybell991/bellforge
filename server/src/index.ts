@@ -141,6 +141,8 @@ function genreTerms(genreId: string): GenreTerms {
       return { scene: 'passage', scenes: 'passages', Scene: 'Passage', Scenes: 'Passages', furnishing: 'detail', furnishings: 'narrative details', layout: 'structure' };
     case 'hidden_object':
       return { scene: 'scene', scenes: 'scenes', Scene: 'Scene', Scenes: 'Scenes', furnishing: 'object', furnishings: 'hidden objects', layout: 'arrangement' };
+    case 'dismantle':
+      return { scene: 'device', scenes: 'devices', Scene: 'Device', Scenes: 'Devices', furnishing: 'component', furnishings: 'components & fasteners', layout: 'assembly' };
     case 'escape_room':
       return { scene: 'room', scenes: 'rooms', Scene: 'Room', Scenes: 'Rooms', furnishing: 'prop', furnishings: 'props & mechanisms', layout: 'layout' };
     case 'point_click':

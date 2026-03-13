@@ -82,5 +82,47 @@
     "buildId": "bd2cf90a-a79d-4fb3-b5a1-4b435a85ea9d",
     "apkSize": "19.3 MB",
     "createdAt": "2026-03-12T20:51:24.495Z"
+  },
+  {
+    "id": "a130ce28-ce59-430e-b7a4-9b7ef57208a7",
+    "name": "Viscous Unmaking",
+    "rating": 0,
+    "config": {
+      "genre": {
+        "id": "dismantle",
+        "name": "Dismantling",
+        "icon": "🔧",
+        "description": "Take apart machines, devices, and contraptions piece by piece",
+        "tag": "NEW",
+        "orientation": "landscape"
+      },
+      "theme": {
+        "id": "postapoc",
+        "name": "Post-Apocalyptic",
+        "icon": "🏚️",
+        "description": "Surviving in the ruins of civilization",
+        "color": "#8d6e63"
+      },
+      "artStyle": {
+        "id": "pixel_art",
+        "name": "Pixel Art / Retro",
+        "icon": "👾",
+        "description": "Nostalgic 8-bit and 16-bit aesthetics"
+      },
+      "structure": {
+        "roomCount": 6,
+        "difficulty": "standard",
+        "puzzleDensity": "moderate"
+      },
+      "story": {
+        "title": "Viscous Unmaking",
+        "characterName": "Rusk",
+        "setting": "Fragmented Drift-Crests of the old world float above a roiling, irradiated chasm, tenuously linked by skeletal bridges of petrified rebar and bioluminescent fungal tendrils.",
+        "description": "As Rusk, a deaf Chem-Savant who communicates through vibrant, reactive solutions, you navigate the perilous Drift-Crests, meticulously dismantling the fossilized relics of a forgotten civilization. Each component analyzed and re-synthesized reveals not just its chemical composition, but fragments of fractured memories – echoing an apocalypse Rusk shouldn't remember, and a profound, unsettling truth about the purpose of Rusk's own synthesized existence."
+      }
+    },
+    "buildId": "bf0a6050-e934-4b0e-883f-27163f9081a4",
+    "apkSize": "12.0 MB",
+    "createdAt": "2026-03-13T08:29:28.241Z"
   }
 ]

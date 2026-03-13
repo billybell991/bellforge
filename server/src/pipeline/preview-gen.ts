@@ -5,6 +5,7 @@ import { generatePlatformerHtml } from './engines/platformer.js';
 import { generateVisualNovelHtml } from './engines/visual-novel.js';
 import { generatePuzzleHtml } from './engines/puzzle.js';
 import { generateHiddenObjectHtml } from './engines/hidden-object.js';
+import { generateDismantleHtml } from './engines/dismantle.js';
 
 export interface GameImages {
   titleBg: string | null;
@@ -117,6 +118,8 @@ export function generatePreviewHtml(config: PreviewConfig): string {
       return generatePuzzleHtml(data);
     case 'hidden_object':
       return generateHiddenObjectHtml(data);
+    case 'dismantle':
+      return generateDismantleHtml(data);
     case 'point_click':
     case 'escape_room':
     default:

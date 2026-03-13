@@ -413,7 +413,9 @@ export async function generateGameImages(
     report(`🎨 Painting ${label} ${i + 1}/${config.rooms.length}: ${room.name}...`);
     startHeartbeat();
     const bg = await generateImage(
-      `${artPrompt} game background scene, interior view of ${room.name}, ${room.description}, ${room.atmosphere} mood, ${themePrompt}, detailed environment art, ${artPrompt} absolutely no text no words no letters no UI no characters`,
+      config.genre === 'dismantle'
+        ? `${artPrompt} game scene, a ${room.name} sitting on a workbench surface ready to be taken apart, ${room.description}, ${room.atmosphere} mood, ${themePrompt}, single object centered in frame, detailed mechanical illustration, ${artPrompt} absolutely no text no words no letters no UI no characters`
+        : `${artPrompt} game background scene, interior view of ${room.name}, ${room.description}, ${room.atmosphere} mood, ${themePrompt}, detailed environment art, ${artPrompt} absolutely no text no words no letters no UI no characters`,
       '16:9',
     );
     stopHeartbeat();

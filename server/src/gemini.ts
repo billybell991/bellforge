@@ -457,6 +457,7 @@ function genreSceneGuide(genreId: string): string {
     interactive_fiction: 'Design locations as evocative text-adventure spaces. Rich atmospheric descriptions matter more than furniture count.',
     puzzle: 'Design stages as puzzle environments. Objects should suggest logic, patterns, and mechanisms. Clean, focused layouts.',
     hidden_object: 'Design scenes PACKED with objects and details. Cluttered, rich, detailed environments where things can hide.',
+    dismantle: 'Each scene is a SINGLE object/device/machine to take apart — a rocket on a launchpad, a blender on a workbench, a clock on a desk, a robot on a repair bench. The scene name IS the object name. Furniture pieces represent the removable components of that object (bolts, panels, gears, covers, wires, screws, hatches). Layer them logically: outer shell pieces first (low index), then inner mechanisms (higher index). Position components where they would actually be ON the object. Keep it focused — one clear device per scene, not a cluttered room.',
   };
   return guides[genreId] || guides.point_click;
 }
@@ -518,7 +519,7 @@ export async function generateBriefRooms(
   try {
     const genreGuide = genreSceneGuide(config.genre.id);
     const difficultyGuide = config.structure.difficulty === 'challenging' ? 'Complex layouts, more objects, denser environments.' : config.structure.difficulty === 'casual' ? 'Simple, open layouts. Fewer objects, clear paths.' : 'Moderate complexity. Balanced layouts.';
-    const furnitureCount = config.genre.id === 'hidden_object' ? '6-10' : config.structure.difficulty === 'challenging' ? '5-8' : '3-6';
+    const furnitureCount = config.genre.id === 'hidden_object' ? '6-10' : config.genre.id === 'dismantle' ? '4-8' : config.structure.difficulty === 'challenging' ? '5-8' : '3-6';
     const p2 = await model.generateContent(`You are a game level designer. ${ctx}
 Accent color: ${palette.accent}. Wall color: ${palette.wall}. Floor color: ${palette.floor}.
 
@@ -707,7 +708,7 @@ Return ONLY this JSON (no fences, no explanation):
   try {
     const genreGuide = genreSceneGuide(config.genre.id);
     const difficultyGuide = config.structure.difficulty === 'challenging' ? 'Complex layouts, more objects, denser environments.' : config.structure.difficulty === 'casual' ? 'Simple, open layouts. Fewer objects, clear paths.' : 'Moderate complexity. Balanced layouts.';
-    const furnitureCount = config.genre.id === 'hidden_object' ? '6-10' : config.structure.difficulty === 'challenging' ? '5-8' : '3-6';
+    const furnitureCount = config.genre.id === 'hidden_object' ? '6-10' : config.genre.id === 'dismantle' ? '4-8' : config.structure.difficulty === 'challenging' ? '5-8' : '3-6';
     const p2 = await model.generateContent(`You are a game level designer. ${ctx}
 Accent color: ${palette!.accent}. Wall color: ${palette!.wall}. Floor color: ${palette!.floor}.
 

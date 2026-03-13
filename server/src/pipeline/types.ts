@@ -29,6 +29,7 @@ export function getUnitLabel(genreId: string): string {
     case 'hidden_object': return 'Scenes';
     case 'platformer':
     case 'puzzle': return 'Levels';
+    case 'dismantle': return 'Devices';
     default: return 'Rooms';
   }
 }
