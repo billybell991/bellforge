@@ -311,9 +311,13 @@ export function generateComicPreviewHtml(story: ComicStory): string {
     var html = '<div class="cover-page" id="cover-click">';
     html += '<div class="cover-publisher">BellForge Comics</div>';
     html += '<div class="cover-issue">Issue #' + (STORY.issueNumber || 1) + '</div>';
-    html += '<h1 class="cover-title">' + escapeHTML(STORY.title) + '</h1>';
-    html += '<div class="cover-subtitle">' + escapeHTML(STORY.subtitle) + '</div>';
-    html += '<div class="cover-art-placeholder">✦ ' + escapeHTML(STORY.title) + ' ✦</div>';
+    if (STORY.coverIllustration) {
+      html += '<div class="cover-art-placeholder" style="border:none;background:none;"><img src="' + sanitizeImageSrc(STORY.coverIllustration) + '" alt="Cover" style="width:100%;height:100%;object-fit:cover;border-radius:8px;"></div>';
+    } else {
+      html += '<h1 class="cover-title">' + escapeHTML(STORY.title) + '</h1>';
+      html += '<div class="cover-subtitle">' + escapeHTML(STORY.subtitle) + '</div>';
+      html += '<div class="cover-art-placeholder">\u2726 ' + escapeHTML(STORY.title) + ' \u2726</div>';
+    }
     html += '<div class="cover-tap">Tap to read \\u2192</div>';
     html += '</div>';
     pageContent.innerHTML = html;
@@ -331,43 +335,53 @@ export function generateComicPreviewHtml(story: ComicStory): string {
     currentIndex = idx;
     var page = STORY.pages[idx];
 
-    var panelCount = page.panels.length;
-    var gridClass = 'panels-' + Math.min(panelCount, 6);
-
     var html = '<div class="comic-page">';
-    html += '<div class="panel-grid ' + gridClass + '">';
 
-    for (var i = 0; i < page.panels.length; i++) {
-      var panel = page.panels[i];
-      html += '<div class="panel">';
+    // Full-page Gemini composition (dialogue baked in) — the proven approach
+    if (page.pageIllustration) {
+      html += '<div style="width:100%;min-height:70vh;position:relative;">';
+      html += '<img src="' + sanitizeImageSrc(page.pageIllustration) + '" alt="Page ' + (idx+1) + '" style="width:100%;height:auto;display:block;border-radius:4px;">';
+      html += '</div>';
+    } else {
+      // Fallback: per-panel grid with HTML dialogue overlays
+      var panelCount = page.panels.length;
+      var gridClass = 'panels-' + Math.min(panelCount, 6);
 
-      // Art
-      if (panel.illustration) {
-        html += '<div class="panel-art"><img src="' + sanitizeImageSrc(panel.illustration) + '" alt="Panel"></div>';
-      } else {
-        html += '<div class="panel-art">' + escapeHTML(panel.artDirection || 'Panel ' + (i+1)) + '</div>';
-      }
+      html += '<div class="panel-grid ' + gridClass + '">';
 
-      // Dialogue
-      if (panel.dialogue && panel.dialogue.length > 0) {
-        html += '<div class="dialogue-layer">';
-        for (var d = 0; d < panel.dialogue.length; d++) {
-          var dlg = panel.dialogue[d];
-          var bubbleClass = dlg.type === 'thought' ? 'bubble-thought' : dlg.type === 'narration' ? 'bubble-narration' : 'bubble-speech';
-          html += '<div class="bubble ' + bubbleClass + '">';
-          if (dlg.speaker && dlg.type !== 'narration') {
-            html += '<div class="bubble-speaker">' + escapeHTML(dlg.speaker) + '</div>';
+      for (var i = 0; i < page.panels.length; i++) {
+        var panel = page.panels[i];
+        html += '<div class="panel">';
+
+        // Art
+        if (panel.illustration) {
+          html += '<div class="panel-art"><img src="' + sanitizeImageSrc(panel.illustration) + '" alt="Panel"></div>';
+        } else {
+          html += '<div class="panel-art">' + escapeHTML(panel.artDirection || 'Panel ' + (i+1)) + '</div>';
+        }
+
+        // Dialogue
+        if (panel.dialogue && panel.dialogue.length > 0) {
+          html += '<div class="dialogue-layer">';
+          for (var d = 0; d < panel.dialogue.length; d++) {
+            var dlg = panel.dialogue[d];
+            var bubbleClass = dlg.type === 'thought' ? 'bubble-thought' : dlg.type === 'narration' ? 'bubble-narration' : 'bubble-speech';
+            html += '<div class="bubble ' + bubbleClass + '">';
+            if (dlg.speaker && dlg.type !== 'narration') {
+              html += '<div class="bubble-speaker">' + escapeHTML(dlg.speaker) + '</div>';
+            }
+            html += escapeHTML(dlg.text);
+            html += '</div>';
           }
-          html += escapeHTML(dlg.text);
           html += '</div>';
         }
+
         html += '</div>';
       }
 
       html += '</div>';
     }
 
-    html += '</div>';
     html += '<div class="page-number">Page ' + (idx + 1) + ' of ' + STORY.pages.length + '</div>';
     html += '</div>';
 

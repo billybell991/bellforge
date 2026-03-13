@@ -125,5 +125,133 @@
     "apkSize": "36 KB",
     "createdAt": "2026-03-13T10:49:30.831Z",
     "entertainmentType": "adventure"
+  },
+  {
+    "id": "f3bcd44f-9a66-4e88-b603-61593415bf63",
+    "name": "Null-Space Cortex",
+    "rating": 0,
+    "entertainmentType": "adventure",
+    "config": {
+      "cyoaGenre": {
+        "id": "exploration",
+        "name": "Exploration",
+        "icon": "🗺️",
+        "description": "Chart the unknown, discover secrets, map new territory",
+        "tag": "FLAGSHIP"
+      },
+      "theme": {
+        "id": "scifi",
+        "name": "Sci-Fi / Space",
+        "icon": "🚀",
+        "description": "Futuristic tech and cosmic exploration",
+        "color": "#00e5ff"
+      },
+      "artStyle": {
+        "id": "watercolor",
+        "name": "Watercolor / Painterly",
+        "icon": "🖌️",
+        "description": "Soft, flowing, artistic brushstrokes"
+      },
+      "structure": {
+        "roomCount": 6,
+        "difficulty": "standard",
+        "puzzleDensity": "moderate"
+      },
+      "story": {
+        "title": "Null-Space Cortex",
+        "characterName": "Nymbus",
+        "setting": "You are adrift within the crystalline processing labyrinth of the derelict *Aether-Bloom Nexus*, a sentient, planet-sized xenofabricator whose bio-luminescent conduits and reality-warping grav-chambers pulse with a dying hum.",
+        "description": "A fragmented echo of your consciousness has been accidentally uploaded into the malfunctioning core of the Nexus, trapped in a recursive simulation loop. To escape, you must re-sequence scrambled neural data and synthesize temporary psionic boosts from the ambient exotic energies, lest your true self be irrevocably digitized into oblivion."
+      }
+    },
+    "buildId": "a82b52ae-c273-4b1d-948c-244a476fc430",
+    "apkSize": "23658 KB",
+    "createdAt": "2026-03-13T13:37:09.357Z"
+  },
+  {
+    "id": "4945c417-51d1-4982-bc94-a5a34a1f383c",
+    "name": "The Brass-Bound Cipher",
+    "rating": 0,
+    "entertainmentType": "comic",
+    "config": {
+      "comicGenre": {
+        "id": "war_epic",
+        "name": "War Epic",
+        "icon": "⚔️",
+        "description": "Large-scale conflict, sacrifice, and the fog of war",
+        "tag": ""
+      },
+      "theme": {
+        "id": "mystery",
+        "name": "Mystery / Detective",
+        "icon": "🔎",
+        "description": "Crime scenes, clues, and whodunits",
+        "color": "#ffa726"
+      },
+      "artStyle": {
+        "id": "cel_shaded",
+        "name": "Cel-Shaded / Toonish",
+        "icon": "🎨",
+        "description": "Bold outlines, flat colors, cartoon charm",
+        "recommended": true
+      },
+      "structure": {
+        "pageCount": 6,
+        "panelStyle": "classic",
+        "tone": "action"
+      },
+      "story": {
+        "title": "The Brass-Bound Cipher",
+        "characterName": "Kitsune 'Kit' Cogsworth",
+        "setting": "The soaring districts of Veridia, built on petrified colossal roots, are eternally shrouded in a thick, unnatural fog that masks treacherous, crumbling bridges and conceals the true nature of their dizzying isolation.",
+        "description": "Disgraced sky-sleuth Kitsune 'Kit' Cogsworth haunts the fog-choked Spire-roots, investigating the catastrophic 'Whisperwind Collapse' and the creeping war of historical erasure threatening all known truth. The very brass-and-leather prosthetics that saved Kit's life, born of the collapse itself, are slowly revealed to be the true archive—a living, unwilling key to the systematic undoing of Veridia's past."
+      }
+    },
+    "buildId": "9f537d22-8424-4c70-8fca-bdefb667d41e",
+    "apkSize": "27 KB",
+    "createdAt": "2026-03-13T13:38:43.943Z"
+  },
+  {
+    "id": "175473b9-cf25-4a03-957f-4c1f9761141d",
+    "name": "The Egyptian Google Camel",
+    "rating": 0,
+    "entertainmentType": "comic",
+    "config": {
+      "comicGenre": {
+        "id": "origin_story",
+        "name": "Origin Story",
+        "icon": "🌟",
+        "description": "A hero is born — powers discovered, destiny revealed",
+        "tag": "FLAGSHIP"
+      },
+      "theme": {
+        "id": "cozy",
+        "name": "Cozy / Slice of Life",
+        "icon": "🌸",
+        "description": "Warm, relaxing, everyday adventures",
+        "color": "#f48fb1"
+      },
+      "artStyle": {
+        "id": "cel_shaded",
+        "name": "Cel-Shaded / Toonish",
+        "icon": "🎨",
+        "description": "Bold outlines, flat colors, cartoon charm",
+        "recommended": true
+      },
+      "structure": {
+        "pageCount": 6,
+        "panelStyle": "classic",
+        "tone": "dramatic"
+      },
+      "story": {
+        "title": "The Egyptian Google Camel",
+        "description": "",
+        "characterName": "",
+        "setting": "egyptian CAMEL trying to make it at Google"
+      }
+    },
+    "buildId": "873b74f2-1dc3-4ddb-88da-5d0a7cb5194e",
+    "apkSize": "14757 KB",
+    "createdAt": "2026-03-13T15:41:44.377Z"
   }
 ]

@@ -1,9 +1,11 @@
 // ── AI Comics Pipeline ──
 // Generates a complete comic book via Gemini + Imagen
-// Cover: 100% Gemini (title text included). Interior: Gemini art-only + text overlay.
+// Cover: 100% Gemini (title + comic chrome, NO ANTI_TEXT)
+// Interior: Per-PANEL Imagen illustrations (scene art, ANTI_TEXT) + HTML dialogue overlays
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { ComicConfig } from './pipeline/types.js';
+import { generateImage } from './imagen.js';
 
 const apiKey = process.env.GEMINI_API_KEY;
 let model: ReturnType<GoogleGenerativeAI['getGenerativeModel']> | null = null;
@@ -45,6 +47,7 @@ export interface ComicPage {
   setting: string;
   panels: ComicPanel[];
   isCover: boolean;
+  pageIllustration?: string;
 }
 
 export interface ComicPanel {
@@ -61,6 +64,7 @@ export interface ComicStory {
   issueNumber: number;
   totalPages: number;
   coverPage: ComicPage | null;
+  coverIllustration?: string;
   pages: ComicPage[];
 }
 
@@ -246,7 +250,7 @@ ${charBlock}
 Story outline for these pages:
 ${batch.map(p => `Page ${p.pageNumber}: [${p.setting}] ${p.description}`).join('\n')}
 
-For each page, write 4-5 panels with detailed art direction and dialogue.
+For each page, write exactly 3 panels with detailed art direction and dialogue.
 
 Output valid JSON array:
 [
@@ -268,7 +272,7 @@ Output valid JSON array:
 ]
 
 RULES:
-- 4-5 panels per page, mix of: establishing shots, action, close-ups, reaction shots
+- Exactly 3 panels per page: one establishing/wide shot, one mid/action shot, one close-up/reaction shot
 - "speech" for speech bubbles, "thought" for thought bubbles, "narration" for caption boxes
 - Keep dialogue punchy — 1-2 short sentences per bubble max
 - Art direction should be vivid and specific about composition, not style
@@ -429,25 +433,63 @@ export async function runComicPipeline(
   const totalPanels = story.pages.reduce((sum, p) => sum + p.panels.length, 0);
   sendProgress(32, `Assembled: ${story.totalPages} pages, ${totalPanels} panels`, 'layouts');
 
-  // Phase 3: Art generation progress markers
-  // (Actual Imagen calls would go here — for now emit progress stages)
+  // Phase 3: Art generation via Imagen
+  // Per-panel illustrations: simple scene art with ANTI_TEXT (no text/bubbles).
+  // HTML viewer handles multi-panel grid layout + dialogue overlays via CSS.
+  // Cover: 100% Gemini composition with title text, NO ANTI_TEXT.
+  const artPrefix = getArtStylePrefix(config.artStyle.id);
+  const charBlock = [
+    `${concept.protagonist.name}: ${concept.protagonist.visualDescription}`,
+    ...concept.characters.map(c => `${c.name}: ${c.visualDescription}`),
+  ].join('. ');
+
+  // 3a: Cover — NO ANTI_TEXT, Gemini renders title + comic book design elements
   sendProgress(35, 'Generating cover artwork...', 'cover_art');
-  await sleep(500);
-  sendProgress(40, 'Cover design complete', 'cover_art');
-
-  const pagesPerStage = Math.ceil(story.totalPages / 3);
-  for (let i = 0; i < story.totalPages; i++) {
-    const pct = 45 + Math.floor((i / story.totalPages) * 20);
-    const stageId = i < pagesPerStage ? 'panel_art' : i < pagesPerStage * 2 ? 'panel_art_mid' : 'panel_art_final';
-    sendProgress(pct, `Drawing page ${i + 1}/${story.totalPages}...`, stageId);
-    await sleep(200);
+  const coverPrompt = `${artPrefix} Design this as a complete, professional comic book cover that looks like an authentic published comic book. Include ALL standard comic cover elements: publisher logo box, issue number, barcode, price stamp. The title of the comic is "${concept.title}" — render it prominently. ${concept.protagonist.visualDescription} should dominate the composition in a dramatic pose. The title should NOT cover the hero's face.`;
+  const coverImg = await generateImage(coverPrompt, '3:4');
+  if (coverImg) {
+    story.coverIllustration = `data:image/png;base64,${coverImg}`;
   }
-  sendProgress(65, `All ${story.totalPages} pages illustrated`, 'panel_art_final');
+  sendProgress(40, coverImg ? 'Cover artwork generated' : 'Cover generation failed — using fallback', 'cover_art');
 
-  // Phase 4: Text overlay markers
-  sendProgress(75, 'Rendering speech bubbles and narration boxes...', 'text_overlay');
-  await sleep(300);
-  sendProgress(78, `Overlaying dialogue on ${totalPanels} panels`, 'text_overlay');
+  // 3b: Interior panels — individual panel illustrations (scene art only)
+  // ANTI_TEXT keeps panels clean of AI-hallucinated text; HTML viewer overlays
+  // dialogue bubbles, thought bubbles, and narration boxes via CSS.
+  const totalPanelImages = story.pages.reduce((sum, p) => sum + p.panels.length, 0);
+  let panelsDone = 0;
+  let imagesGenerated = 0;
+
+  for (let i = 0; i < story.pages.length; i++) {
+    const page = story.pages[i];
+
+    for (let j = 0; j < page.panels.length; j++) {
+      const panel = page.panels[j];
+      panelsDone++;
+      const pct = 42 + Math.floor((panelsDone / totalPanelImages) * 28);
+      sendProgress(pct, `Drawing panel ${panelsDone}/${totalPanelImages} (page ${i + 1})...`, 'panel_art');
+
+      // Focus character references on who actually appears in this panel
+      const panelCharNames = [...new Set(
+        (panel.dialogue || []).filter(d => d.speaker && d.type !== 'narration').map(d => d.speaker)
+      )];
+      const charRef = panelCharNames.length > 0
+        ? `Characters visible: ${panelCharNames.join(', ')}. ${charBlock}`
+        : charBlock;
+
+      const panelPrompt = `${artPrefix} single comic book panel illustration. ${panel.artDirection}. Setting: ${page.setting}. ${charRef}. ${ANTI_TEXT}`;
+      const panelImg = await generateImage(panelPrompt, '4:3');
+      if (panelImg) {
+        panel.illustration = `data:image/png;base64,${panelImg}`;
+        imagesGenerated++;
+      }
+
+      // Throttle between panels
+      if (panelsDone < totalPanelImages) await sleep(1500);
+    }
+  }
+  sendProgress(70, `Art complete: ${imagesGenerated}/${totalPanelImages} panel illustrations generated`, 'panel_art');
+
+  sendProgress(75, 'Finalizing pages...', 'text_overlay');
 
   // Phase 5: QA
   sendProgress(82, 'Checking panel continuity...', 'qa_panels');
