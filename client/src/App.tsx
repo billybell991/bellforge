@@ -1,10 +1,12 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import type { AppPage, GameConfig, AdventureConfig, ComicConfig, EntertainmentType, GenreOption, ThemeOption, ArtStyleOption, StructureConfig, StoryConfig, CYOAGenreOption, CYOAStructureConfig, ComicGenreOption, ComicStructureConfig, LibraryEntry, WSProgressMessage, WSCompleteMessage, QAReport } from './types';
-import { GENRES, THEMES, ART_STYLES, CYOA_GENRES, COMIC_GENRES } from './types';
+import type { AppPage, GameConfig, AdventureConfig, ComicConfig, EscapeConfig, PuzzleConfig, EntertainmentType, GenreOption, ThemeOption, ArtStyleOption, StructureConfig, StoryConfig, CYOAGenreOption, CYOAStructureConfig, ComicGenreOption, ComicStructureConfig, EscapeThemeOption, EscapeStructureConfig, PuzzleSubjectOption, PuzzleStructureConfig, LibraryEntry, WSProgressMessage, WSCompleteMessage, QAReport } from './types';
+import { GENRES, THEMES, ART_STYLES, CYOA_GENRES, COMIC_GENRES, ESCAPE_THEMES, PUZZLE_SUBJECTS } from './types';
 import { Landing } from './components/Landing';
 import { WizardContainer } from './components/WizardContainer';
 import { CYOAWizardContainer } from './components/CYOAWizardContainer';
 import { ComicWizardContainer } from './components/ComicWizardContainer';
+import { EscapeWizardContainer } from './components/EscapeWizardContainer';
+import { PuzzleWizardContainer } from './components/PuzzleWizardContainer';
 import { BuildProgress } from './components/BuildProgress';
 import { GamePreview } from './components/GamePreview';
 import { DeployGuide } from './components/DeployGuide';
@@ -37,6 +39,18 @@ const defaultComicStructure: ComicStructureConfig = {
   tone: 'action',
 };
 
+const defaultEscapeStructure: EscapeStructureConfig = {
+  envelopeCount: 4,
+  difficulty: 'standard',
+  duration: 45,
+};
+
+const defaultPuzzleStructure: PuzzleStructureConfig = {
+  pieceCount: 25,
+  difficulty: 'medium',
+  rotation: false,
+};
+
 // ── Build log entry for the progress display ──
 interface BuildLogEntry {
   name: string;
@@ -58,6 +72,12 @@ export default function App() {
   // Comic-specific state
   const [comicGenre, setComicGenre] = useState<ComicGenreOption | null>(null);
   const [comicStructure, setComicStructure] = useState<ComicStructureConfig>(defaultComicStructure);
+  // Escape-specific state
+  const [escapeTheme, setEscapeTheme] = useState<EscapeThemeOption | null>(null);
+  const [escapeStructure, setEscapeStructure] = useState<EscapeStructureConfig>(defaultEscapeStructure);
+  // Puzzle-specific state
+  const [puzzleSubject, setPuzzleSubject] = useState<PuzzleSubjectOption | null>(null);
+  const [puzzleStructure, setPuzzleStructure] = useState<PuzzleStructureConfig>(defaultPuzzleStructure);
   const [buildId, setBuildId] = useState<string | null>(null);
   const [apkInfo, setApkInfo] = useState<{ path: string; size: string } | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -97,6 +117,16 @@ export default function App() {
   const comicConfig: ComicConfig | null =
     comicGenre && theme && artStyle
       ? { comicGenre, theme, artStyle, structure: comicStructure, story }
+      : null;
+
+  const escapeConfig: EscapeConfig | null =
+    escapeTheme && theme && artStyle
+      ? { escapeTheme, theme, artStyle, structure: escapeStructure, story }
+      : null;
+
+  const puzzleConfig: PuzzleConfig | null =
+    puzzleSubject && artStyle
+      ? { puzzleSubject, artStyle, structure: puzzleStructure }
       : null;
 
   // ── Library count fetcher ──
@@ -294,6 +324,22 @@ export default function App() {
         setArtStyle(a);
         setCyoaStructure(ac.structure as CYOAStructureConfig || defaultCYOAStructure);
         setStory(ac.story as StoryConfig);
+      } else if (type === 'escape') {
+        const et = ESCAPE_THEMES.find((x) => x.id === (ac.escapeThemeId as string)) || ESCAPE_THEMES[0];
+        const t = THEMES.find((x) => x.id === (ac.themeId as string)) || THEMES[0];
+        const a = ART_STYLES.find((x) => x.id === (ac.artStyleId as string)) || ART_STYLES[0];
+        setEscapeTheme(et);
+        setTheme(t);
+        setArtStyle(a);
+        setEscapeStructure(ac.structure as EscapeStructureConfig || defaultEscapeStructure);
+        setStory(ac.story as StoryConfig);
+      } else if (type === 'puzzle') {
+        const ps = PUZZLE_SUBJECTS.find((x) => x.id === (ac.puzzleSubjectId as string)) || PUZZLE_SUBJECTS[0];
+        const a = ART_STYLES.find((x) => x.id === (ac.artStyleId as string)) || ART_STYLES[0];
+        setPuzzleSubject(ps);
+        setArtStyle(a);
+        setPuzzleStructure(ac.structure as PuzzleStructureConfig || defaultPuzzleStructure);
+        setStory(ac.story as StoryConfig);
       } else if (type === 'comic') {
         const cg = COMIC_GENRES.find((x) => x.id === (ac.comicGenreId as string)) || COMIC_GENRES[0];
         const t = THEMES.find((x) => x.id === (ac.themeId as string)) || THEMES[0];
@@ -324,6 +370,22 @@ export default function App() {
         setArtStyle(a);
         setCyoaStructure({ pageCount: 15 + Math.floor(Math.random() * 31), deadliness: 'medium', branchDensity: 'forking' });
         setStory({ title: '', description: '', characterName: '', setting: '' });
+      } else if (type === 'escape') {
+        const et = ESCAPE_THEMES[Math.floor(Math.random() * ESCAPE_THEMES.length)];
+        const t = THEMES[Math.floor(Math.random() * THEMES.length)];
+        const a = ART_STYLES[Math.floor(Math.random() * ART_STYLES.length)];
+        setEscapeTheme(et);
+        setTheme(t);
+        setArtStyle(a);
+        setEscapeStructure({ envelopeCount: 3 + Math.floor(Math.random() * 4), difficulty: 'standard', duration: [30, 45, 60][Math.floor(Math.random() * 3)] });
+        setStory({ title: '', description: '', characterName: '', setting: '' });
+      } else if (type === 'puzzle') {
+        const ps = PUZZLE_SUBJECTS[Math.floor(Math.random() * PUZZLE_SUBJECTS.length)];
+        const a = ART_STYLES[Math.floor(Math.random() * ART_STYLES.length)];
+        setPuzzleSubject(ps);
+        setArtStyle(a);
+        setPuzzleStructure({ pieceCount: [9, 25, 49][Math.floor(Math.random() * 3)], difficulty: 'medium', rotation: false });
+        setStory({ title: '', description: '', characterName: '', setting: '' });
       } else if (type === 'comic') {
         const cg = COMIC_GENRES[Math.floor(Math.random() * COMIC_GENRES.length)];
         const t = THEMES[Math.floor(Math.random() * THEMES.length)];
@@ -352,12 +414,16 @@ export default function App() {
   const handleForgeIt = useCallback(async () => {
     const payload = entertainmentType === 'adventure' ? adventureConfig
       : entertainmentType === 'comic' ? comicConfig
+      : entertainmentType === 'escape' ? escapeConfig
+      : entertainmentType === 'puzzle' ? puzzleConfig
       : config;
     if (!payload) return;
 
     try {
       const endpoint = entertainmentType === 'adventure' ? '/api/forge/adventure'
         : entertainmentType === 'comic' ? '/api/forge/comic'
+        : entertainmentType === 'escape' ? '/api/forge/escape'
+        : entertainmentType === 'puzzle' ? '/api/forge/puzzle'
         : '/api/forge';
       const res = await fetch(endpoint, {
         method: 'POST',
@@ -383,7 +449,7 @@ export default function App() {
     } catch {
       alert('The forge server is not running here — this is a static demo.\n\nTo forge real games, clone the repo and run it locally:\n  git clone → npm run install:all → npm run dev');
     }
-  }, [config, adventureConfig, comicConfig, entertainmentType, connectWs]);
+  }, [config, adventureConfig, comicConfig, escapeConfig, puzzleConfig, entertainmentType, connectWs]);
 
   const handleBuildComplete = useCallback((apkPath: string, apkSize: string, previewUrlPath: string) => {
     setApkInfo({ path: apkPath, size: apkSize });
@@ -417,6 +483,20 @@ export default function App() {
       setArtStyle(cc.artStyle);
       setComicStructure(cc.structure);
       setStory(cc.story);
+    } else if ('escapeTheme' in c) {
+      const ec = c as EscapeConfig;
+      setEntertainmentType('escape');
+      setEscapeTheme(ec.escapeTheme);
+      setTheme(ec.theme);
+      setArtStyle(ec.artStyle);
+      setEscapeStructure(ec.structure);
+      setStory(ec.story);
+    } else if ('puzzleSubject' in c) {
+      const pc = c as PuzzleConfig;
+      setEntertainmentType('puzzle');
+      setPuzzleSubject(pc.puzzleSubject);
+      setArtStyle(pc.artStyle);
+      setPuzzleStructure(pc.structure);
     } else {
       const gc = c as GameConfig;
       setEntertainmentType('game');
@@ -451,6 +531,20 @@ export default function App() {
       setArtStyle(cc.artStyle);
       setComicStructure(cc.structure);
       setStory(cc.story);
+    } else if ('escapeTheme' in c) {
+      const ec = c as EscapeConfig;
+      setEntertainmentType('escape');
+      setEscapeTheme(ec.escapeTheme);
+      setTheme(ec.theme);
+      setArtStyle(ec.artStyle);
+      setEscapeStructure(ec.structure);
+      setStory(ec.story);
+    } else if ('puzzleSubject' in c) {
+      const pc = c as PuzzleConfig;
+      setEntertainmentType('puzzle');
+      setPuzzleSubject(pc.puzzleSubject);
+      setArtStyle(pc.artStyle);
+      setPuzzleStructure(pc.structure);
     } else {
       const gc = c as GameConfig;
       setEntertainmentType('game');
@@ -490,6 +584,10 @@ export default function App() {
     setCyoaStructure(defaultCYOAStructure);
     setComicGenre(null);
     setComicStructure(defaultComicStructure);
+    setEscapeTheme(null);
+    setEscapeStructure(defaultEscapeStructure);
+    setPuzzleSubject(null);
+    setPuzzleStructure(defaultPuzzleStructure);
     setApkInfo(null);
     setPreviewUrl(null);
     setQaReport(null);
@@ -527,7 +625,7 @@ export default function App() {
 
       <header className="forge-header">
         <div className="forge-header-brand" onClick={handleStartOver}>
-          <span>⚒️</span> BELLFORGE
+          <img src="/bellforge-logo.png" alt="" className="header-logo-img" /> BELLFORGE
         </div>
         <div className="forge-header-right">
           {/* Build-in-progress indicator */}
@@ -615,6 +713,36 @@ export default function App() {
           />
         )}
 
+        {page === 'wizard' && entertainmentType === 'escape' && (
+          <EscapeWizardContainer
+            escapeTheme={escapeTheme}
+            theme={theme}
+            artStyle={artStyle}
+            structure={escapeStructure}
+            story={story}
+            onEscapeThemeChange={setEscapeTheme}
+            onThemeChange={setTheme}
+            onArtStyleChange={setArtStyle}
+            onStructureChange={setEscapeStructure}
+            onStoryChange={setStory}
+            onForge={handleForgeIt}
+            onBack={() => setPage('landing')}
+          />
+        )}
+
+        {page === 'wizard' && entertainmentType === 'puzzle' && (
+          <PuzzleWizardContainer
+            puzzleSubject={puzzleSubject}
+            artStyle={artStyle}
+            structure={puzzleStructure}
+            onSubjectChange={setPuzzleSubject}
+            onArtStyleChange={setArtStyle}
+            onStructureChange={setPuzzleStructure}
+            onForge={handleForgeIt}
+            onBack={() => setPage('landing')}
+          />
+        )}
+
         {page === 'building' && buildId && (
           <BuildProgress
             percent={buildPercent}
@@ -631,7 +759,7 @@ export default function App() {
             previewUrl={previewUrl}
             apkPath={apkInfo?.path ?? ''}
             apkSize={apkInfo?.size ?? ''}
-            orientation={(entertainmentType === 'adventure' || entertainmentType === 'comic') ? 'landscape' : (genre?.orientation ?? 'landscape')}
+            orientation={(entertainmentType === 'adventure' || entertainmentType === 'comic' || entertainmentType === 'escape' || entertainmentType === 'puzzle') ? 'landscape' : (genre?.orientation ?? 'landscape')}
             onDeploy={handleGoToDeploy}
             onStartOver={handleStartOver}
             onReForge={() => { setBuildActive(false); buildCompletedRef.current = false; setPage('wizard'); }}

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { BUILD_STAGES, ADVENTURE_BUILD_STAGES, COMIC_BUILD_STAGES, type EntertainmentType } from '../types';
+import { BUILD_STAGES, ADVENTURE_BUILD_STAGES, COMIC_BUILD_STAGES, ESCAPE_BUILD_STAGES, PUZZLE_BUILD_STAGES, type EntertainmentType } from '../types';
 
 interface LogEntry {
   name: string;
@@ -25,7 +25,7 @@ export function BuildProgress({ percent, stageName, detail, error, log, entertai
 
   return (
     <div className="build-screen">
-      <h1 className="build-title">⚒️ Forging Your {entertainmentType === 'adventure' ? 'Adventure' : entertainmentType === 'comic' ? 'Comic' : 'Game'}</h1>
+      <h1 className="build-title">⚒️ Forging Your {entertainmentType === 'adventure' ? 'Adventure' : entertainmentType === 'comic' ? 'Comic' : entertainmentType === 'escape' ? 'Escape Room' : entertainmentType === 'puzzle' ? 'Puzzle' : 'Game'}</h1>
       <p className="build-subtitle">
         Sit back — the forge is hot and the hammers are swinging.
       </p>
@@ -74,6 +74,10 @@ export function BuildProgress({ percent, stageName, detail, error, log, entertai
             ? `${ADVENTURE_BUILD_STAGES.length} stages · Interactive Fiction · Gemini AI Bridge`
             : entertainmentType === 'comic'
             ? `${COMIC_BUILD_STAGES.length} stages · AI Comics · Gemini AI Bridge · Imagen`
+            : entertainmentType === 'escape'
+            ? `${ESCAPE_BUILD_STAGES.length} stages · Escape Room · Gemini AI Bridge`
+            : entertainmentType === 'puzzle'
+            ? `${PUZZLE_BUILD_STAGES.length} stages · Jigsaw Puzzle · Gemini AI Bridge · Imagen`
             : `${BUILD_STAGES.length} stages · Kotlin/Canvas · Gemini AI Bridge · Gradle Build`}
         </p>
       </div>

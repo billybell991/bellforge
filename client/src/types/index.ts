@@ -4,7 +4,7 @@
 
 // ── Entertainment Type ──
 
-export type EntertainmentType = 'game' | 'adventure' | 'comic';
+export type EntertainmentType = 'game' | 'adventure' | 'comic' | 'escape' | 'puzzle';
 
 export interface GameConfig {
   genre: GenreOption;
@@ -93,6 +93,72 @@ export const COMIC_GENRES: ComicGenreOption[] = [
   { id: 'coming_of_age', name: 'Coming of Age', icon: '🌱', description: 'Growing up, finding identity, first big challenge', tag: 'NEW' },
 ];
 
+// ── Escape Room Config ──
+
+export interface EscapeConfig {
+  escapeTheme: EscapeThemeOption;
+  theme: ThemeOption;
+  artStyle: ArtStyleOption;
+  structure: EscapeStructureConfig;
+  story: StoryConfig;
+}
+
+export interface EscapeStructureConfig {
+  envelopeCount: number;
+  difficulty: 'casual' | 'standard' | 'expert';
+  duration: number;
+}
+
+export interface EscapeThemeOption {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  tag: string;
+}
+
+export const ESCAPE_THEMES: EscapeThemeOption[] = [
+  { id: 'heist', name: 'The Heist', icon: '💎', description: 'Break into the vault before security resets — crack safes, bypass lasers, decode intel', tag: 'FLAGSHIP' },
+  { id: 'detective', name: 'Cold Case', icon: '🔎', description: 'A case was closed too soon — buried evidence, conflicting alibis, one night to find the truth', tag: 'POPULAR' },
+  { id: 'haunted', name: 'Haunted Estate', icon: '👻', description: 'Locked inside a decaying mansion with restless spirits and cryptic warnings', tag: '' },
+  { id: 'laboratory', name: 'The Laboratory', icon: '🧪', description: 'A research facility in lockdown — decipher experiments before containment fails', tag: '' },
+  { id: 'shipwreck', name: 'Sunken Vessel', icon: '⚓', description: 'Trapped in a flooded submarine — restore power, seal breaches, signal for rescue', tag: '' },
+  { id: 'time_capsule', name: 'Time Capsule', icon: '⏳', description: 'Someone left a trail of puzzles across decades — each envelope unlocks a memory', tag: 'NEW' },
+];
+
+// ── Jigsaw Puzzle Config ──
+
+export interface PuzzleConfig {
+  puzzleSubject: PuzzleSubjectOption;
+  artStyle: ArtStyleOption;
+  structure: PuzzleStructureConfig;
+}
+
+export interface PuzzleStructureConfig {
+  pieceCount: number;
+  difficulty: 'easy' | 'medium' | 'hard' | 'expert';
+  rotation: boolean;
+}
+
+export interface PuzzleSubjectOption {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  tag: string;
+}
+
+export const PUZZLE_SUBJECTS: PuzzleSubjectOption[] = [
+  { id: 'landscape', name: 'Epic Landscape', icon: '🏔️', description: 'Sweeping vistas — mountains, valleys, sunsets, and horizons', tag: 'FLAGSHIP' },
+  { id: 'fantasy_scene', name: 'Fantasy Scene', icon: '🐉', description: 'Dragons, castles, enchanted forests, and magical creatures', tag: 'POPULAR' },
+  { id: 'animal', name: 'Animal Portrait', icon: '🦁', description: 'A majestic animal rendered in stunning detail', tag: '' },
+  { id: 'space', name: 'Cosmic Vista', icon: '🌌', description: 'Nebulae, planets, starfields, and galactic panoramas', tag: '' },
+  { id: 'cityscape', name: 'Cityscape', icon: '🏙️', description: 'Urban skylines, neon streets, and architectural wonders', tag: '' },
+  { id: 'abstract', name: 'Abstract Art', icon: '🎨', description: 'Shapes, colors, and patterns — beautiful chaos', tag: '' },
+  { id: 'underwater', name: 'Underwater World', icon: '🐠', description: 'Coral reefs, deep sea creatures, and sunken treasures', tag: '' },
+  { id: 'custom', name: 'Custom Subject', icon: '✨', description: 'Describe anything — the AI will paint it for you', tag: 'NEW' },
+];
+
 // ── Genre ──
 
 export type Orientation = 'portrait' | 'landscape';
@@ -112,7 +178,6 @@ export const GENRES: GenreOption[] = [
   { id: 'visual_novel', name: 'Visual Novel', icon: '📖', description: 'Story-driven with dialogue choices', tag: '', orientation: 'portrait' },
   { id: 'platformer', name: 'Platformer', icon: '🏃', description: 'Jump, run, and collect through levels', tag: '', orientation: 'landscape' },
   { id: 'hidden_object', name: 'Hidden Object', icon: '🔍', description: 'Find concealed items in detailed scenes', tag: '', orientation: 'landscape' },
-  { id: 'escape_room', name: 'Escape Room', icon: '🚪', description: 'Crack clues to escape locked rooms', tag: 'POPULAR', orientation: 'landscape' },
   { id: 'interactive_fiction', name: 'Interactive Fiction', icon: '🗺️', description: 'Text-heavy adventures with rich narratives', tag: '', orientation: 'portrait' },
   { id: 'dismantle', name: 'Dismantling', icon: '🔧', description: 'Take apart machines, devices, and contraptions piece by piece', tag: 'NEW', orientation: 'landscape' },
 ];
@@ -246,6 +311,46 @@ export const COMIC_WIZARD_STEPS: { id: WizardStep; label: string; icon: string }
   { id: 'review', label: 'Review', icon: '✅' },
 ];
 
+export const ESCAPE_WIZARD_STEPS: { id: WizardStep; label: string; icon: string }[] = [
+  { id: 'genre', label: 'Scenario', icon: '🔑' },
+  { id: 'theme', label: 'Atmosphere', icon: '🎭' },
+  { id: 'artStyle', label: 'Art Style', icon: '🎨' },
+  { id: 'structure', label: 'Structure', icon: '🏗️' },
+  { id: 'story', label: 'Story', icon: '📝' },
+  { id: 'review', label: 'Review', icon: '✅' },
+];
+
+export const ESCAPE_BUILD_STAGES: BuildStage[] = [
+  { id: 'concept', name: 'Designing Escape Room Concept', percent: 5, icon: '📝' },
+  { id: 'outline', name: 'Building Puzzle Graph', percent: 12, icon: '🧩' },
+  { id: 'puzzles', name: 'Crafting Puzzle Details', percent: 22, icon: '🔑' },
+  { id: 'puzzles_mid', name: 'Threading Clues & Answers', percent: 35, icon: '🔗' },
+  { id: 'puzzles_final', name: 'Polishing Hint Chains', percent: 45, icon: '💡' },
+  { id: 'assembly', name: 'Assembling Escape Structure', percent: 52, icon: '📦' },
+  { id: 'illustrations', name: 'AI Bridge → Scene Art', percent: 62, icon: '🎨' },
+  { id: 'illustrations_items', name: 'AI Bridge → Puzzle Assets', percent: 72, icon: '✨' },
+  { id: 'qa_graph', name: 'QA — Verifying Solvability', percent: 80, icon: '🔍' },
+  { id: 'qa_cohesion', name: 'QA — Story Cohesion Check', percent: 88, icon: '🧭' },
+  { id: 'viewer', name: 'Building Interactive Viewer', percent: 95, icon: '📱' },
+  { id: 'complete', name: 'Escape Room Complete!', percent: 100, icon: '🎉' },
+];
+
+export const PUZZLE_WIZARD_STEPS: { id: WizardStep; label: string; icon: string }[] = [
+  { id: 'genre', label: 'Subject', icon: '🖼️' },
+  { id: 'artStyle', label: 'Art Style', icon: '🎨' },
+  { id: 'structure', label: 'Difficulty', icon: '🧩' },
+  { id: 'review', label: 'Review', icon: '✅' },
+];
+
+export const PUZZLE_BUILD_STAGES: BuildStage[] = [
+  { id: 'concept', name: 'Designing Puzzle Image', percent: 10, icon: '📝' },
+  { id: 'illustration', name: 'AI Bridge → Generating Artwork', percent: 30, icon: '🎨' },
+  { id: 'cutting', name: 'Cutting Jigsaw Pieces', percent: 55, icon: '✂️' },
+  { id: 'engine', name: 'Building Puzzle Engine', percent: 75, icon: '⚙️' },
+  { id: 'qa', name: 'QA — Testing Interactions', percent: 90, icon: '🔍' },
+  { id: 'complete', name: 'Puzzle Complete!', percent: 100, icon: '🎉' },
+];
+
 // ── App Page State ──
 
 export type AppPage = 'landing' | 'wizard' | 'building' | 'preview' | 'deploy';
@@ -256,11 +361,12 @@ export interface LibraryEntry {
   id: string;
   name: string;
   rating: number;
-  config: GameConfig | AdventureConfig | ComicConfig;
+  config: GameConfig | AdventureConfig | ComicConfig | EscapeConfig | PuzzleConfig;
   entertainmentType?: EntertainmentType;
   buildId: string;
   apkSize: string;
   createdAt: string;
+  thumbnail?: string;
 }
 
 // ── WebSocket Messages ──

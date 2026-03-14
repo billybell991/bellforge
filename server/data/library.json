@@ -1,256 +1,32 @@
 [
   {
-    "id": "e096baff-dd3a-4cc6-a3c7-faebc9039804",
-    "name": "Empty Hand's Reckoning",
+    "id": "9cd78637-4c7c-4eed-a6c3-0ec970ed0715",
+    "name": "Epic Landscape Puzzle",
     "rating": 0,
-    "entertainmentType": "game",
+    "entertainmentType": "puzzle",
     "config": {
-      "genre": {
-        "id": "puzzle",
-        "name": "Puzzle Game",
-        "icon": "🧩",
-        "description": "Brain teasers and logic challenges",
-        "tag": "",
-        "orientation": "portrait"
-      },
-      "theme": {
-        "id": "postapoc",
-        "name": "Post-Apocalyptic",
-        "icon": "🏚️",
-        "description": "Surviving in the ruins of civilization",
-        "color": "#8d6e63"
-      },
-      "artStyle": {
-        "id": "low_poly",
-        "name": "Low Poly / Flat Design",
-        "icon": "🔷",
-        "description": "Clean, minimal, geometric shapes"
-      },
-      "structure": {
-        "roomCount": 5,
-        "difficulty": "casual",
-        "puzzleDensity": "light"
-      },
-      "story": {
-        "title": "Empty Hand's Reckoning",
-        "characterName": "Vespra",
-        "setting": "The Shard Sea is a vast, shimmering basin where a pre-Collapse metropolis was pulverized into razor-sharp, multi-hued crystal dust, constantly shifting under corrosive winds.",
-        "description": "As Vespra, a 'Resonance Whisperer,' you traverse the treacherous Shard Sea, using a salvaged Harmonic Scrapper to sculpt sonic paths through the swirling dust and crumbling ruins. Your quest is to reach the fabled Cradle of Quiet, but its protection wards off anyone burdened by the residual 'Ghosts' of the old world. The true puzzle lies not in what you collect, but in which tempting relics you strategically *leave behind* in the desolate shimmer, for only the unburdened may find solace."
-      }
-    },
-    "buildId": "f8689801-d8b3-46c5-b970-aec94b64b15e",
-    "apkSize": "14.5 MB",
-    "createdAt": "2026-03-13T22:19:01.155Z"
-  },
-  {
-    "id": "53d6b97f-cd80-43f9-84a7-2ebfd045e656",
-    "name": "The Absent Compass",
-    "rating": 0,
-    "entertainmentType": "game",
-    "config": {
-      "genre": {
-        "id": "point_click",
-        "name": "Point & Click Adventure",
-        "icon": "🎯",
-        "description": "Explore rooms, solve puzzles, uncover stories",
-        "tag": "FLAGSHIP",
-        "orientation": "landscape"
-      },
-      "theme": {
-        "id": "horror",
-        "name": "Horror / Supernatural",
-        "icon": "👻",
-        "description": "Dark atmospheres and spine-tingling mysteries",
-        "color": "#ff3d00"
-      },
-      "artStyle": {
-        "id": "pixel_art",
-        "name": "Pixel Art / Retro",
-        "icon": "👾",
-        "description": "Nostalgic 8-bit and 16-bit aesthetics"
-      },
-      "structure": {
-        "roomCount": 3,
-        "difficulty": "standard",
-        "puzzleDensity": "moderate"
-      },
-      "story": {
-        "title": "The Absent Compass",
-        "characterName": "Calyx",
-        "setting": "The Loom of Unmaking, an impossible, ever-shifting labyrinth woven from the psychic detritus of collapsed universes, eternally drifts through the cold, echoing abyss where realities unravel.",
-        "description": "You are Calyx, a psychopomp burdened with shepherding the dying echoes of cosmic horrors across the Loom of Unmaking, an ever-shifting reality that feeds on comprehension. Your latest charge is a pulsating fragment of absolute non-existence, and navigating its labyrinthine horrors demands not just movement, but a terrifying re-sculpting of your own perception to forge paths that fundamentally do not exist."
-      }
-    },
-    "buildId": "0944a57a-7507-4fa2-8699-23d507da5265",
-    "apkSize": "11.7 MB",
-    "createdAt": "2026-03-13T22:21:25.094Z"
-  },
-  {
-    "id": "51213f54-f7f8-436c-986f-c2e381164716",
-    "name": "Aethelburg's Miasmic Heart",
-    "rating": 0,
-    "entertainmentType": "comic",
-    "config": {
-      "comicGenre": {
-        "id": "origin_story",
-        "name": "Origin Story",
-        "icon": "🌟",
-        "description": "A hero is born — powers discovered, destiny revealed",
+      "puzzleSubject": {
+        "id": "landscape",
+        "name": "Epic Landscape",
+        "icon": "🏔️",
+        "description": "Sweeping vistas — mountains, valleys, sunsets, and horizons",
         "tag": "FLAGSHIP"
       },
-      "theme": {
-        "id": "steampunk",
-        "name": "Steampunk",
-        "icon": "⚙️",
-        "description": "Victorian era with brass and steam machinery",
-        "color": "#ff8a65"
-      },
       "artStyle": {
-        "id": "hand_drawn",
-        "name": "Hand-Drawn / Sketch",
-        "icon": "✏️",
-        "description": "Pencil and ink illustration style"
+        "id": "cel_shaded",
+        "name": "Cel-Shaded / Toonish",
+        "icon": "🎨",
+        "description": "Bold outlines, flat colors, cartoon charm",
+        "recommended": true
       },
       "structure": {
-        "pageCount": 4,
-        "panelStyle": "classic",
-        "tone": "action"
-      },
-      "story": {
-        "title": "Aethelburg's Miasmic Heart",
-        "characterName": "Fumeux",
-        "setting": "Aethelburg, a sprawling brass metropolis carved into a massive, phosphorescent geode deep beneath the earth's crust, its perpetual gloom pierced by the pulsating, clockwork-regulated glow of crystal veins.",
-        "description": "Fumeux, a nascent collective consciousness born from Aethelburg's refined Anima-Gas effluvium, yearns for a physical form to explore the brass-laden world it perceives. Its origin story begins when it attempts to possess a deactivated clockwork sentinel, unaware that the colossal geode cavern itself is a living, resonating entity with a protective 'will' that views Fumeux's attempts as an intrusion."
+        "pieceCount": 9,
+        "difficulty": "easy",
+        "rotation": false
       }
     },
-    "buildId": "b819f26b-3ad7-44f1-8130-3066b308efed",
-    "apkSize": "35393 KB",
-    "createdAt": "2026-03-13T22:32:26.857Z"
-  },
-  {
-    "id": "2e084e54-6c93-44f6-98b4-7fc5793e409d",
-    "name": "Echoes of Unmade Law",
-    "rating": 0,
-    "entertainmentType": "comic",
-    "config": {
-      "comicGenre": {
-        "id": "origin_story",
-        "name": "Origin Story",
-        "icon": "🌟",
-        "description": "A hero is born — powers discovered, destiny revealed",
-        "tag": "FLAGSHIP"
-      },
-      "theme": {
-        "id": "fantasy",
-        "name": "Fantasy / Medieval",
-        "icon": "🏰",
-        "description": "Castles, dragons, and magical realms",
-        "color": "#7c4dff"
-      },
-      "artStyle": {
-        "id": "noir",
-        "name": "Noir / Black & White",
-        "icon": "🎬",
-        "description": "High contrast, dramatic shadows"
-      },
-      "structure": {
-        "pageCount": 6,
-        "panelStyle": "classic",
-        "tone": "action"
-      },
-      "story": {
-        "title": "Echoes of Unmade Law",
-        "characterName": "Morwen",
-        "setting": "A vast, ancient peat bog, known as the Mire of Echoes, where the decaying whispers of forgotten ages congeal into sentient, ephemeral mists.",
-        "description": "Morwen, a reclusive bog-witch and anima-carver, sculpts intricate totems from the gnarled bog-wood steeped in the Mire of Echoes. Her craft isn't merely artistic; each completed carving doesn't just represent a fundamental law of existence—like gravity, time, or magic itself—it *redefines* it for the entire world. The tale unfolds as her desperate attempt to carve a 'cure for blight' accidentally unravels the world's natural order, forcing her to become the reluctant architect of reality itself."
-      }
-    },
-    "buildId": "395bf599-c2d9-4a34-9223-3cde2233a8c3",
-    "apkSize": "48643 KB",
-    "createdAt": "2026-03-13T22:35:14.442Z"
-  },
-  {
-    "id": "b8f80e89-246e-4ebe-b938-c448e9951826",
-    "name": "Root-Cellar Heart",
-    "rating": 0,
-    "entertainmentType": "comic",
-    "config": {
-      "comicGenre": {
-        "id": "origin_story",
-        "name": "Origin Story",
-        "icon": "🌟",
-        "description": "A hero is born — powers discovered, destiny revealed",
-        "tag": "FLAGSHIP"
-      },
-      "theme": {
-        "id": "cozy",
-        "name": "Cozy / Slice of Life",
-        "icon": "🌸",
-        "description": "Warm, relaxing, everyday adventures",
-        "color": "#f48fb1"
-      },
-      "artStyle": {
-        "id": "neon",
-        "name": "Neon / Synthwave",
-        "icon": "💫",
-        "description": "Glowing lights, retro-futuristic vibes"
-      },
-      "structure": {
-        "pageCount": 6,
-        "panelStyle": "classic",
-        "tone": "action"
-      },
-      "story": {
-        "title": "Root-Cellar Heart",
-        "characterName": "Thistlewick",
-        "setting": "The ancient cottage's cellar wasn't just for preserves, but a haven where plump, bioluminescent fungi softly lit every nook, emitting a comforting, earthy warmth and a faint, sweet scent.",
-        "description": "Thistlewick, a quiet soul, tended to living fungal 'echoes' beneath the village, cultivating patches of bioluminescent mycelium that literally glowed with the essence of cherished comfort – from the scent of hearth smoke to the feeling of a perfectly warmed teacup. His gentle artistry ensured the village's collective contentment, but perfecting one glow meant subtly diminishing another, leaving Thistlewick to decide which cozy memory truly needed to bloom next."
-      }
-    },
-    "buildId": "23f3ce78-985c-4a4f-8358-ffdfb5f6aab3",
-    "apkSize": "50046 KB",
-    "createdAt": "2026-03-13T22:55:49.485Z"
-  },
-  {
-    "id": "c936d692-5319-44b6-b4f0-ab5962946079",
-    "name": "The Harmonarium's Cipher",
-    "rating": 0,
-    "entertainmentType": "adventure",
-    "config": {
-      "cyoaGenre": {
-        "id": "investigation",
-        "name": "Investigation",
-        "icon": "🔎",
-        "description": "Gather clues, interview witnesses, solve the case",
-        "tag": ""
-      },
-      "theme": {
-        "id": "mystery",
-        "name": "Mystery / Detective",
-        "icon": "🔎",
-        "description": "Crime scenes, clues, and whodunits",
-        "color": "#ffa726"
-      },
-      "artStyle": {
-        "id": "noir",
-        "name": "Noir / Black & White",
-        "icon": "🎬",
-        "description": "High contrast, dramatic shadows"
-      },
-      "structure": {
-        "pageCount": 10,
-        "deadliness": "medium",
-        "branchDensity": "forking"
-      },
-      "story": {
-        "title": "The Harmonarium's Cipher",
-        "characterName": "Cyprian Vox",
-        "setting": "The secluded Harmonarium, a labyrinthine clockwork cathedral of brass and gilded wood, silently dictates the city’s emotional temperament through its intricate, almost sentient mechanisms.",
-        "description": "Cyprian Vox, an investigator known for his uncanny ability to discern lingering emotional 'imprints' on places and objects, is summoned when the Harmonarium's central 'Concordance Note' mysteriously falls silent. He must navigate a society where every citizen contributes to a vital psychic harmony, deciphering discordant psychic echoes left by the missing note's sudden absence. But as he delves deeper, the unsettling quiet suggests a saboteur far closer than anyone dares to imagine, one whose presence resonates with a perfect, deadly pitch."
-      }
-    },
-    "buildId": "8916869e-9294-42ea-90d5-00c04696ee0a",
-    "apkSize": "13930 KB",
-    "createdAt": "2026-03-13T23:03:39.198Z"
+    "buildId": "45b8366f-9066-4d92-92aa-cf57e164bc05",
+    "apkSize": "2568 KB",
+    "createdAt": "2026-03-14T12:36:48.311Z"
   }
 ]

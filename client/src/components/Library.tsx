@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { LibraryEntry, GameConfig, AdventureConfig, ComicConfig, EntertainmentType } from '../types';
+import type { LibraryEntry, GameConfig, AdventureConfig, ComicConfig, PuzzleConfig, EscapeConfig, EntertainmentType } from '../types';
 
 function getEntryType(entry: LibraryEntry): EntertainmentType {
   if (entry.entertainmentType) return entry.entertainmentType;
@@ -12,6 +12,8 @@ const TYPE_BADGES: Record<EntertainmentType, { icon: string; label: string; colo
   game: { icon: '🎮', label: 'Game', color: '#00e5ff' },
   adventure: { icon: '📚', label: 'Adventure', color: '#ffa726' },
   comic: { icon: '💥', label: 'Comic', color: '#ff5252' },
+  puzzle: { icon: '🧩', label: 'Puzzle', color: '#ab47bc' },
+  escape: { icon: '🚪', label: 'Escape Room', color: '#66bb6a' },
 };
 
 function getEntryGenreDisplay(entry: LibraryEntry): { icon: string; name: string } {
@@ -21,6 +23,13 @@ function getEntryGenreDisplay(entry: LibraryEntry): { icon: string; name: string
   }
   if ('comicGenre' in c) {
     return { icon: (c as ComicConfig).comicGenre.icon, name: (c as ComicConfig).comicGenre.name };
+  }
+  if ('puzzleSubject' in c) {
+    const pc = c as PuzzleConfig;
+    return { icon: '🧩', name: pc.puzzleSubject?.name || 'Puzzle' };
+  }
+  if ('escapeTheme' in c) {
+    return { icon: '🚪', name: (c as EscapeConfig).escapeTheme?.name || 'Escape Room' };
   }
   const gc = c as GameConfig;
   return { icon: gc.genre?.icon || '🎮', name: gc.genre?.name || 'Game' };
@@ -117,6 +126,16 @@ export function Library({ onBack, onViewPreview, onReForge, onCountChange }: Lib
         <div className="library-grid">
           {entries.map((entry) => (
             <div key={entry.id} className="library-card">
+              {/* Thumbnail */}
+              {entry.thumbnail && (
+                <div className="library-card-thumb" onClick={() => onViewPreview(entry)}>
+                  <img
+                    src={`/api/library/${entry.id}/thumbnail`}
+                    alt={entry.name}
+                    loading="lazy"
+                  />
+                </div>
+              )}
               <div className="library-card-header">
                 {/* Type badge */}
                 {(() => {
@@ -153,7 +172,12 @@ export function Library({ onBack, onViewPreview, onReForge, onCountChange }: Lib
 
               <div className="library-card-meta">
                 <span>{getEntryGenreDisplay(entry).icon} {getEntryGenreDisplay(entry).name}</span>
-                <span>{entry.config?.theme?.icon} {entry.config?.theme?.name}</span>
+                {'theme' in entry.config && (entry.config as GameConfig).theme && (
+                  <span>{(entry.config as GameConfig).theme?.icon} {(entry.config as GameConfig).theme?.name}</span>
+                )}
+                {'artStyle' in entry.config && (entry.config as PuzzleConfig).artStyle && (
+                  <span>🎨 {(entry.config as PuzzleConfig).artStyle.name}</span>
+                )}
               </div>
 
               <div className="library-card-meta">
@@ -176,8 +200,8 @@ export function Library({ onBack, onViewPreview, onReForge, onCountChange }: Lib
 
               {/* Actions */}
               <div className="library-card-actions">
-                <button className="library-action-btn" onClick={() => onViewPreview(entry)} title={getEntryType(entry) === 'game' ? 'Play in browser' : 'Open in viewer'}>
-                  {getEntryType(entry) === 'game' ? '🎮 Play' : getEntryType(entry) === 'adventure' ? '📖 Read' : '📖 Read'}
+                <button className="library-action-btn" onClick={() => onViewPreview(entry)} title={getEntryType(entry) === 'game' ? 'Play in browser' : getEntryType(entry) === 'puzzle' ? 'Solve puzzle' : 'Open in viewer'}>
+                  {getEntryType(entry) === 'game' ? '🎮 Play' : getEntryType(entry) === 'puzzle' ? '🧩 Solve' : getEntryType(entry) === 'escape' ? '🚪 Play' : getEntryType(entry) === 'adventure' ? '📖 Read' : '📖 Read'}
                 </button>
                 <button className="library-action-btn library-action-reforge" onClick={() => onReForge(entry)} title="Load settings into the forge and rebuild with latest improvements">
                   🔄 Re-Forge

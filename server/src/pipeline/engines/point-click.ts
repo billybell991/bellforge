@@ -87,20 +87,6 @@ function drawRoom(roomIdx){
   var hasImg = drawBgImage(loadedImages['room_'+roomIdx]);
   if(!hasImg){
     drawRoomFallbackBg(room);
-    if(room.hasWindow){
-      var wt=room.windowType||'tall';
-      ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=18;
-      if(wt==='round'){
-        ctx.fillStyle=PALETTE.bg+'cc';ctx.beginPath();ctx.arc(nx(0.5),ny(0.22),nx(0.08),0,Math.PI*2);ctx.fill();
-        ctx.strokeStyle=PALETTE.accent+'66';ctx.lineWidth=3;ctx.stroke();
-      }else if(wt==='wide'){
-        rRect(0.25,0.10,0.50,0.16,6,PALETTE.bg+'cc',PALETTE.accent+'66');
-      }else{
-        rRect(0.38,0.10,0.10,0.28,6,PALETTE.bg+'cc',PALETTE.accent+'66');
-        rRect(0.52,0.10,0.10,0.28,6,PALETTE.bg+'cc',PALETTE.accent+'66');
-      }
-      ctx.restore();
-    }
     if(room.furniture){for(var fi=0;fi<room.furniture.length;fi++){drawFurniture(room.furniture[fi])}}
   } else {
     var lg2=ctx.createLinearGradient(0,0,0,H);
@@ -221,24 +207,10 @@ function getItemRoomIndex(name){
 }
 
 function drawFurniture(f){
-  var c=f.color||PALETTE.wall;
-  ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=10;
-  switch(f.type){
-    case 'circle':
-      ctx.fillStyle=c;ctx.beginPath();ctx.ellipse(nx(f.x+f.w/2),ny(f.y+f.h/2),nx(f.w/2),ny(f.h/2),0,0,Math.PI*2);ctx.fill();
-      ctx.strokeStyle=PALETTE.accent+'60';ctx.lineWidth=2;ctx.stroke();break;
-    case 'arch':
-      ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(nx(f.x),ny(f.y+f.h));ctx.lineTo(nx(f.x),ny(f.y+f.h*0.3));
-      ctx.quadraticCurveTo(nx(f.x+f.w/2),ny(f.y),nx(f.x+f.w),ny(f.y+f.h*0.3));ctx.lineTo(nx(f.x+f.w),ny(f.y+f.h));ctx.closePath();ctx.fill();
-      ctx.strokeStyle=PALETTE.accent+'60';ctx.lineWidth=2;ctx.stroke();break;
-    case 'triangle':
-      ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(nx(f.x+f.w/2),ny(f.y));ctx.lineTo(nx(f.x+f.w),ny(f.y+f.h));ctx.lineTo(nx(f.x),ny(f.y+f.h));ctx.closePath();ctx.fill();
-      ctx.strokeStyle=PALETTE.accent+'50';ctx.lineWidth=1.5;ctx.stroke();break;
-    default:
-      var grd=ctx.createLinearGradient(nx(f.x),ny(f.y),nx(f.x),ny(f.y+f.h));
-      grd.addColorStop(0,c);grd.addColorStop(1,PALETTE.bg+'88');
-      glowRect(f.x,f.y,f.w,f.h,6,grd,PALETTE.accent+'50');
-  }
+  // Minimal placeholder — just a subtle outlined rectangle
+  ctx.save();ctx.globalAlpha=0.3;
+  ctx.strokeStyle=PALETTE.accent+'60';ctx.lineWidth=1;
+  ctx.strokeRect(nx(f.x),ny(f.y),nx(f.w),ny(f.h));
   ctx.restore();
   if(f.label){
     ctx.save();ctx.shadowColor=PALETTE.bg;ctx.shadowBlur=4;

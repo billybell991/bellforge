@@ -15,10 +15,14 @@ import { generateGameImages } from './imagen.js';
 import type { GameConfig } from './pipeline/types.js';
 import type { AdventureConfig } from './pipeline/types.js';
 import type { ComicConfig } from './pipeline/types.js';
+import type { EscapeConfig } from './pipeline/types.js';
+import type { PuzzleConfig } from './pipeline/types.js';
 import { runAdventurePipeline } from './cyoa-pipeline.js';
 import { generateCYOAPreviewHtml } from './cyoa-engine.js';
 import { runComicPipeline } from './comic-pipeline.js';
 import { generateComicPreviewHtml } from './comic-engine.js';
+import { runEscapePipeline, generateEscapePreviewHtml } from './escape-pipeline.js';
+import { runPuzzlePipeline, generatePuzzlePreviewHtml } from './puzzle-pipeline.js';
 import type { CreativeBrief, CreativePalette, CreativeRoom, CreativeItem, PuzzleConnection } from './gemini.js';
 
 const execFileAsync = promisify(execFile);
@@ -52,15 +56,17 @@ interface LibraryEntry {
   id: string;
   name: string;
   rating: number; // 0-5 stars
-  entertainmentType: 'game' | 'adventure' | 'comic';
+  entertainmentType: 'game' | 'adventure' | 'comic' | 'escape' | 'puzzle';
   config: unknown;
   buildId: string;
   apkSize: string;
   createdAt: string;
+  thumbnail?: string; // filename in data/thumbnails/
 }
 
 const LIBRARY_PATH = join(process.cwd(), 'data', 'library.json');
 const PREVIEWS_DIR = join(process.cwd(), 'data', 'previews');
+const THUMBNAILS_DIR = join(process.cwd(), 'data', 'thumbnails');
 
 function loadLibrary(): LibraryEntry[] {
   try {
@@ -81,8 +87,15 @@ function saveLibrary(entries: LibraryEntry[]): void {
 
 let library = loadLibrary();
 
-// Ensure previews directory exists
+// Ensure previews and thumbnails directories exist
 if (!existsSync(PREVIEWS_DIR)) mkdirSync(PREVIEWS_DIR, { recursive: true });
+if (!existsSync(THUMBNAILS_DIR)) mkdirSync(THUMBNAILS_DIR, { recursive: true });
+
+function saveThumbnail(buildId: string, base64: string): string {
+  const filename = `${buildId}.png`;
+  writeFileSync(join(THUMBNAILS_DIR, filename), Buffer.from(base64, 'base64'));
+  return filename;
+}
 
 function savePreviewHtml(buildId: string, html: string): void {
   writeFileSync(join(PREVIEWS_DIR, `${buildId}.html`), html, 'utf-8');
@@ -251,6 +264,28 @@ app.post('/api/forge/comic', async (req, res) => {
   waitForClient(buildId, 5000).then(() => runComicBuild(buildId, config));
 });
 
+// Start an Escape Room build
+app.post('/api/forge/escape', async (req, res) => {
+  const config = req.body as EscapeConfig;
+  const buildId = uuidv4();
+
+  builds.set(buildId, { config, status: 'queued', progress: 0 });
+  res.json({ buildId });
+
+  waitForClient(buildId, 5000).then(() => runEscapeBuild(buildId, config));
+});
+
+// Start a Jigsaw Puzzle build
+app.post('/api/forge/puzzle', async (req, res) => {
+  const config = req.body as PuzzleConfig;
+  const buildId = uuidv4();
+
+  builds.set(buildId, { config, status: 'queued', progress: 0 });
+  res.json({ buildId });
+
+  waitForClient(buildId, 5000).then(() => runPuzzleBuild(buildId, config));
+});
+
 // Get build status
 app.get('/api/status/:buildId', (req, res) => {
   const build = builds.get(req.params.buildId);
@@ -416,6 +451,23 @@ app.post('/api/gemini/auto-config', async (_req, res) => {
 // List all saved games
 app.get('/api/library', (_req, res) => {
   res.json({ entries: library });
+});
+
+// Serve thumbnail images
+app.get('/api/library/:id/thumbnail', (req, res) => {
+  const entry = library.find((e) => e.id === req.params.id);
+  if (!entry?.thumbnail) {
+    res.status(404).send('No thumbnail');
+    return;
+  }
+  const filePath = join(THUMBNAILS_DIR, entry.thumbnail);
+  if (!existsSync(filePath)) {
+    res.status(404).send('Thumbnail file not found');
+    return;
+  }
+  res.setHeader('Content-Type', 'image/png');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.sendFile(filePath);
 });
 
 // Save a game to library
@@ -1084,6 +1136,170 @@ async function runComicBuild(buildId: string, config: ComicConfig) {
         theme: config.theme.name,
         artStyle: config.artStyle.name,
         roomCount: config.structure.pageCount,
+        title,
+      },
+      timing: { startedAt: Date.now(), completedAt: Date.now() },
+    },
+  });
+}
+
+// ── Escape Room Build Pipeline ──
+
+async function runEscapeBuild(buildId: string, config: EscapeConfig) {
+  const record = builds.get(buildId)!;
+  record.status = 'building';
+
+  const result = await runEscapePipeline(config, (pct, msg, stage) => {
+    sendProgress(buildId, {
+      type: 'progress',
+      stage: stage || 'escape',
+      name: msg,
+      percent: pct,
+      detail: '',
+      timestamp: Date.now(),
+    });
+  });
+
+  if (!result) {
+    sendProgress(buildId, {
+      type: 'error',
+      message: 'Escape room generation failed.',
+    });
+    record.status = 'error';
+    return;
+  }
+
+  const previewHtml = generateEscapePreviewHtml(result);
+  record.status = 'complete';
+  record.progress = 100;
+  record.previewHtml = previewHtml;
+
+  try { savePreviewHtml(buildId, previewHtml); } catch (err) { console.error('Failed to save escape preview:', err); }
+
+  const title = config.story.title || result.title || 'Untitled Escape Room';
+  if (!library.some((e) => e.buildId === buildId)) {
+    const existing = library.findIndex((e) => e.name === title);
+    const entry: LibraryEntry = {
+      id: existing >= 0 ? library[existing].id : uuidv4(),
+      name: title,
+      rating: existing >= 0 ? library[existing].rating : 0,
+      entertainmentType: 'escape',
+      config: config,
+      buildId,
+      apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
+      createdAt: new Date().toISOString(),
+    };
+    if (existing >= 0) {
+      library[existing] = entry;
+      console.log(`  📚 Updated escape room "${entry.name}" in library (replaced previous build)`);
+    } else {
+      library.push(entry);
+      console.log(`  📚 Auto-saved escape room "${entry.name}" to library`);
+    }
+    saveLibrary(library);
+  }
+
+  sendProgress(buildId, {
+    type: 'complete',
+    percent: 100,
+    apkPath: '',
+    apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
+    previewUrl: `/api/preview/${buildId}`,
+    qaReport: {
+      overallScore: 0,
+      categories: [],
+      summary: '',
+      images: null,
+      config: {
+        genre: config.escapeTheme.name,
+        theme: config.theme.name,
+        artStyle: config.artStyle.name,
+        roomCount: config.structure.envelopeCount,
+        title,
+      },
+      timing: { startedAt: Date.now(), completedAt: Date.now() },
+    },
+  });
+}
+
+// ── Jigsaw Puzzle Build Pipeline ──
+
+async function runPuzzleBuild(buildId: string, config: PuzzleConfig) {
+  const record = builds.get(buildId)!;
+  record.status = 'building';
+
+  const result = await runPuzzlePipeline(config, (pct, msg, stage) => {
+    sendProgress(buildId, {
+      type: 'progress',
+      stage: stage || 'puzzle',
+      name: msg,
+      percent: pct,
+      detail: '',
+      timestamp: Date.now(),
+    });
+  });
+
+  if (!result) {
+    sendProgress(buildId, {
+      type: 'error',
+      message: 'Puzzle generation failed.',
+    });
+    record.status = 'error';
+    return;
+  }
+
+  const previewHtml = generatePuzzlePreviewHtml(result, config);
+  record.status = 'complete';
+  record.progress = 100;
+  record.previewHtml = previewHtml;
+
+  try { savePreviewHtml(buildId, previewHtml); } catch (err) { console.error('Failed to save puzzle preview:', err); }
+
+  const title = result.title || `${config.puzzleSubject.name} Puzzle`;
+  // Save puzzle image as thumbnail
+  let thumbnailFile: string | undefined;
+  if (result.imageBase64) {
+    try { thumbnailFile = saveThumbnail(buildId, result.imageBase64); } catch (err) { console.error('Failed to save puzzle thumbnail:', err); }
+  }
+  if (!library.some((e) => e.buildId === buildId)) {
+    const existing = library.findIndex((e) => e.name === title);
+    const entry: LibraryEntry = {
+      id: existing >= 0 ? library[existing].id : uuidv4(),
+      name: title,
+      rating: existing >= 0 ? library[existing].rating : 0,
+      entertainmentType: 'puzzle',
+      config: config,
+      buildId,
+      apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
+      createdAt: new Date().toISOString(),
+      thumbnail: thumbnailFile,
+    };
+    if (existing >= 0) {
+      library[existing] = entry;
+      console.log(`  📚 Updated puzzle "${entry.name}" in library (replaced previous build)`);
+    } else {
+      library.push(entry);
+      console.log(`  📚 Auto-saved puzzle "${entry.name}" to library`);
+    }
+    saveLibrary(library);
+  }
+
+  sendProgress(buildId, {
+    type: 'complete',
+    percent: 100,
+    apkPath: '',
+    apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
+    previewUrl: `/api/preview/${buildId}`,
+    qaReport: {
+      overallScore: 0,
+      categories: [],
+      summary: '',
+      images: null,
+      config: {
+        genre: config.puzzleSubject.name,
+        theme: 'N/A',
+        artStyle: config.artStyle.name,
+        roomCount: config.structure.pieceCount,
         title,
       },
       timing: { startedAt: Date.now(), completedAt: Date.now() },

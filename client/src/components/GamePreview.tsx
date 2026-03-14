@@ -20,14 +20,20 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
   const isLandscape = true;
   const isAdventure = entertainmentType === 'adventure';
   const isComic = entertainmentType === 'comic';
-  const isNonGame = isAdventure || isComic;
+  const isEscape = entertainmentType === 'escape';
+  const isPuzzle = entertainmentType === 'puzzle';
+  const isNonGame = isAdventure || isComic || isEscape || isPuzzle;
 
   const titleLabel = isAdventure ? '📚 Your Adventure is Ready!'
     : isComic ? '💥 Your Comic is Ready!'
+    : isEscape ? '🔑 Your Escape Room is Ready!'
+    : isPuzzle ? '🧩 Your Puzzle is Ready!'
     : '🎮 Your Game is Ready!';
 
   const subtitleLabel = isAdventure ? 'Your adventure book awaits — dive in and explore every path.'
     : isComic ? 'Your comic book is hot off the press — start reading!'
+    : isEscape ? 'Step inside and start solving.'
+    : isPuzzle ? 'Drag the pieces into place — can you complete the image?'
     : 'Review the report, then play-test it right here.';
 
   // Sync fullscreen state with browser Fullscreen API events
@@ -70,7 +76,7 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
           <iframe
             src={previewUrl}
             className="comic-viewer-screen"
-            title={isComic ? 'Comic Preview' : 'Adventure Preview'}
+            title={isComic ? 'Comic Preview' : isAdventure ? 'Adventure Preview' : isEscape ? 'Escape Room Preview' : 'Puzzle Preview'}
             sandbox="allow-scripts"
           />
           {fullscreen && (
@@ -124,7 +130,7 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
           </button>
         )}
         <button className="preview-forge-another" onClick={onStartOver}>
-          ⚒️ Forge Another {isAdventure ? 'Adventure' : isComic ? 'Comic' : 'Game'}
+          ⚒️ Forge Another {isAdventure ? 'Adventure' : isComic ? 'Comic' : isEscape ? 'Escape Room' : isPuzzle ? 'Puzzle' : 'Game'}
         </button>
       </div>
     </div>

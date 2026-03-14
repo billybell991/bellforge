@@ -229,13 +229,21 @@ body {
   justify-content: center;
   min-height: 100vh;
   text-align: center;
-  padding: 40px 24px;
+  padding: 16px 24px;
 }
 
 /* Logo / Anvil Icon */
 
 .landing-logo {
   font-size: 72px;
+  margin-bottom: 16px;
+  filter: drop-shadow(0 0 20px rgba(255, 107, 53, 0.5));
+  animation: anvil-pulse 3s ease-in-out infinite;
+}
+
+.landing-logo-img {
+  width: 120px;
+  height: auto;
   margin-bottom: 16px;
   filter: drop-shadow(0 0 20px rgba(255, 107, 53, 0.5));
   animation: anvil-pulse 3s ease-in-out infinite;
@@ -260,6 +268,18 @@ body {
   background-clip: text;
   animation: shimmer 4s ease-in-out infinite;
   margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.landing-title-logo {
+  width: clamp(48px, 8vw, 80px);
+  height: auto;
+  filter: drop-shadow(0 0 15px rgba(255, 107, 53, 0.5));
+  animation: anvil-pulse 3s ease-in-out infinite;
+  /* Prevent text gradient from hiding the image */
+  -webkit-text-fill-color: initial;
 }
 
 @keyframes shimmer {
@@ -273,7 +293,7 @@ body {
   font-family: 'JetBrains Mono', monospace;
   font-size: clamp(1rem, 2vw, 1.3rem);
   color: var(--text-secondary);
-  margin-bottom: 48px;
+  margin-bottom: 20px;
   overflow: hidden;
   white-space: nowrap;
   border-right: 2px solid var(--cyan);
@@ -313,13 +333,13 @@ body {
   padding: 28px 20px;
   text-align: center;
   transition: all 0.3s ease;
+  cursor: default;
+  position: relative;
 }
 
 .feature-card:hover {
   background: var(--bg-card-hover);
-  border-color: var(--border-active);
-  transform: translateY(-4px);
-  box-shadow: var(--glow-cyan);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .feature-icon {
@@ -341,6 +361,15 @@ body {
   font-size: 0.85rem;
   color: var(--text-secondary);
   line-height: 1.5;
+}
+
+/* Forge Area (Review step CTA) */
+.wizard-forge-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 2rem;
+  gap: 0.75rem;
 }
 
 /* CTA Button */
@@ -404,6 +433,32 @@ body {
 }
 
 /* ── Landing Two-Button Layout ── */
+
+.feature-nudge {
+  position: absolute;
+  bottom: -32px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  color: var(--accent-cyan);
+  font-family: 'Orbitron', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.5px;
+  padding: 6px 14px;
+  background: rgba(0, 229, 255, 0.1);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  border-radius: 6px;
+  animation: nudge-fade 2.5s ease forwards;
+  pointer-events: none;
+  z-index: 10;
+}
+
+@keyframes nudge-fade {
+  0% { opacity: 0; transform: translateX(-50%) translateY(-4px); }
+  15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+  75% { opacity: 1; }
+  100% { opacity: 0; }
+}
 
 .landing-buttons {
   display: flex;
@@ -2052,7 +2107,8 @@ body {
   background: var(--bg-card);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-lg);
-  padding: 20px;
+  padding: 0;
+  overflow: hidden;
   transition: all 0.25s ease;
 }
 
@@ -2061,8 +2117,44 @@ body {
   box-shadow: 0 0 20px rgba(255, 107, 53, 0.1);
 }
 
+.library-card-thumb {
+  width: 100%;
+  height: 160px;
+  overflow: hidden;
+  cursor: pointer;
+  background: #0a0a14;
+}
+
+.library-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.library-card-thumb:hover img {
+  transform: scale(1.05);
+}
+
 .library-card-header {
   margin-bottom: 12px;
+  padding: 16px 20px 0;
+}
+
+/* Cards without thumbnails get padding on top */
+.library-card:not(:has(.library-card-thumb)) .library-card-header {
+  padding-top: 20px;
+}
+
+.library-card-meta,
+.library-card-actions,
+.library-stars {
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.library-card-actions {
+  padding-bottom: 16px;
 }
 
 .library-type-badge {
@@ -2265,10 +2357,10 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-bottom: 20px;
-  padding: 8px 20px;
+  margin-bottom: 8px;
+  padding: 6px 16px;
   border-radius: 20px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
@@ -2356,6 +2448,12 @@ body {
 
 .forge-header-brand span {
   font-size: 20px;
+}
+
+.header-logo-img {
+  width: 28px;
+  height: auto;
+  filter: drop-shadow(0 0 6px rgba(255, 107, 53, 0.4));
 }
 
 .forge-header-version {
@@ -2570,7 +2668,7 @@ body {
 
 .entertainment-selector {
   text-align: center;
-  margin: 32px 0 16px;
+  margin: 16px 0 8px;
 }
 
 .entertainment-prompt {
@@ -2578,7 +2676,7 @@ body {
   font-size: 1.3rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   letter-spacing: 1px;
 }
 

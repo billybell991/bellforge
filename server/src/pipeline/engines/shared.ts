@@ -215,61 +215,24 @@ function drawParticles(c,dir){
   ctx.globalAlpha=1;
 }
 
-// ══ Atmospheric fallback background ══
+// ══ Minimal fallback background (Imagen unavailable) ══
 function drawFallbackBg(){
-  var g1=ctx.createLinearGradient(0,0,W*0.3,H);
-  g1.addColorStop(0,PALETTE.shadow||PALETTE.bg);g1.addColorStop(0.5,PALETTE.bg);g1.addColorStop(1,PALETTE.wall);
-  ctx.fillStyle=g1;ctx.fillRect(0,0,W,H);
-  // Radial light source from upper area
-  var rl=ctx.createRadialGradient(W*0.5,H*0.2,0,W*0.5,H*0.3,W*0.7);
-  rl.addColorStop(0,PALETTE.accent+'18');rl.addColorStop(0.4,PALETTE.accent+'08');rl.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.fillStyle=rl;ctx.fillRect(0,0,W,H);
-  // Silhouette shapes (distant architecture/landscape)
-  ctx.fillStyle=PALETTE.bg+'cc';
-  var t=animFrame*0.003;
-  for(var i=0;i<7;i++){
-    var bx=i*0.16-0.04+Math.sin(t+i*1.3)*0.005;
-    var bh=0.15+Math.sin(i*2.7)*0.12;
-    var by=0.82-bh;
-    ctx.fillRect(nx(bx),ny(by),nx(0.08),ny(bh+0.20));
-  }
-  // Ground mist
-  var mist=ctx.createLinearGradient(0,H*0.85,0,H);
-  mist.addColorStop(0,'rgba(0,0,0,0)');mist.addColorStop(0.5,PALETTE.accent+'0c');mist.addColorStop(1,PALETTE.bg+'88');
-  ctx.fillStyle=mist;ctx.fillRect(0,H*0.85,W,H*0.15);
-  // Ambient particles
-  drawParticles(PALETTE.accent,-1);
-  // Scanline overlay
-  ctx.globalAlpha=0.03;
-  for(var s=0;s<H;s+=4){ctx.fillStyle=s%8<4?'#000':'#fff';ctx.fillRect(0,s,W,1)}
-  ctx.globalAlpha=1;
+  ctx.fillStyle=PALETTE.bg||'#0f0f1a';ctx.fillRect(0,0,W,H);
+  // Subtle vignette (UI chrome, not art)
+  var vig=ctx.createRadialGradient(W*0.5,H*0.5,W*0.2,W*0.5,H*0.5,W*0.8);
+  vig.addColorStop(0,'rgba(0,0,0,0)');vig.addColorStop(1,'rgba(0,0,0,0.4)');
+  ctx.fillStyle=vig;ctx.fillRect(0,0,W,H);
 }
 
-// ══ Room fallback background ══
+// ══ Minimal room fallback (Imagen unavailable) ══
 function drawRoomFallbackBg(room){
   var wc=room.wallColor||PALETTE.wall;
+  ctx.fillStyle=wc;ctx.fillRect(0,0,W,H);
+  // Simple floor line (UI chrome)
   var fc=room.floorColor||PALETTE.floor;
-  // Perspective room: ceiling, back wall, floor with vanishing point
-  var g=ctx.createLinearGradient(0,0,0,H);
-  g.addColorStop(0,PALETTE.bg);g.addColorStop(0.3,wc);g.addColorStop(0.8,wc);g.addColorStop(1,fc);
-  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
-  // Perspective lines from corners to vanishing point
-  ctx.save();ctx.globalAlpha=0.08;ctx.strokeStyle=PALETTE.accent;ctx.lineWidth=1;
-  var vx=W*0.5,vy=H*0.35;
-  ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(vx,vy);ctx.moveTo(W,0);ctx.lineTo(vx,vy);
-  ctx.moveTo(0,H);ctx.lineTo(vx,vy);ctx.moveTo(W,H);ctx.lineTo(vx,vy);ctx.stroke();ctx.restore();
-  // Central radial glow
-  var rl=ctx.createRadialGradient(vx,vy,0,vx,vy,W*0.5);
-  rl.addColorStop(0,PALETTE.accent+'15');rl.addColorStop(1,'rgba(0,0,0,0)');
-  ctx.fillStyle=rl;ctx.fillRect(0,0,W,H);
-  // Floor reflection line
+  ctx.fillStyle=fc;ctx.fillRect(0,H*0.80,W,H*0.20);
   ctx.save();ctx.globalAlpha=0.12;ctx.strokeStyle=PALETTE.accent;ctx.lineWidth=1;
   ctx.beginPath();ctx.moveTo(0,H*0.80);ctx.lineTo(W,H*0.80);ctx.stroke();ctx.restore();
-  // Light shaft
-  ctx.save();ctx.globalAlpha=0.04;
-  ctx.fillStyle=PALETTE.accent;
-  ctx.beginPath();ctx.moveTo(W*0.35,0);ctx.lineTo(W*0.55,0);ctx.lineTo(W*0.52,H*0.7);ctx.lineTo(W*0.38,H*0.7);ctx.fill();
-  ctx.restore();
 }
 `;
 }

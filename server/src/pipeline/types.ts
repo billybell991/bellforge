@@ -24,6 +24,20 @@ export interface ComicConfig {
   story: { title: string; description: string; characterName: string; setting: string };
 }
 
+export interface EscapeConfig {
+  escapeTheme: { id: string; name: string };
+  theme: { id: string; name: string };
+  artStyle: { id: string; name: string };
+  structure: { envelopeCount: number; difficulty: string; duration: number };
+  story: { title: string; description: string; characterName: string; setting: string };
+}
+
+export interface PuzzleConfig {
+  puzzleSubject: { id: string; name: string };
+  artStyle: { id: string; name: string };
+  structure: { pieceCount: number; difficulty: string; rotation: boolean };
+}
+
 export interface PipelineContext {
   buildId: string;
   config: GameConfig;

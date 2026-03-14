@@ -138,20 +138,6 @@ function drawHOScene() {
   var hasImg = drawBgImage(loadedImages['room_' + currentScene]);
   if (!hasImg) {
     drawRoomFallbackBg(room);
-    // Fallback: draw furniture as the scene content
-    if (room.furniture) {
-      for (var fi = 0; fi < room.furniture.length; fi++) {
-        var f = room.furniture[fi];
-        ctx.save();ctx.shadowColor=PALETTE.accent;ctx.shadowBlur=8;
-        glowRect(f.x, f.y, f.w, f.h, 4, f.color || PALETTE.wall, PALETTE.accent + '40');
-        ctx.restore();
-        if (f.label) {
-          ctx.globalAlpha = 0.5;
-          drawT(f.label, f.x + f.w / 2, f.y + f.h / 2, 8, PALETTE.text);
-          ctx.globalAlpha = 1;
-        }
-      }
-    }
   }
 
   var objs = sceneObjects[currentScene];
