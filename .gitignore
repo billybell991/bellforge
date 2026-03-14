@@ -6,3 +6,8 @@ dist/
 .DS_Store
 Thumbs.db
 output/
+qa-temp/
+server/data/previews/
+server/data/thumbnails/
+data/previews/
+data/thumbnails/

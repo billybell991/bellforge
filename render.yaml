@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: bellforge
+    runtime: node
+    buildCommand: npm run render-build
+    startCommand: npm run render-start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GEMINI_API_KEY
+        sync: false

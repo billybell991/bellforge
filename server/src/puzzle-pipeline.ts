@@ -88,8 +88,10 @@ canvas{display:block;width:100%;height:100%}
 #hud *{pointer-events:auto}
 #hud .title{color:#f0c040;font-weight:700;font-size:0.9rem}
 #hud .info{color:rgba(255,255,255,0.7);font-size:0.8rem}
-#hud button{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:0.75rem}
-#hud button:hover{background:rgba(255,255,255,0.2)}
+#hud .toolbar{display:flex;gap:6px;align-items:center}
+#hud .toolbar button{background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;width:32px;height:32px;border-radius:6px;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;padding:0;position:relative}
+#hud .toolbar button:hover{background:rgba(255,255,255,0.25)}
+#hud .toolbar button[title]:hover::after{content:attr(title);position:absolute;top:110%;right:0;background:rgba(0,0,0,0.85);color:#fff;font-size:0.7rem;padding:4px 8px;border-radius:4px;white-space:nowrap;pointer-events:none}
 #win{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);z-index:20;flex-direction:column;gap:16px}
 #win.show{display:flex}
 #win h1{color:#f0c040;font-size:2.5rem}
@@ -101,13 +103,24 @@ canvas{display:block;width:100%;height:100%}
 <div id="hud">
   <span class="title">${title}</span>
   <span class="info" id="counter">0 / 0 placed</span>
-  <button onclick="scramble()">Scramble</button>
+  <div class="toolbar">
+    <button onclick="parent.postMessage({type:'puzzle-fullscreen'},'*')" title="Fullscreen" id="btn-fs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M4 10V4H10M20 14V20H14M10 20H4V14M14 4H20V10"/></svg></button>
+    <button onclick="scramble()" title="Scramble pieces"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M5 5C9 3 15 21 19 19M19 19L16 16M19 19L16 22"/><path d="M19 5C15 3 9 21 5 19M5 19L8 16M5 19L8 22"/></svg></button>
+    <button onclick="parent.postMessage({type:'puzzle-exit-fs'},'*')" title="Exit fullscreen" id="btn-exit" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M6 6L18 18M18 6L6 18"/></svg></button>
+  </div>
 </div>
 <canvas id="c"></canvas>
 ${hasRealImage ? `<img id="puzzle-src" src="data:image/png;base64,${result.imageBase64}" style="display:none"/>` : ''}
 <div id="win"><h1>🎉 Complete!</h1><p id="win-time"></p></div>
 <script>
 (function(){
+// Listen for fullscreen state from parent
+window.addEventListener('message',function(e){
+  if(e.data&&e.data.type==='fullscreen-state'){
+    document.getElementById('btn-fs').style.display=e.data.fullscreen?'none':'flex';
+    document.getElementById('btn-exit').style.display=e.data.fullscreen?'flex':'none';
+  }
+});
 const COLS=${cols},ROWS=${rows},TOTAL=COLS*ROWS;
 const KNOB=0.18;
 const canvas=document.getElementById('c');
@@ -204,12 +217,12 @@ function resize(){
   W=canvas.width=window.innerWidth;
   H=canvas.height=window.innerHeight;
   const margin=40;
-  const availW=W*0.65, availH=H-margin*2-40;
+  const availW=W*0.45, availH=H*0.55;
   const aspect=COLS/ROWS;
   if(availW/availH>aspect){boardH=availH;boardW=boardH*aspect;}
   else{boardW=availW;boardH=boardW/aspect;}
   boardX=(W-boardW)/2;
-  boardY=(H-boardH)/2+20;
+  boardY=margin+20;
   pieceW=boardW/COLS;
   pieceH=boardH/ROWS;
   // Update piece target positions
@@ -233,33 +246,25 @@ function initPieces(){
 
 window.scramble=function(){
   const pad=10;
-  pieces.forEach(p=>{
-    if(p.placed) return;
-    // Try left or right margins first
-    const leftSpace=boardX-pieceW-pad;
-    const rightSpace=W-boardX-boardW-pieceW-pad;
-    const useLeft=leftSpace>30&&(rightSpace<30||Math.random()>0.5);
-    const useRight=rightSpace>30&&!useLeft;
-    if(useLeft){
-      p.x=pad+Math.random()*leftSpace;
-    } else if(useRight){
-      p.x=boardX+boardW+pad+Math.random()*rightSpace;
-    } else {
-      // Margins too thin — scatter above/below the board
-      p.x=pad+Math.random()*(W-pieceW-pad*2);
-    }
-    // Y: scatter across full height, avoiding HUD
-    if(!useLeft&&!useRight){
-      // Choose above or below board
-      if(Math.random()>0.5&&boardY>pieceH+60){
-        p.y=50+Math.random()*(boardY-pieceH-60);
-      } else {
-        p.y=boardY+boardH+pad+Math.random()*Math.max(10,H-boardY-boardH-pieceH-pad*2);
-      }
-    } else {
-      p.y=50+Math.random()*(H-pieceH-60);
-    }
-    // Clamp to canvas
+  const unplaced=pieces.filter(p=>!p.placed);
+  // Build zones around the board: left, right, above, below
+  const zones=[];
+  const bPad=20; // padding from board edge
+  const lw=boardX-bPad-pieceW-pad;
+  const rw=W-boardX-boardW-bPad-pieceW-pad;
+  const th=boardY-bPad-pieceH-50;
+  const bh=H-boardY-boardH-bPad-pieceH-pad;
+  if(lw>20) zones.push({x:pad,y:50,w:lw,h:H-pieceH-60});
+  if(rw>20) zones.push({x:boardX+boardW+bPad,y:50,w:rw,h:H-pieceH-60});
+  if(th>20) zones.push({x:pad,y:50,w:W-pieceW-pad*2,h:th});
+  if(bh>20) zones.push({x:pad,y:boardY+boardH+bPad,w:W-pieceW-pad*2,h:bh});
+  // Fallback: scatter across whole canvas if no good zones
+  if(zones.length===0) zones.push({x:pad,y:50,w:W-pieceW-pad*2,h:H-pieceH-60});
+  // Distribute pieces evenly across zones
+  unplaced.forEach((p,i)=>{
+    const z=zones[i%zones.length];
+    p.x=z.x+Math.random()*Math.max(10,z.w);
+    p.y=z.y+Math.random()*Math.max(10,z.h);
     p.x=Math.max(pad,Math.min(W-pieceW-pad,p.x));
     p.y=Math.max(50,Math.min(H-pieceH-pad,p.y));
     if(${rotation}) p.rot=[0,90,180,270][Math.floor(Math.random()*4)];

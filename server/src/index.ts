@@ -32,6 +32,12 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
+// In production, serve the built client
+if (process.env.NODE_ENV === 'production') {
+  const clientDist = join(process.cwd(), '..', 'client', 'dist');
+  app.use(express.static(clientDist));
+}
+
 const server = createServer(app);
 const wss = new WebSocketServer({ server, path: '/ws' });
 
@@ -1327,9 +1333,17 @@ function waitForClient(buildId: string, timeoutMs: number): Promise<void> {
   });
 }
 
+// In production, catch-all serves the SPA for client-side routing
+if (process.env.NODE_ENV === 'production') {
+  const clientDist = join(process.cwd(), '..', 'client', 'dist');
+  app.get('*', (_req, res) => {
+    res.sendFile(join(clientDist, 'index.html'));
+  });
+}
+
 // ── Start Server ──
 
-const PORT = 3001;
+const PORT = parseInt(process.env.PORT || '3001', 10);
 server.listen(PORT, () => {
   console.log('');
   console.log('  ⚒️  ════════════════════════════════════════');

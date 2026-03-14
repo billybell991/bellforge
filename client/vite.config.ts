@@ -1,10 +1,9 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-export default defineConfig(({ command }) => ({
+export default defineConfig({
   plugins: [react()],
-  // GitHub Pages deploys to /BellForge/ subpath
-  base: command === 'build' ? '/bellforge/' : '/',
+  base: '/',
   server: {
     port: 3000,
     proxy: {
@@ -15,4 +14,4 @@ export default defineConfig(({ command }) => ({
       },
     },
   },
-}));
+});

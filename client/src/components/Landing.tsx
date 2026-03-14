@@ -98,11 +98,6 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
         <div className="entertainment-selector">
           <h2 className="entertainment-prompt">The forge is hot. What are we making?</h2>
           <div className="entertainment-cards">
-            <div className="entertainment-card" onClick={() => setEntertainmentType('game')}>
-              <span className="entertainment-card-icon">🎮</span>
-              <h3 className="entertainment-card-title">Online Game</h3>
-              <p className="entertainment-card-desc">Craft a playable game — puzzles, platformers, adventures, visual novels, and more.</p>
-            </div>
             <div className="entertainment-card" onClick={() => setEntertainmentType('adventure')}>
               <span className="entertainment-card-icon">📚</span>
               <h3 className="entertainment-card-title">Adventure</h3>
@@ -122,6 +117,11 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
               <span className="entertainment-card-icon">🧩</span>
               <h3 className="entertainment-card-title">Jigsaw Puzzle</h3>
               <p className="entertainment-card-desc">A beautiful AI-painted image cut into classic jigsaw pieces — drag, snap, and solve.</p>
+            </div>
+            <div className="entertainment-card" onClick={() => setEntertainmentType('game')}>
+              <span className="entertainment-card-icon">🎮</span>
+              <h3 className="entertainment-card-title">Online Game</h3>
+              <p className="entertainment-card-desc">Craft a playable game — puzzles, platformers, adventures, visual novels, and more.</p>
             </div>
           </div>
         </div>

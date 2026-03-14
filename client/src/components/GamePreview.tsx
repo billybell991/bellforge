@@ -39,11 +39,35 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
   // Sync fullscreen state with browser Fullscreen API events
   useEffect(() => {
     const handleChange = () => {
-      setFullscreen(!!document.fullscreenElement);
+      const isFs = !!document.fullscreenElement;
+      setFullscreen(isFs);
+      // Notify puzzle iframe of fullscreen state
+      if (isPuzzle && viewerRef.current) {
+        const iframe = viewerRef.current.querySelector('iframe');
+        iframe?.contentWindow?.postMessage({ type: 'fullscreen-state', fullscreen: isFs }, '*');
+      }
     };
     document.addEventListener('fullscreenchange', handleChange);
     return () => document.removeEventListener('fullscreenchange', handleChange);
-  }, []);
+  }, [isPuzzle]);
+
+  // Listen for postMessage from puzzle iframe for fullscreen/exit
+  useEffect(() => {
+    if (!isPuzzle) return;
+    const handleMsg = (e: MessageEvent) => {
+      if (e.data?.type === 'puzzle-fullscreen') {
+        if (viewerRef.current && !document.fullscreenElement) {
+          viewerRef.current.requestFullscreen().catch(() => {});
+        }
+      } else if (e.data?.type === 'puzzle-exit-fs') {
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+        }
+      }
+    };
+    window.addEventListener('message', handleMsg);
+    return () => window.removeEventListener('message', handleMsg);
+  }, [isPuzzle]);
 
   const toggleFullscreen = useCallback(() => {
     if (document.fullscreenElement) {
@@ -79,9 +103,6 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
             title={isComic ? 'Comic Preview' : isAdventure ? 'Adventure Preview' : isEscape ? 'Escape Room Preview' : 'Puzzle Preview'}
             sandbox="allow-scripts"
           />
-          {fullscreen && (
-            <div className="fullscreen-hint">Press <kbd>Esc</kbd> to exit fullscreen</div>
-          )}
         </div>
       ) : (
         /* Phone frame with iframe */
@@ -102,12 +123,14 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
 
       {/* Controls */}
       <div className="preview-controls">
-        <button
-          className="preview-btn preview-btn-secondary"
-          onClick={toggleFullscreen}
-        >
-          {fullscreen ? '✖️ Exit Fullscreen' : '🖥️ Fullscreen'}
-        </button>
+        {!isPuzzle && (
+          <button
+            className="preview-btn preview-btn-secondary"
+            onClick={toggleFullscreen}
+          >
+            {fullscreen ? '✖️ Exit Fullscreen' : '🖥️ Fullscreen'}
+          </button>
+        )}
         {!isNonGame && (
           <button className="preview-btn preview-btn-primary preview-btn-disabled" disabled title="Real APK pipeline coming soon">
             📲 Push to Phone — Coming Soon

@@ -1,16 +1,76 @@
 [
   {
-    "id": "9cd78637-4c7c-4eed-a6c3-0ec970ed0715",
-    "name": "Epic Landscape Puzzle",
+    "id": "a84ed810-0a42-408a-8935-0fc3eb3939ef",
+    "name": "Underwater World Puzzle",
     "rating": 0,
     "entertainmentType": "puzzle",
     "config": {
       "puzzleSubject": {
-        "id": "landscape",
-        "name": "Epic Landscape",
-        "icon": "🏔️",
-        "description": "Sweeping vistas — mountains, valleys, sunsets, and horizons",
-        "tag": "FLAGSHIP"
+        "id": "underwater",
+        "name": "Underwater World",
+        "icon": "🐠",
+        "description": "Coral reefs, deep sea creatures, and sunken treasures",
+        "tag": ""
+      },
+      "artStyle": {
+        "id": "pixel_art",
+        "name": "Pixel Art / Retro",
+        "icon": "👾",
+        "description": "Nostalgic 8-bit and 16-bit aesthetics"
+      },
+      "structure": {
+        "pieceCount": 9,
+        "difficulty": "easy",
+        "rotation": false
+      }
+    },
+    "buildId": "56c8be31-f680-43c4-90cd-c981910d219a",
+    "apkSize": "2652 KB",
+    "createdAt": "2026-03-14T13:43:07.064Z",
+    "thumbnail": "56c8be31-f680-43c4-90cd-c981910d219a.png"
+  },
+  {
+    "id": "cf31efb0-ad9d-46f3-8f64-204818b15015",
+    "name": "Abstract Art Puzzle",
+    "rating": 0,
+    "entertainmentType": "puzzle",
+    "config": {
+      "puzzleSubject": {
+        "id": "abstract",
+        "name": "Abstract Art",
+        "icon": "🎨",
+        "description": "Shapes, colors, and patterns — beautiful chaos",
+        "tag": ""
+      },
+      "artStyle": {
+        "id": "neon",
+        "name": "Neon / Synthwave",
+        "icon": "💫",
+        "description": "Glowing lights, retro-futuristic vibes"
+      },
+      "structure": {
+        "pieceCount": 9,
+        "difficulty": "easy",
+        "rotation": false
+      }
+    },
+    "buildId": "57aae073-87c1-4601-8776-d217ad8d500c",
+    "apkSize": "2378 KB",
+    "createdAt": "2026-03-14T13:50:19.933Z",
+    "thumbnail": "57aae073-87c1-4601-8776-d217ad8d500c.png"
+  },
+  {
+    "id": "76eb7eba-8c84-4aca-aff8-7e2b3acbc72a",
+    "name": "a monkey that likes zucchini Puzzle",
+    "rating": 0,
+    "entertainmentType": "puzzle",
+    "config": {
+      "puzzleSubject": {
+        "id": "custom",
+        "name": "a monkey that likes zucchini",
+        "icon": "✨",
+        "description": "a monkey that likes zucchini",
+        "tag": "NEW"
       },
       "artStyle": {
         "id": "cel_shaded",
@@ -25,8 +85,39 @@
         "rotation": false
       }
     },
-    "buildId": "45b8366f-9066-4d92-92aa-cf57e164bc05",
-    "apkSize": "2568 KB",
-    "createdAt": "2026-03-14T12:36:48.311Z"
+    "buildId": "9c80c50d-af2f-43a3-821e-b1b41e1f6b2d",
+    "apkSize": "2547 KB",
+    "createdAt": "2026-03-14T14:02:31.837Z",
+    "thumbnail": "9c80c50d-af2f-43a3-821e-b1b41e1f6b2d.png"
+  },
+  {
+    "id": "e2300882-992c-4a10-951d-fc7806c8acae",
+    "name": "your mom playing darts Puzzle",
+    "rating": 0,
+    "entertainmentType": "puzzle",
+    "config": {
+      "puzzleSubject": {
+        "id": "custom",
+        "name": "your mom playing darts",
+        "icon": "✨",
+        "description": "your mom playing darts",
+        "tag": "NEW"
+      },
+      "artStyle": {
+        "id": "neon",
+        "name": "Neon / Synthwave",
+        "icon": "💫",
+        "description": "Glowing lights, retro-futuristic vibes"
+      },
+      "structure": {
+        "pieceCount": 25,
+        "difficulty": "medium",
+        "rotation": false
+      }
+    },
+    "buildId": "56722b53-f61a-4085-bf9a-4d1541ac9b9e",
+    "apkSize": "2276 KB",
+    "createdAt": "2026-03-14T14:04:47.844Z",
+    "thumbnail": "56722b53-f61a-4085-bf9a-4d1541ac9b9e.png"
   }
 ]
