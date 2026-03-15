@@ -1094,21 +1094,23 @@ body {
 }
 
 .surprise-btn {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.85rem;
-  padding: 10px 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 12px 32px;
   border-radius: var(--radius);
-  border: 1px dashed var(--purple);
-  background: rgba(187, 134, 252, 0.08);
-  color: var(--purple);
+  border: 1px solid var(--border-card);
+  background: var(--bg-card);
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.3s ease;
   margin-top: 8px;
 }
 
 .surprise-btn:hover {
-  background: rgba(187, 134, 252, 0.15);
-  box-shadow: var(--glow-purple);
+  border-color: var(--forge-amber);
+  color: var(--forge-amber);
+  box-shadow: var(--glow-orange);
 }
 
 /* ═══════════════════════════════════════

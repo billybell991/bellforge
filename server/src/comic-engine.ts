@@ -372,8 +372,8 @@ export function generateComicPreviewHtml(story: ComicStory): string {
           html += '<div class="panel-art">' + escapeHTML(panel.artDirection || 'Panel ' + (i+1)) + '</div>';
         }
 
-        // Dialogue — positioned in zones based on speakerPosition
-        if (panel.dialogue && panel.dialogue.length > 0) {
+        // Dialogue — skip overlay when panel has illustration (dialogue is baked into the art)
+        if (!panel.illustration && panel.dialogue && panel.dialogue.length > 0) {
           html += '<div class=\"dialogue-layer\">';
           for (var d = 0; d < panel.dialogue.length; d++) {
             var dlg = panel.dialogue[d];

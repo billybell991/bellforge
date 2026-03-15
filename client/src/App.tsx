@@ -14,6 +14,64 @@ import { Library } from './components/Library';
 import { EmberField } from './components/EmberField';
 import { DebugButton } from './components/DebugButton';
 
+// Maps server stage IDs to friendly phase labels for the build banner
+function friendlyPhaseLabel(stage: string): string {
+  const labels: Record<string, string> = {
+    // Game pipeline
+    init: 'Setting up the project...',
+    brief_palette: 'Choosing the palette...',
+    brief_rooms: 'Designing the world...',
+    brief_items: 'Placing items & puzzles...',
+    brief_hints: 'Writing hints...',
+    architecture: 'Building the blueprint...',
+    rooms: 'Constructing rooms...',
+    qa_brief: 'Reviewing the blueprint...',
+    art_bg: 'Painting backgrounds...',
+    art_items: 'Drawing items...',
+    art_ui: 'Crafting the interface...',
+    logic: 'Writing game logic...',
+    inventory: 'Wiring up inventory...',
+    qa_game: 'Playtesting the game...',
+    gradle_setup: 'Assembling the project...',
+    gradle_build: 'Building the app...',
+    signing: 'Signing the app...',
+    // CYOA pipeline
+    concept: 'Dreaming up the story...',
+    outline: 'Outlining the adventure...',
+    prose: 'Writing the narrative...',
+    prose_mid: 'Expanding story branches...',
+    prose_final: 'Polishing the prose...',
+    assembly: 'Connecting the paths...',
+    illustrations: 'Painting illustrations...',
+    qa_graph: 'Checking story paths...',
+    qa_items: 'Verifying item gates...',
+    qa_endings: 'Confirming endings...',
+    // Comic pipeline
+    story: 'Crafting the story...',
+    script: 'Writing panel scripts...',
+    layouts: 'Designing page layouts...',
+    cover_art: 'Painting the cover...',
+    char_refs: 'Sketching character portraits...',
+    panel_art: 'Drawing the panels...',
+    text_overlay: 'Adding dialogue...',
+    qa_panels: 'Reviewing panel quality...',
+    qa_story: 'Checking story flow...',
+    // Escape room pipeline
+    escape: 'Building the escape room...',
+    puzzles: 'Crafting the puzzles...',
+    // Puzzle pipeline
+    puzzle: 'Generating the puzzle...',
+    illustration: 'Painting the artwork...',
+    cutting: 'Cutting jigsaw pieces...',
+    engine: 'Building the puzzle engine...',
+    qa: 'Quality check...',
+    // Shared
+    viewer: 'Assembling the viewer...',
+    complete: 'Putting on finishing touches...',
+  };
+  return labels[stage] || 'Forging...';
+}
+
 const defaultStructure: StructureConfig = {
   roomCount: 6,
   difficulty: 'standard',
@@ -196,7 +254,9 @@ export default function App() {
           if (data.type === 'progress') {
             const msg = data as WSProgressMessage;
             setBuildPercent(msg.percent);
-            setBuildStageName(msg.name);
+            // Banner shows friendly phase label; scrolling log gets the detailed message
+            const phase = friendlyPhaseLabel(msg.stage);
+            setBuildStageName(phase);
             setBuildDetail(msg.detail);
             setBuildLog((prev) => {
               // If the last entry has the same name, update it in place (heartbeat)

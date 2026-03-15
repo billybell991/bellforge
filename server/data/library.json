@@ -1,76 +1,23 @@
 [
   {
-    "id": "a84ed810-0a42-408a-8935-0fc3eb3939ef",
-    "name": "Underwater World Puzzle",
+    "id": "759da806-6935-47a5-b9b4-ad2066a1ad4e",
+    "name": "The Marrow-Song Bloom",
     "rating": 0,
-    "entertainmentType": "puzzle",
+    "entertainmentType": "comic",
     "config": {
-      "puzzleSubject": {
-        "id": "underwater",
-        "name": "Underwater World",
-        "icon": "🐠",
-        "description": "Coral reefs, deep sea creatures, and sunken treasures",
-        "tag": ""
+      "comicGenre": {
+        "id": "origin_story",
+        "name": "Origin Story",
+        "icon": "🌟",
+        "description": "A hero is born — powers discovered, destiny revealed",
+        "tag": "FLAGSHIP"
       },
-      "artStyle": {
-        "id": "pixel_art",
-        "name": "Pixel Art / Retro",
-        "icon": "👾",
-        "description": "Nostalgic 8-bit and 16-bit aesthetics"
-      },
-      "structure": {
-        "pieceCount": 9,
-        "difficulty": "easy",
-        "rotation": false
-      }
-    },
-    "buildId": "56c8be31-f680-43c4-90cd-c981910d219a",
-    "apkSize": "2652 KB",
-    "createdAt": "2026-03-14T13:43:07.064Z",
-    "thumbnail": "56c8be31-f680-43c4-90cd-c981910d219a.png"
-  },
-  {
-    "id": "cf31efb0-ad9d-46f3-8f64-204818b15015",
-    "name": "Abstract Art Puzzle",
-    "rating": 0,
-    "entertainmentType": "puzzle",
-    "config": {
-      "puzzleSubject": {
-        "id": "abstract",
-        "name": "Abstract Art",
-        "icon": "🎨",
-        "description": "Shapes, colors, and patterns — beautiful chaos",
-        "tag": ""
-      },
-      "artStyle": {
-        "id": "neon",
-        "name": "Neon / Synthwave",
-        "icon": "💫",
-        "description": "Glowing lights, retro-futuristic vibes"
-      },
-      "structure": {
-        "pieceCount": 9,
-        "difficulty": "easy",
-        "rotation": false
-      }
-    },
-    "buildId": "57aae073-87c1-4601-8776-d217ad8d500c",
-    "apkSize": "2378 KB",
-    "createdAt": "2026-03-14T13:50:19.933Z",
-    "thumbnail": "57aae073-87c1-4601-8776-d217ad8d500c.png"
-  },
-  {
-    "id": "76eb7eba-8c84-4aca-aff8-7e2b3acbc72a",
-    "name": "a monkey that likes zucchini Puzzle",
-    "rating": 0,
-    "entertainmentType": "puzzle",
-    "config": {
-      "puzzleSubject": {
-        "id": "custom",
-        "name": "a monkey that likes zucchini",
-        "icon": "✨",
-        "description": "a monkey that likes zucchini",
-        "tag": "NEW"
+      "theme": {
+        "id": "horror",
+        "name": "Horror / Supernatural",
+        "icon": "👻",
+        "description": "Dark atmospheres and spine-tingling mysteries",
+        "color": "#ff3d00"
       },
       "artStyle": {
         "id": "cel_shaded",
@@ -80,44 +27,191 @@
         "recommended": true
       },
       "structure": {
-        "pieceCount": 9,
-        "difficulty": "easy",
-        "rotation": false
+        "pageCount": 4,
+        "panelStyle": "classic",
+        "tone": "action"
+      },
+      "story": {
+        "title": "The Marrow-Song Bloom",
+        "characterName": "Malakar",
+        "setting": "A cyclopean city-necropolist built upon the petrified, still-groaning remains of a nameless Elder Horror, whose bone-towers pierce the perpetually twilight sky like jagged monuments to forgotten dread.",
+        "description": "Malakar, an ancient spirit bound by a forgotten pact, patrols the city’s labyrinthine ossuaries, his existence a ceaseless vigil. He slowly unearths a horrifying truth: he is not merely a guardian, but the living vessel of the Elder Horror's nascent consciousness, destined to shepherd its full reawakening by harvesting the dread of those who dare explore its skeletal form."
       }
     },
-    "buildId": "9c80c50d-af2f-43a3-821e-b1b41e1f6b2d",
-    "apkSize": "2547 KB",
-    "createdAt": "2026-03-14T14:02:31.837Z",
-    "thumbnail": "9c80c50d-af2f-43a3-821e-b1b41e1f6b2d.png"
+    "buildId": "460a1433-254e-414e-9b08-6dee6429c643",
+    "apkSize": "31302 KB",
+    "createdAt": "2026-03-14T23:57:31.369Z"
   },
   {
-    "id": "e2300882-992c-4a10-951d-fc7806c8acae",
-    "name": "your mom playing darts Puzzle",
+    "id": "72610f4b-b0ed-4cf7-aca7-77c5e77e1c27",
+    "name": "The Groaning Spire",
     "rating": 0,
-    "entertainmentType": "puzzle",
+    "entertainmentType": "comic",
     "config": {
-      "puzzleSubject": {
-        "id": "custom",
-        "name": "your mom playing darts",
-        "icon": "✨",
-        "description": "your mom playing darts",
-        "tag": "NEW"
+      "comicGenre": {
+        "id": "origin_story",
+        "name": "Origin Story",
+        "icon": "🌟",
+        "description": "A hero is born — powers discovered, destiny revealed",
+        "tag": "FLAGSHIP"
+      },
+      "theme": {
+        "id": "horror",
+        "name": "Horror / Supernatural",
+        "icon": "👻",
+        "description": "Dark atmospheres and spine-tingling mysteries",
+        "color": "#ff3d00"
       },
       "artStyle": {
-        "id": "neon",
-        "name": "Neon / Synthwave",
-        "icon": "💫",
-        "description": "Glowing lights, retro-futuristic vibes"
+        "id": "cel_shaded",
+        "name": "Cel-Shaded / Toonish",
+        "icon": "🎨",
+        "description": "Bold outlines, flat colors, cartoon charm",
+        "recommended": true
       },
       "structure": {
-        "pieceCount": 25,
-        "difficulty": "medium",
-        "rotation": false
+        "pageCount": 4,
+        "panelStyle": "classic",
+        "tone": "action"
+      },
+      "story": {
+        "title": "The Groaning Spire",
+        "characterName": "Morthos",
+        "setting": "The Groaning Spire, a cyclopean edifice of petrified bone and weeping stone, endlessly churns through the brackish, soul-choked waters of the Lamenter's Fen, a bog where forgotten blasphemies rise as hungry specters.",
+        "description": "Morthos, the last keeper, tends the Groaning Spire, a colossal beacon whose ghastly, siphoning light barely holds back the spectral hunger of the Lamenter's Fen. He believes the Spire wards off ancient evils lurking beneath the peat, but slowly uncovers a horrifying truth: the Spire is not a shield, but a gargantuan, living prison, and its light is slowly devouring *him*, binding his very existence to the escalating horror it contains—a horror whose origin story is intimately, catastrophically his own."
       }
     },
-    "buildId": "56722b53-f61a-4085-bf9a-4d1541ac9b9e",
-    "apkSize": "2276 KB",
-    "createdAt": "2026-03-14T14:04:47.844Z",
-    "thumbnail": "56722b53-f61a-4085-bf9a-4d1541ac9b9e.png"
+    "buildId": "b30d0c8c-c2e4-4f99-a3ef-7e87a5919d0f",
+    "apkSize": "30408 KB",
+    "createdAt": "2026-03-15T00:06:02.761Z"
+  },
+  {
+    "id": "61052807-6e75-401c-a4ae-0c164e2416c8",
+    "name": "The Inverse Vessel",
+    "rating": 0,
+    "entertainmentType": "comic",
+    "config": {
+      "comicGenre": {
+        "id": "origin_story",
+        "name": "Origin Story",
+        "icon": "🌟",
+        "description": "A hero is born — powers discovered, destiny revealed",
+        "tag": "FLAGSHIP"
+      },
+      "theme": {
+        "id": "horror",
+        "name": "Horror / Supernatural",
+        "icon": "👻",
+        "description": "Dark atmospheres and spine-tingling mysteries",
+        "color": "#ff3d00"
+      },
+      "artStyle": {
+        "id": "cel_shaded",
+        "name": "Cel-Shaded / Toonish",
+        "icon": "🎨",
+        "description": "Bold outlines, flat colors, cartoon charm",
+        "recommended": true
+      },
+      "structure": {
+        "pageCount": 4,
+        "panelStyle": "classic",
+        "tone": "action"
+      },
+      "story": {
+        "title": "The Inverse Vessel",
+        "characterName": "Threnos",
+        "setting": "Within the sprawling, lightless maw of Blackwood Asylum, where the air itself tastes of forgotten sorrow and ancient rust, every shattered mirror doesn't reflect, but instead offers a chilling, inverted window into moments that *should* have been.",
+        "description": "Threnos, a patient trapped within the Blackwood Asylum, believes he is perpetually undergoing a cycle of agonizing, archaic treatments, oblivious that he is the collective, corporeal echo of every un-mourned soul within its walls. To break free from this spectral torment, he must perform an act of 'retroactive mourning' – accepting a death that has not yet occurred in conventional time – thus untangling the inverse reality woven from generations of denied grief."
+      }
+    },
+    "buildId": "278ec225-81a7-44ca-9c48-b6ad52a9d5f3",
+    "apkSize": "29947 KB",
+    "createdAt": "2026-03-15T00:36:03.662Z"
+  },
+  {
+    "id": "98623ec8-d986-42ba-9c75-db2b0a6d54eb",
+    "name": "The Dirge Weaver's Pact",
+    "rating": 0,
+    "entertainmentType": "comic",
+    "config": {
+      "comicGenre": {
+        "id": "origin_story",
+        "name": "Origin Story",
+        "icon": "🌟",
+        "description": "A hero is born — powers discovered, destiny revealed",
+        "tag": "FLAGSHIP"
+      },
+      "theme": {
+        "id": "horror",
+        "name": "Horror / Supernatural",
+        "icon": "👻",
+        "description": "Dark atmospheres and spine-tingling mysteries",
+        "color": "#ff3d00"
+      },
+      "artStyle": {
+        "id": "cel_shaded",
+        "name": "Cel-Shaded / Toonish",
+        "icon": "🎨",
+        "description": "Bold outlines, flat colors, cartoon charm",
+        "recommended": true
+      },
+      "structure": {
+        "pageCount": 4,
+        "panelStyle": "classic",
+        "tone": "action"
+      },
+      "story": {
+        "title": "The Dirge Weaver's Pact",
+        "characterName": "Xylos",
+        "setting": "The Charnel Chimes, a sprawling, subterranean cathedral carved not from stone, but from a calcified, monstrous ear, where every reverberation is a whisper from a soul trapped in a repeating loop of their dying scream.",
+        "description": "Xylos, a burdened 'sound-courier,' is cursed to traverse the vast, echoing hallways of the Charnel Chimes, meticulously collecting the crystalline fragments of dying echoes from souls caught in eternal sonic torment. The true horror lies in the delivery: Xylos must consume these fragments, slowly becoming a living conduit for the 'Unsound' that feeds the cathedral, and the only escape demands an act of perception that unravels not just sound, but the very concept of being heard."
+      }
+    },
+    "buildId": "c3c65469-032f-4b2a-8907-43c4ddbcf964",
+    "apkSize": "28092 KB",
+    "createdAt": "2026-03-15T00:55:24.351Z"
+  },
+  {
+    "id": "47613b7b-3d5f-40a2-9ae7-66ce663ee4fb",
+    "name": "Maw of the Petrified",
+    "rating": 0,
+    "entertainmentType": "comic",
+    "config": {
+      "comicGenre": {
+        "id": "origin_story",
+        "name": "Origin Story",
+        "icon": "🌟",
+        "description": "A hero is born — powers discovered, destiny revealed",
+        "tag": "FLAGSHIP"
+      },
+      "theme": {
+        "id": "horror",
+        "name": "Horror / Supernatural",
+        "icon": "👻",
+        "description": "Dark atmospheres and spine-tingling mysteries",
+        "color": "#ff3d00"
+      },
+      "artStyle": {
+        "id": "cel_shaded",
+        "name": "Cel-Shaded / Toonish",
+        "icon": "🎨",
+        "description": "Bold outlines, flat colors, cartoon charm",
+        "recommended": true
+      },
+      "structure": {
+        "pageCount": 4,
+        "panelStyle": "classic",
+        "tone": "action"
+      },
+      "story": {
+        "title": "Maw of the Petrified",
+        "characterName": "Malakor Vane",
+        "setting": "Perched precariously atop the fossilized remains of a colossal, sky-swimming leviathan, an eternally twilight shantytown known as the 'Baleen Borough' drifts through a perpetually starless void, echoing with the moans of the creature's forgotten consciousness.",
+        "description": "Malakor Vane, a reclusive necromancer, believes he is attempting to sever the Baleen Borough from the monstrous, slumbering spirit of the leviathan it rests upon—a spirit he inadvertently awakened centuries ago. His only guide is a seemingly benevolent, whispering entity, a formless shadow that promises salvation, unaware it is the very nascent horror he means to contain, steering him towards its grotesque rebirth. The 'good deed' is the final step in its complete manifestation."
+      }
+    },
+    "buildId": "b76e726d-86f4-4017-a74f-30b56e437160",
+    "apkSize": "30939 KB",
+    "createdAt": "2026-03-15T01:10:51.005Z"
   }
 ]

@@ -1,7 +1,7 @@
 // ── AI Comics Pipeline ──
 // Generates a complete comic book via Gemini + Imagen
 // Cover: 100% Gemini (title + comic chrome, NO ANTI_TEXT)
-// Interior: Per-PANEL Imagen illustrations (scene art, ANTI_TEXT) + HTML dialogue overlays
+// Interior: Per-PANEL illustrations with dialogue BAKED IN (speech bubbles, thought bubbles, narration boxes composed by the image generator)
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { ComicConfig } from './pipeline/types.js';
@@ -116,6 +116,127 @@ function parseJsonResponse(text: string | null): Record<string, unknown> | null 
 
 function sleep(ms: number): Promise<void> {
   return new Promise(r => setTimeout(r, ms));
+}
+
+// ── Panel QA — Gemini vision analyzes each panel after generation ──
+
+interface PanelQAResult {
+  pass: boolean;
+  reason: string;
+}
+
+// Character reference portraits — keyed by character name
+type CharacterRefs = Map<string, string>; // name → base64 PNG
+
+async function generateCharacterRefs(
+  concept: ComicConcept,
+  styleAnchor: string,
+  onProgress?: (msg: string) => void,
+): Promise<CharacterRefs> {
+  const refs: CharacterRefs = new Map();
+  const allChars = [
+    { name: concept.protagonist.name, visual: concept.protagonist.visualDescription },
+    ...concept.characters.map(c => ({ name: c.name, visual: c.visualDescription })),
+  ];
+
+  for (let i = 0; i < allChars.length; i++) {
+    const char = allChars[i];
+    onProgress?.(`Generating reference portrait ${i + 1}/${allChars.length}: ${char.name}...`);
+
+    const prompt = `${styleAnchor} character reference sheet, single character portrait. ${char.visual}. Front-facing three-quarter view, neutral standing pose, clean simple background, full body visible from head to feet, consistent studio lighting, clear view of face and outfit details. ${ANTI_TEXT}`;
+    const img = await generateImage(prompt, '3:4');
+    if (img) {
+      refs.set(char.name, img);
+      console.log(`[Char Ref] Generated reference portrait for ${char.name}`);
+    } else {
+      console.warn(`[Char Ref] Failed to generate reference for ${char.name}`);
+    }
+    if (i < allChars.length - 1) await sleep(1500);
+  }
+
+  return refs;
+}
+
+async function qaPanel(
+  base64Png: string,
+  artDirection: string,
+  expectedCharacters: string[],
+  setting: string,
+  charRefs?: CharacterRefs,
+): Promise<PanelQAResult> {
+  if (!model) return { pass: true, reason: 'Gemini unavailable — auto-pass' };
+
+  const charList = expectedCharacters.length > 0
+    ? `Expected characters: ${expectedCharacters.join(', ')}.`
+    : 'No specific characters expected.';
+
+  // Build multimodal parts: panel image + any reference portraits for expected characters
+  const parts: { inlineData: { mimeType: string; data: string } }[] | { text: string }[] = [];
+  const imageParts: Array<{ inlineData: { mimeType: string; data: string } } | { text: string }> = [];
+
+  // Add reference portraits first (if available)
+  const refNames: string[] = [];
+  if (charRefs && expectedCharacters.length > 0) {
+    for (const name of expectedCharacters) {
+      const ref = charRefs.get(name);
+      if (ref) {
+        imageParts.push({ text: `Reference portrait for ${name}:` });
+        imageParts.push({ inlineData: { mimeType: 'image/png', data: ref } });
+        refNames.push(name);
+      }
+    }
+  }
+
+  // Add the panel image
+  imageParts.push({ text: 'Panel to review:' });
+  imageParts.push({ inlineData: { mimeType: 'image/png', data: base64Png } });
+
+  const refCheck = refNames.length > 0
+    ? `\n5. CHARACTER_MISMATCH — compare characters in the panel against the reference portraits provided above. Flag if hair color/style, clothing, or build clearly doesn't match the reference (e.g. reference shows red hair but panel shows blonde, reference shows leather jacket but panel shows robes)`
+    : '';
+
+  const prompt = `You are a comic book art QA reviewer. Analyze this comic panel image against the intended art direction.
+
+Art direction: "${artDirection}"
+Setting: "${setting}"
+${charList}
+
+Check for these issues ONLY:
+1. ILLEGIBLE_TEXT — if the panel contains speech bubbles or narration boxes, check that the text inside them is readable and not garbled/misspelled gibberish. Minor spelling variations are OK, but completely unreadable text is a problem.
+2. WRONG_CHARACTERS — expected characters are missing, or extra unexpected characters appear
+3. BROKEN_ANATOMY — severely distorted faces, merged body parts, extra limbs
+4. WRONG_SCENE — the scene doesn't match the described setting at all${refCheck}
+
+Be lenient on artistic interpretation — only flag clear, obvious problems.
+Minor style differences are fine. Focus on deal-breakers.
+
+Output JSON:
+{"pass": true} if the panel is acceptable, or
+{"pass": false, "reason": "ISSUE_TYPE: brief description"} if it has a clear problem.`;
+
+  imageParts.push({ text: prompt });
+
+  try {
+    const result = await model.generateContent({
+      contents: [{
+        role: 'user',
+        parts: imageParts,
+      }],
+      generationConfig: {
+        temperature: 0.2,
+        responseMimeType: 'application/json',
+      } as Parameters<typeof model.generateContent>[0] extends { generationConfig?: infer G } ? G : never,
+    });
+    const text = result.response.text();
+    const parsed = parseJsonResponse(text);
+    if (parsed && typeof parsed.pass === 'boolean') {
+      return { pass: parsed.pass, reason: (parsed.reason as string) || '' };
+    }
+  } catch (e) {
+    console.warn('[Panel QA] Gemini error:', String(e).slice(0, 120));
+  }
+  // On any failure, auto-pass — never block the pipeline
+  return { pass: true, reason: 'QA error — auto-pass' };
 }
 
 function getArtStylePrefix(artStyleId: string): string {
@@ -240,7 +361,7 @@ export async function phasePanelScripts(
     const batch = outline.slice(i, i + BATCH_SIZE);
     const batchIdx = Math.floor(i / BATCH_SIZE);
     const pageRange = batch.length === 1 ? `page ${batch[0].pageNumber}` : `pages ${batch[0].pageNumber}-${batch[batch.length - 1].pageNumber}`;
-    onProgress?.(`Writing detailed scripts for ${pageRange}...`, batchIdx, totalBatches);
+    onProgress?.(`Writing scripts for ${pageRange} of ${outline.length}...`, batchIdx, totalBatches);
 
     const prompt = `You are scripting panel-by-panel layouts for a ${config.comicGenre.name} comic called "${concept.title}".
 
@@ -273,10 +394,13 @@ Output valid JSON array:
 
 RULES:
 - Exactly 3 panels per page: one establishing/wide shot, one mid/action shot, one close-up/reaction shot
-- "speech" for speech bubbles, "thought" for thought bubbles, "narration" for caption boxes
-- speakerPosition: where the speaker is in the panel art ("left", "right", or "center") — bubbles will be placed on the OPPOSITE side
+- "speech" for spoken dialogue OUT LOUD to another character (the default — use this most of the time)
+- "thought" for RARE private inner monologue ONLY — use sparingly (max 1 per page, and only when a character is alone or hiding their true feelings). Do NOT use thought bubbles for normal reactions or observations.
+- "narration" for scene-setting captions or omniscient narrator (e.g. "Meanwhile..." or "Three hours later..."). Keep narration SHORT — 1 sentence max.
+- Most panels should use "speech" — characters talking to each other drives the story. Avoid panels where nobody speaks.
+- speakerPosition: where the speaker is in the panel art ("left", "right", or "center") — bubbles will be placed near the speaker
 - In artDirection, position characters on the side matching their speakerPosition (e.g. if speakerPosition is "left", describe the character on the left side of the panel)
-- Keep dialogue punchy — 1-2 short sentences per bubble max
+- Keep dialogue punchy — 1-2 short sentences per bubble max. Keep text SIMPLE — avoid long or uncommon words (the AI art generator struggles to spell them).
 - Art direction should be vivid and specific about composition, not style
 
 Output ONLY the JSON array.`;
@@ -328,6 +452,11 @@ Output ONLY the JSON array.`;
         });
       }
     }
+
+    // Report what was scripted in this batch
+    const batchPages = allBeats.slice(-batch.length);
+    const totalPanelsInBatch = batchPages.reduce((s, b) => s + (b.panels?.length || 0), 0);
+    onProgress?.(`Scripted ${pageRange} (${totalPanelsInBatch} panels) — ${allBeats.length}/${outline.length} pages done`, batchIdx, totalBatches);
   }
 
   return allBeats;
@@ -447,8 +576,15 @@ export async function runComicPipeline(
     ...concept.characters.map(c => `${c.name}: ${c.visualDescription}`),
   ].join('. ');
 
-  // 3a: Cover — NO ANTI_TEXT, Gemini renders title + comic book design elements
-  sendProgress(35, 'Generating cover artwork...', 'cover_art');
+  // 3a: Character reference portraits — establishes visual ground truth
+  sendProgress(33, `Generating ${concept.characters.length + 1} character reference portraits...`, 'char_refs');
+  const charRefs = await generateCharacterRefs(concept, styleAnchor, (msg) => {
+    sendProgress(34, msg, 'char_refs');
+  });
+  sendProgress(35, `Character refs: ${charRefs.size} portraits generated`, 'char_refs');
+
+  // 3b: Cover — NO ANTI_TEXT, Gemini renders title + comic book design elements
+  sendProgress(36, 'Generating cover artwork...', 'cover_art');
   const coverPrompt = `${styleAnchor} Design this as a complete, professional comic book cover that looks like an authentic published comic book. Include ALL standard comic cover elements: publisher logo box, issue number, barcode, price stamp. The title of the comic is "${concept.title}" — render it prominently. ${concept.protagonist.visualDescription} should dominate the composition in a dramatic pose. The title should NOT cover the hero's face.`;
   const coverImg = await generateImage(coverPrompt, '3:4');
   if (coverImg) {
@@ -456,12 +592,14 @@ export async function runComicPipeline(
   }
   sendProgress(40, coverImg ? 'Cover artwork generated' : 'Cover generation failed — using fallback', 'cover_art');
 
-  // 3b: Interior panels — individual panel illustrations (scene art only)
-  // ANTI_TEXT keeps panels clean of AI-hallucinated text; HTML viewer overlays
-  // dialogue bubbles, thought bubbles, and narration boxes via CSS.
+  // 3c: Interior panels — dialogue baked into each panel's art prompt
+  // Image generator composes speech bubbles, thought bubbles, and narration boxes naturally.", "oldString": "  // 3c: Interior panels — individual panel illustrations with QA/retry loop\n  // ANTI_TEXT keeps panels clean of AI-hallucinated text; HTML viewer overlays\n  // dialogue bubbles, thought bubbles, and narration boxes via CSS.
+  // After each panel generates, Gemini vision QAs it. Failures trigger retry (max 2).
   const totalPanelImages = story.pages.reduce((sum, p) => sum + p.panels.length, 0);
   let panelsDone = 0;
   let imagesGenerated = 0;
+  let qaRetries = 0;
+  const MAX_PANEL_RETRIES = 2;
 
   for (let i = 0; i < story.pages.length; i++) {
     const page = story.pages[i];
@@ -480,10 +618,69 @@ export async function runComicPipeline(
         ? `Characters visible: ${panelCharNames.join(', ')}. ${charBlock}`
         : charBlock;
 
-      const panelPrompt = `${styleAnchor} single comic book panel illustration. ${panel.artDirection}. Setting: ${page.setting}. ${charRef}. No text, no speech bubbles, no captions. ${ANTI_TEXT}`;
-      const panelImg = await generateImage(panelPrompt, '4:3');
-      if (panelImg) {
-        panel.illustration = `data:image/png;base64,${panelImg}`;
+      // Build character-anchored prompt — forceful consistency instruction
+      const charAnchors = panelCharNames.map(name => {
+        const protag = concept.protagonist;
+        if (name === protag.name) return `${name} MUST EXACTLY match: ${protag.visualDescription}`;
+        const found = concept.characters.find(c => c.name === name);
+        return found ? `${name} MUST EXACTLY match: ${found.visualDescription}` : name;
+      });
+      const charAnchorBlock = charAnchors.length > 0
+        ? `CRITICAL — Character appearance rules (DO NOT deviate):\n${charAnchors.join('\n')}\n`
+        : charRef;
+
+      // Build dialogue instruction block for the image prompt
+      const dialogueLines = (panel.dialogue || []).map(d => {
+        if (d.type === 'narration') {
+          return `A flat rectangular yellow narration caption box at the top reads: "${d.text}"`;
+        } else if (d.type === 'thought') {
+          return `A cloud-shaped thought bubble from ${d.speaker} (on the ${d.speakerPosition || 'center'}) reads: "${d.text}"`;
+        } else {
+          return `A round white speech bubble with tail pointing toward ${d.speaker} (on the ${d.speakerPosition || 'center'}) reads: "${d.text}"`;
+        }
+      });
+      const dialogueBlock = dialogueLines.length > 0
+        ? `\nDialogue to render IN the image:\n${dialogueLines.join('\n')}\nIMPORTANT: Render these speech/thought/narration elements as part of the comic art. Place bubbles near their speakers without covering faces. Each speech or thought bubble must have exactly ONE tail, and it must point directly at the speaker's face. Do NOT add any other text or dialogue beyond what is listed above.`
+        : '\nThis panel has NO dialogue — do not add any text, speech bubbles, or captions.';
+
+      const panelPrompt = `${styleAnchor} single comic book panel illustration. ${panel.artDirection}. Setting: ${page.setting}. ${charAnchorBlock}.${dialogueBlock}`;
+
+      // Generate with QA/retry loop
+      let bestImg: string | null = null;
+      let bestReason = '';
+
+      for (let attempt = 0; attempt <= MAX_PANEL_RETRIES; attempt++) {
+        const panelImg = await generateImage(panelPrompt, '4:3');
+        if (!panelImg) {
+          console.warn(`[Panel Art] Page ${i + 1} Panel ${j + 1}: Imagen failed (attempt ${attempt + 1})`);
+          if (attempt < MAX_PANEL_RETRIES) await sleep(2000);
+          continue;
+        }
+
+        // First successful image becomes our fallback best
+        if (!bestImg) bestImg = panelImg;
+
+        // QA check via Gemini vision (with character reference portraits for consistency)
+        const qa = await qaPanel(panelImg, panel.artDirection, panelCharNames, page.setting, charRefs);
+
+        if (qa.pass) {
+          bestImg = panelImg;
+          console.log(`[Panel QA] Page ${i + 1} Panel ${j + 1}: PASS${attempt > 0 ? ` (retry ${attempt})` : ''}`);
+          break;
+        } else {
+          bestImg = panelImg; // Keep latest as best — it's at least a valid image
+          bestReason = qa.reason;
+          console.warn(`[Panel QA] Page ${i + 1} Panel ${j + 1}: FAIL — ${qa.reason}${attempt < MAX_PANEL_RETRIES ? ' → retrying' : ' → accepting best'}`);
+          if (attempt < MAX_PANEL_RETRIES) {
+            qaRetries++;
+            sendProgress(pct, `Panel ${panelsDone}/${totalPanelImages} QA issue: ${qa.reason} — retrying...`, 'panel_art');
+            await sleep(2000);
+          }
+        }
+      }
+
+      if (bestImg) {
+        panel.illustration = `data:image/png;base64,${bestImg}`;
         imagesGenerated++;
       }
 
@@ -491,7 +688,8 @@ export async function runComicPipeline(
       if (panelsDone < totalPanelImages) await sleep(1500);
     }
   }
-  sendProgress(70, `Art complete: ${imagesGenerated}/${totalPanelImages} panel illustrations generated`, 'panel_art');
+  const retryNote = qaRetries > 0 ? ` (${qaRetries} QA retries)` : '';
+  sendProgress(70, `Art complete: ${imagesGenerated}/${totalPanelImages} panel illustrations generated${retryNote}`, 'panel_art');
 
   sendProgress(75, 'Finalizing pages...', 'text_overlay');
 
