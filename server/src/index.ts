@@ -10,7 +10,7 @@ import { join } from 'path';
 import 'dotenv/config';
 import { generatePreviewHtml } from './pipeline/preview-gen.js';
 import type { GameImages } from './pipeline/preview-gen.js';
-import { generateStory, generateAutoConfig, generateCreativeBrief, generateBriefPalette, generateBriefRooms, generateBriefItems, generateBriefHints, qaCreativeBrief, qaGameCode, qaScoredReport, isGeminiAvailable } from './gemini.js';
+import { generateStory, generateAutoConfig, generateCreativeBrief, generateBriefPalette, generateBriefRooms, generateBriefItems, generateBriefHints, qaCreativeBrief, qaGameCode, qaScoredReport, qaContentReport, isGeminiAvailable } from './gemini.js';
 import { generateGameImages } from './imagen.js';
 import type { GameConfig } from './pipeline/types.js';
 import type { AdventureConfig } from './pipeline/types.js';
@@ -99,7 +99,9 @@ if (!existsSync(THUMBNAILS_DIR)) mkdirSync(THUMBNAILS_DIR, { recursive: true });
 
 function saveThumbnail(buildId: string, base64: string): string {
   const filename = `${buildId}.png`;
-  writeFileSync(join(THUMBNAILS_DIR, filename), Buffer.from(base64, 'base64'));
+  // Strip data URI prefix if present
+  const raw = base64.replace(/^data:image\/\w+;base64,/, '');
+  writeFileSync(join(THUMBNAILS_DIR, filename), Buffer.from(raw, 'base64'));
   return filename;
 }
 
@@ -196,39 +198,39 @@ function getPipelineStages(config: Record<string, unknown>): PipelineStage[] {
 
   return [
     { id: 'init', name: '🔥 Lighting the Forge', percent: 3, duration: 1200,
-      detail: 'Laying the foundation stones of your game world...' },
+      detail: 'Laying the foundation stones of your game world' },
     { id: 'architecture', name: '🏗️ Raising the Framework', percent: 6, duration: 1800,
-      detail: `Bending iron and code into a ${genre} skeleton...` },
+      detail: `Bending iron and code into a ${genre} skeleton` },
     { id: 'brief_palette', name: '🎨 Mixing the Paints', percent: 10, duration: 3000,
-      detail: 'Choosing pigments by the light of the forge fire...' },
+      detail: 'Choosing pigments by the light of the forge fire' },
     { id: 'brief_rooms', name: `🎬 Drafting ${roomCount} ${t.Scenes}`, percent: 18, duration: 4000,
-      detail: `Mapping uncharted territories — placing ${t.furnishings} in every corner...` },
+      detail: `Mapping uncharted territories — placing ${t.furnishings} in every corner` },
     { id: 'brief_items', name: '🧩 Forging Keys & Mysteries', percent: 28, duration: 3000,
-      detail: 'Hammering out collectibles, locked doors, and brain-teasers...' },
+      detail: 'Hammering out collectibles, locked doors, and brain-teasers' },
     { id: 'brief_hints', name: '💬 Inscribing Guiding Whispers', percent: 33, duration: 2000,
-      detail: 'Writing cryptic nudges for when adventurers lose their way...' },
+      detail: 'Writing cryptic nudges for when adventurers lose their way' },
     { id: 'qa_brief', name: '🔍 Gemini QA — Inspecting the Blueprint', percent: 37, duration: 3000,
-      detail: 'Gemini reviews the creative brief for broken puzzles, orphan items, and theme drift...' },
+      detail: 'Gemini reviews the creative brief for broken puzzles, orphan items, and theme drift' },
     { id: 'rooms', name: `🎬 Charting ${roomCount} ${t.Scenes}`, percent: 42, duration: 2500,
-      detail: `Placing hotspots, pathways, and hidden secrets across the map...` },
+      detail: `Placing hotspots, pathways, and hidden secrets across the map` },
     { id: 'art_bg', name: `🖼️ Painting ${t.Scenes} on Canvas`, percent: 48, duration: 4000,
-      detail: `Imagen is bringing ${roomCount} ${t.scenes} to life in ${artStyle} style...` },
+      detail: `Imagen is bringing ${roomCount} ${t.scenes} to life in ${artStyle} style` },
     { id: 'art_items', name: '✨ Sculpting Item Sprites', percent: 58, duration: 3500,
-      detail: 'Breathing detail into every collectible, tool, and artifact...' },
+      detail: 'Breathing detail into every collectible, tool, and artifact' },
     { id: 'art_ui', name: '🖼️ Gilding the Interface', percent: 64, duration: 2500,
-      detail: 'Etching the HUD, panels, and frames that guide the player...' },
+      detail: 'Etching the HUD, panels, and frames that guide the player' },
     { id: 'logic', name: '⚡ Enchanting with Logic', percent: 72, duration: 3000,
-      detail: `Weaving puzzle gates, state machines, and cause-and-effect into every ${t.scene}...` },
+      detail: `Weaving puzzle gates, state machines, and cause-and-effect into every ${t.scene}` },
     { id: 'inventory', name: '🎒 Stitching the Adventurer\'s Pack', percent: 78, duration: 2000,
-      detail: 'Binding the bag, wiring item slots, and attaching hotspot triggers...' },
+      detail: 'Binding the bag, wiring item slots, and attaching hotspot triggers' },
     { id: 'qa_game', name: '🔍 Gemini QA — Playtesting the Code', percent: 82, duration: 3000,
-      detail: 'Gemini reviews the assembled game logic for dead ends, broken puzzles, and unreachable items...' },
+      detail: 'Gemini reviews the assembled game logic for dead ends, broken puzzles, and unreachable items' },
     { id: 'gradle_setup', name: '📦 Assembling the Artifact', percent: 87, duration: 2000,
-      detail: 'Wrapping the game code into an installable Android package...' },
+      detail: 'Wrapping the game code into an installable Android package' },
     { id: 'gradle_build', name: '🔨 Tempering the Build', percent: 92, duration: 5000,
-      detail: 'Compiling, linking, and hardening — the final heat treat...' },
+      detail: 'Compiling, linking, and hardening — the final heat treat' },
     { id: 'signing', name: '🔐 Stamping the Forge Mark', percent: 96, duration: 1500,
-      detail: 'Signing the APK with the forge\'s seal of quality...' },
+      detail: 'Signing the APK with the forge\'s seal of quality' },
     { id: 'complete', name: '🎉 Build Complete!', percent: 100, duration: 500,
       detail: 'Your game is ready to deploy!' },
   ];
@@ -646,7 +648,7 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
     } else if (stage.id === 'brief_palette') {
       // Chunk 1: Palette + vibe + opening/ending text
       const nextPercent = stages.find(s => s.id === 'brief_rooms')?.percent ?? stage.percent + 8;
-      sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🎨 Choosing color palette & atmosphere', percent: stage.percent + 1, detail: 'Mixing pigments and setting the mood by firelight...', timestamp: Date.now() });
+      sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🎨 Choosing color palette & atmosphere', percent: stage.percent + 1, detail: 'Mixing pigments and setting the mood by firelight', timestamp: Date.now() });
       const chunk1 = await generateBriefPalette(gameConfig, (msg) => {
         sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🎨 Designing visual identity', percent: stage.percent + 3, detail: msg, timestamp: Date.now() });
       });
@@ -660,9 +662,9 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
       // Chunk 2: Scene layouts with furniture
       const nextPercent = stages.find(s => s.id === 'brief_items')?.percent ?? stage.percent + 10;
       const sceneCount = gameConfig.structure.roomCount;
-      sendProgress(buildId, { type: 'progress', stage: stage.id, name: `🏗️ Designing ${sceneCount} unique scenes`, percent: stage.percent + 1, detail: 'Sketching floor plans, placing furnishings, adjusting the light...', timestamp: Date.now() });
+      sendProgress(buildId, { type: 'progress', stage: stage.id, name: `🏗️ Designing ${sceneCount} unique scenes`, percent: stage.percent + 1, detail: 'Sketching floor plans, placing furnishings, adjusting the light', timestamp: Date.now() });
       briefRooms = await generateBriefRooms(gameConfig, briefPalette!, (msg) => {
-        sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🏗️ Sketching blueprints by firelight...', percent: stage.percent + 3, detail: msg, timestamp: Date.now() });
+        sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🏗️ Sketching blueprints by firelight', percent: stage.percent + 3, detail: msg, timestamp: Date.now() });
       });
       // Report each scene individually with smooth progress
       const perSceneRange = nextPercent - (stage.percent + 4);
@@ -678,7 +680,7 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
     } else if (stage.id === 'brief_items') {
       // Chunk 3: Items + puzzle connections
       const nextPercent = stages.find(s => s.id === 'brief_hints')?.percent ?? stage.percent + 7;
-      sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🧩 Crafting items & puzzle gates', percent: stage.percent + 1, detail: 'Forging keys, locks, and mysteries for explorers to uncover...', timestamp: Date.now() });
+      sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🧩 Crafting items & puzzle gates', percent: stage.percent + 1, detail: 'Forging keys, locks, and mysteries for explorers to uncover', timestamp: Date.now() });
       const chunk3 = await generateBriefItems(gameConfig, briefRooms!, (msg) => {
         sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🧩 Wiring puzzle logic', percent: stage.percent + 3, detail: msg, timestamp: Date.now() });
       });
@@ -689,7 +691,7 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
     } else if (stage.id === 'brief_hints') {
       // Chunk 4: Context-aware hints
       const nextPercent = stages.find(s => s.id === 'qa_brief')?.percent ?? stage.percent + 5;
-      sendProgress(buildId, { type: 'progress', stage: stage.id, name: '💬 Inscribing guiding whispers', percent: stage.percent + 1, detail: 'Carving cryptic hints into the walls for lost adventurers...', timestamp: Date.now() });
+      sendProgress(buildId, { type: 'progress', stage: stage.id, name: '💬 Inscribing guiding whispers', percent: stage.percent + 1, detail: 'Carving cryptic hints into the walls for lost adventurers', timestamp: Date.now() });
       briefHints = await generateBriefHints(gameConfig, briefRooms!, briefItems!, (msg) => {
         sendProgress(buildId, { type: 'progress', stage: stage.id, name: '💬 Polishing hint text', percent: stage.percent + 2, detail: msg, timestamp: Date.now() });
       });
@@ -709,7 +711,7 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
     } else if (stage.id === 'qa_brief') {
       // Gemini QA pass — review the brief for broken puzzles, orphan items, theme drift
       if (creativeBrief) {
-        sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🔍 Gemini QA — inspecting the blueprint', percent: stage.percent + 1, detail: 'Checking puzzle chains, item references, theme coherence...', timestamp: Date.now() });
+        sendProgress(buildId, { type: 'progress', stage: stage.id, name: '🔍 Gemini QA — inspecting the blueprint', percent: stage.percent + 1, detail: 'Checking puzzle chains, item references, theme coherence', timestamp: Date.now() });
         let qaStep = 0;
         const qaLabels = ['🔍 Checking puzzle chains', '🔍 Validating item placement', '🔍 Scanning for theme drift', '🔍 Reviewing story coherence', '🔍 Polishing hints & dialogue'];
         const qaResult = await qaCreativeBrief(gameConfig, creativeBrief, (msg) => {
@@ -757,7 +759,7 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
           stage: 'art_bg',
           name: `🖼️ Imagen 4.0 → Painting ${t.scenes} & assets`,
           percent: stage.percent + 1,
-          detail: `Sending prompts to Imagen for title, character, ${t.scenes}, and items...`,
+          detail: `Sending prompts to Imagen for title, character, ${t.scenes}, and items`,
           timestamp: Date.now(),
         });
         try {
@@ -885,7 +887,7 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
       });
 
       // Now run the actual QA
-      sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: '🔍 Gemini QA — playtesting the code', percent: stage.percent + 1, detail: 'Stripping images and sending game logic to Gemini for review...', timestamp: Date.now() });
+      sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: '🔍 Gemini QA — playtesting the code', percent: stage.percent + 1, detail: 'Stripping images and sending game logic to Gemini for review', timestamp: Date.now() });
       let gameQaStep = 0;
       const gameQaLabels = ['🔍 Tracing puzzle logic paths', '🔍 Testing item gate sequences', '🔍 Checking for dead ends', '🔍 Verifying win conditions', '🔍 Reviewing state machines'];
       const gameQaResult = await qaGameCode(gameConfig, previewHtml, (msg) => {
@@ -903,9 +905,9 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
 
       // Run scored QA report (Gemini rates the build across genre-specific categories)
       if (creativeBrief) {
-        sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: '📊 Generating scored QA report...', percent: stage.percent + 5, detail: 'Gemini is rating your build across multiple categories...', timestamp: Date.now() });
+        sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: '📊 Generating scored QA report', percent: stage.percent + 5, detail: 'Gemini is rating your build across multiple categories', timestamp: Date.now() });
         const scored = await qaScoredReport(gameConfig, creativeBrief, (msg) => {
-          sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: `📊 ${msg}`, percent: stage.percent + 6, detail: 'Analyzing narrative, theme, difficulty, and cohesion...', timestamp: Date.now() });
+          sendProgress(buildId, { type: 'progress', stage: 'qa_game', name: `📊 ${msg}`, percent: stage.percent + 6, detail: 'Analyzing narrative, theme, difficulty, and cohesion', timestamp: Date.now() });
         });
         qaReport.overallScore = scored.overallScore;
         qaReport.categories = scored.categories;
@@ -964,7 +966,12 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
       buildId,
       apkSize: apkSizeStr,
       createdAt: new Date().toISOString(),
+      thumbnail: undefined as string | undefined,
     };
+    // Save title background as thumbnail
+    if (gameImages.titleBg) {
+      try { entry.thumbnail = saveThumbnail(buildId, gameImages.titleBg); } catch (err) { console.error('Failed to save game thumbnail:', err); }
+    }
     if (existing >= 0) {
       library[existing] = entry;
       console.log(`  📚 Updated "${entry.name}" in library (replaced previous build)`);
@@ -1036,7 +1043,12 @@ async function runAdventureBuild(buildId: string, config: AdventureConfig) {
       buildId,
       apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
       createdAt: new Date().toISOString(),
+      thumbnail: undefined as string | undefined,
     };
+    // Save cover illustration as thumbnail
+    if (result.story.coverIllustration) {
+      try { entry.thumbnail = saveThumbnail(buildId, result.story.coverIllustration); } catch (err) { console.error('Failed to save adventure thumbnail:', err); }
+    }
     if (existing >= 0) {
       library[existing] = entry;
       console.log(`  📚 Updated adventure "${entry.name}" in library (replaced previous build)`);
@@ -1047,6 +1059,20 @@ async function runAdventureBuild(buildId: string, config: AdventureConfig) {
     saveLibrary(library);
   }
 
+  // Scored QA report
+  const qaStartedAt = Date.now();
+  sendProgress(buildId, { type: 'progress', stage: 'qa', name: '📊 Generating QA confidence report', percent: 95, detail: '', timestamp: Date.now() });
+  const pageList = Object.entries(result.story.pages).map(([id, p]) => `Page ${id}: ${(p as { text: string[] }).text[0]?.slice(0, 60) || 'empty'}... (${(p as { choices: unknown[] }).choices.length} choices)`).join('\n');
+  const scored = await qaContentReport({
+    entertainmentType: 'adventure',
+    title,
+    genre: config.cyoaGenre.name,
+    artStyle: config.artStyle.name,
+    contentSummary: `A ${config.structure.pageCount}-page CYOA adventure. Premise: ${result.concept.premise}. Protagonist: ${result.concept.protagonist}. Characters: ${result.concept.characters.map(c => c.name).join(', ')}. Key items: ${result.concept.key_items.map(i => i.name).join(', ')}.\nPages:\n${pageList}`,
+  }, (msg) => {
+    sendProgress(buildId, { type: 'progress', stage: 'qa', name: `📊 ${msg}`, percent: 96, detail: '', timestamp: Date.now() });
+  });
+
   sendProgress(buildId, {
     type: 'complete',
     percent: 100,
@@ -1054,9 +1080,9 @@ async function runAdventureBuild(buildId: string, config: AdventureConfig) {
     apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
     previewUrl: `/api/preview/${buildId}`,
     qaReport: {
-      overallScore: 0,
-      categories: [],
-      summary: '',
+      overallScore: scored.overallScore,
+      categories: scored.categories,
+      summary: scored.summary,
       images: null,
       config: {
         genre: config.cyoaGenre.name,
@@ -1065,7 +1091,7 @@ async function runAdventureBuild(buildId: string, config: AdventureConfig) {
         roomCount: config.structure.pageCount,
         title,
       },
-      timing: { startedAt: Date.now(), completedAt: Date.now() },
+      timing: { startedAt: qaStartedAt, completedAt: Date.now() },
     },
   });
 }
@@ -1115,7 +1141,12 @@ async function runComicBuild(buildId: string, config: ComicConfig) {
       buildId,
       apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
       createdAt: new Date().toISOString(),
+      thumbnail: undefined as string | undefined,
     };
+    // Save cover illustration as thumbnail
+    if (result.story.coverIllustration) {
+      try { entry.thumbnail = saveThumbnail(buildId, result.story.coverIllustration); } catch (err) { console.error('Failed to save comic thumbnail:', err); }
+    }
     if (existing >= 0) {
       library[existing] = entry;
       console.log(`  📚 Updated comic "${entry.name}" in library (replaced previous build)`);
@@ -1126,6 +1157,20 @@ async function runComicBuild(buildId: string, config: ComicConfig) {
     saveLibrary(library);
   }
 
+  // Scored QA report
+  const qaStartedAt = Date.now();
+  sendProgress(buildId, { type: 'progress', stage: 'qa', name: '📊 Generating QA confidence report', percent: 95, detail: '', timestamp: Date.now() });
+  const comicPages = result.story.pages.map(p => `Page ${p.pageNumber}: ${p.setting} (${p.panels.length} panels)`).join('\n');
+  const scored = await qaContentReport({
+    entertainmentType: 'comic',
+    title,
+    genre: config.comicGenre.name,
+    artStyle: config.artStyle.name,
+    contentSummary: `A ${result.story.totalPages}-page comic book. Synopsis: ${result.concept.synopsis}. Protagonist: ${result.concept.protagonist.name} — ${result.concept.protagonist.description}. Characters: ${result.concept.characters.map(c => `${c.name} (${c.role})`).join(', ')}.\nPages:\n${comicPages}`,
+  }, (msg) => {
+    sendProgress(buildId, { type: 'progress', stage: 'qa', name: `📊 ${msg}`, percent: 96, detail: '', timestamp: Date.now() });
+  });
+
   sendProgress(buildId, {
     type: 'complete',
     percent: 100,
@@ -1133,9 +1178,9 @@ async function runComicBuild(buildId: string, config: ComicConfig) {
     apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
     previewUrl: `/api/preview/${buildId}`,
     qaReport: {
-      overallScore: 0,
-      categories: [],
-      summary: '',
+      overallScore: scored.overallScore,
+      categories: scored.categories,
+      summary: scored.summary,
       images: null,
       config: {
         genre: config.comicGenre.name,
@@ -1144,7 +1189,7 @@ async function runComicBuild(buildId: string, config: ComicConfig) {
         roomCount: config.structure.pageCount,
         title,
       },
-      timing: { startedAt: Date.now(), completedAt: Date.now() },
+      timing: { startedAt: qaStartedAt, completedAt: Date.now() },
     },
   });
 }
@@ -1205,6 +1250,20 @@ async function runEscapeBuild(buildId: string, config: EscapeConfig) {
     saveLibrary(library);
   }
 
+  // Scored QA report
+  const qaStartedAt = Date.now();
+  sendProgress(buildId, { type: 'progress', stage: 'qa', name: '📊 Generating QA confidence report', percent: 95, detail: '', timestamp: Date.now() });
+  const envelopeSummary = result.envelopes.map(e => `Stage ${e.id}: ${e.title} (${e.puzzles.length} puzzles)`).join('\n');
+  const scored = await qaContentReport({
+    entertainmentType: 'escape',
+    title,
+    genre: config.escapeTheme.name,
+    artStyle: config.artStyle.name,
+    contentSummary: `A ${config.structure.envelopeCount}-stage escape room. Theme: ${config.escapeTheme.name}. Setting: ${config.story.setting || 'N/A'}.\nStages:\n${envelopeSummary}`,
+  }, (msg) => {
+    sendProgress(buildId, { type: 'progress', stage: 'qa', name: `📊 ${msg}`, percent: 96, detail: '', timestamp: Date.now() });
+  });
+
   sendProgress(buildId, {
     type: 'complete',
     percent: 100,
@@ -1212,9 +1271,9 @@ async function runEscapeBuild(buildId: string, config: EscapeConfig) {
     apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
     previewUrl: `/api/preview/${buildId}`,
     qaReport: {
-      overallScore: 0,
-      categories: [],
-      summary: '',
+      overallScore: scored.overallScore,
+      categories: scored.categories,
+      summary: scored.summary,
       images: null,
       config: {
         genre: config.escapeTheme.name,
@@ -1223,7 +1282,7 @@ async function runEscapeBuild(buildId: string, config: EscapeConfig) {
         roomCount: config.structure.envelopeCount,
         title,
       },
-      timing: { startedAt: Date.now(), completedAt: Date.now() },
+      timing: { startedAt: qaStartedAt, completedAt: Date.now() },
     },
   });
 }
@@ -1290,6 +1349,19 @@ async function runPuzzleBuild(buildId: string, config: PuzzleConfig) {
     saveLibrary(library);
   }
 
+  // Scored QA report
+  const qaStartedAt = Date.now();
+  sendProgress(buildId, { type: 'progress', stage: 'qa', name: '📊 Generating QA confidence report', percent: 95, detail: '', timestamp: Date.now() });
+  const scored = await qaContentReport({
+    entertainmentType: 'puzzle',
+    title,
+    genre: config.puzzleSubject.name,
+    artStyle: config.artStyle.name,
+    contentSummary: `A ${config.structure.pieceCount}-piece jigsaw puzzle. Subject: ${config.puzzleSubject.name}. Art style: ${config.artStyle.name}. Image generated via Imagen AI.`,
+  }, (msg) => {
+    sendProgress(buildId, { type: 'progress', stage: 'qa', name: `📊 ${msg}`, percent: 96, detail: '', timestamp: Date.now() });
+  });
+
   sendProgress(buildId, {
     type: 'complete',
     percent: 100,
@@ -1297,9 +1369,9 @@ async function runPuzzleBuild(buildId: string, config: PuzzleConfig) {
     apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
     previewUrl: `/api/preview/${buildId}`,
     qaReport: {
-      overallScore: 0,
-      categories: [],
-      summary: '',
+      overallScore: scored.overallScore,
+      categories: scored.categories,
+      summary: scored.summary,
       images: null,
       config: {
         genre: config.puzzleSubject.name,
@@ -1308,7 +1380,7 @@ async function runPuzzleBuild(buildId: string, config: PuzzleConfig) {
         roomCount: config.structure.pieceCount,
         title,
       },
-      timing: { startedAt: Date.now(), completedAt: Date.now() },
+      timing: { startedAt: qaStartedAt, completedAt: Date.now() },
     },
   });
 }

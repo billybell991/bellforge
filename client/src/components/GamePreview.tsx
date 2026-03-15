@@ -16,6 +16,7 @@ interface GamePreviewProps {
 
 export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeploy, onStartOver, onReForge, qaReport, entertainmentType = 'game' }: GamePreviewProps) {
   const [fullscreen, setFullscreen] = useState(false);
+  const [qaDismissed, setQaDismissed] = useState(false);
   const viewerRef = useRef<HTMLDivElement>(null);
   const isLandscape = true;
   const isAdventure = entertainmentType === 'adventure';
@@ -77,16 +78,27 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
     }
   }, []);
 
-  return (
-    <div className="preview-screen">
-      <h1 className="preview-title">{titleLabel}</h1>
-      <p className="preview-subtitle">
-        {subtitleLabel}
-      </p>
+  // QA interstitial — show before the preview
+  const showQaInterstitial = qaReport && qaReport.overallScore > 0 && !qaDismissed;
 
-      {/* QA Report — shown prominently before the preview */}
-      {qaReport && qaReport.overallScore > 0 && (
-        <QAPanel report={qaReport} />
+  if (showQaInterstitial) {
+    return (
+      <div className="qa-interstitial">
+        <h1 className="preview-title">{titleLabel}</h1>
+        <QAPanel report={qaReport} onDismiss={() => setQaDismissed(true)} />
+      </div>
+    );
+  }
+
+  return (
+    <div className={`preview-screen${isNonGame ? ' preview-screen-compact' : ''}`}>
+      {!isNonGame && (
+        <>
+          <h1 className="preview-title">{titleLabel}</h1>
+          <p className="preview-subtitle">
+            {subtitleLabel}
+          </p>
+        </>
       )}
 
       {/* Auto-saved indicator */}
@@ -101,7 +113,7 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
             src={previewUrl}
             className="comic-viewer-screen"
             title={isComic ? 'Comic Preview' : isAdventure ? 'Adventure Preview' : isEscape ? 'Escape Room Preview' : 'Puzzle Preview'}
-            sandbox="allow-scripts"
+            sandbox="allow-scripts allow-same-origin"
           />
         </div>
       ) : (
@@ -122,7 +134,7 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
       )}
 
       {/* Controls */}
-      <div className="preview-controls">
+      <div className={`preview-controls${isNonGame ? ' preview-controls-compact' : ''}`}>
         {!isPuzzle && (
           <button
             className="preview-btn preview-btn-secondary"
@@ -136,6 +148,16 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
             📲 Push to Phone — Coming Soon
           </button>
         )}
+        {isNonGame && onReForge && (
+          <button className="preview-btn preview-btn-secondary" onClick={onReForge}>
+            🔄 Re-Forge
+          </button>
+        )}
+        {isNonGame && (
+          <button className="preview-btn preview-btn-secondary" onClick={onStartOver}>
+            <img src="/bellforge-logo.png" alt="" style={{ width: 14, height: 'auto', verticalAlign: 'middle', marginRight: 4 }} /> New {isComic ? 'Comic' : isAdventure ? 'Adventure' : isPuzzle ? 'Puzzle' : 'Build'}
+          </button>
+        )}
       </div>
 
       {/* Info */}
@@ -146,16 +168,18 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
         </div>
       )}
 
-      <div className="preview-bottom-actions">
-        {onReForge && (
-          <button className="preview-reforge" onClick={onReForge}>
-            🔄 Re-Forge — Tweak &amp; Rebuild
+      {!isNonGame && (
+        <div className="preview-bottom-actions">
+          {onReForge && (
+            <button className="preview-reforge" onClick={onReForge}>
+              🔄 Re-Forge — Tweak &amp; Rebuild
+            </button>
+          )}
+          <button className="preview-forge-another" onClick={onStartOver}>
+            <img src="/bellforge-logo.png" alt="" style={{ width: 18, height: 'auto', verticalAlign: 'middle', marginRight: 6 }} /> Forge Another Game
           </button>
-        )}
-        <button className="preview-forge-another" onClick={onStartOver}>
-          ⚒️ Forge Another {isAdventure ? 'Adventure' : isComic ? 'Comic' : isEscape ? 'Escape Room' : isPuzzle ? 'Puzzle' : 'Game'}
-        </button>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

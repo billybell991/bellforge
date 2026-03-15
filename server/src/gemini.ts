@@ -1159,3 +1159,101 @@ RULES:
     summary: 'QA scoring encountered an error. Build completed.',
   };
 }
+
+// ── Generic QA Scored Report for non-game entertainment types ──
+
+interface ContentQAInput {
+  entertainmentType: 'comic' | 'adventure' | 'escape' | 'puzzle';
+  title: string;
+  genre: string;
+  artStyle: string;
+  contentSummary: string;  // concise description of what was built
+}
+
+function getContentQACategories(type: string): string[] {
+  switch (type) {
+    case 'comic':
+      return ['Narrative Arc', 'Dialogue Quality', 'Art Consistency', 'Panel Flow', 'Character Design', 'Cohesion'];
+    case 'adventure':
+      return ['Narrative', 'Branching Depth', 'Choice Quality', 'Pacing', 'World-Building', 'Cohesion'];
+    case 'escape':
+      return ['Puzzle Design', 'Lock Variety', 'Clue Placement', 'Theme', 'Difficulty', 'Cohesion'];
+    case 'puzzle':
+      return ['Visual Appeal', 'Detail Distribution', 'Color Variety', 'Subject Clarity', 'Difficulty', 'Cohesion'];
+    default:
+      return ['Quality', 'Creativity', 'Theme', 'Cohesion'];
+  }
+}
+
+export async function qaContentReport(
+  input: ContentQAInput,
+  onStatus?: (msg: string) => void,
+): Promise<ScoredQAReport> {
+  const categories = getContentQACategories(input.entertainmentType);
+  const typeLabel = input.entertainmentType === 'comic' ? 'comic book'
+    : input.entertainmentType === 'adventure' ? 'choose-your-own-adventure story'
+    : input.entertainmentType === 'escape' ? 'escape room'
+    : 'jigsaw puzzle';
+
+  if (!model) {
+    onStatus?.('Gemini unavailable — generating default scores');
+    return {
+      overallScore: 8,
+      categories: categories.map(name => ({ name, score: 8, detail: 'Gemini unavailable — default score.' })),
+      summary: 'QA scoring skipped (Gemini unavailable). Build completed successfully.',
+    };
+  }
+
+  onStatus?.('Generating scored QA report...');
+
+  const prompt = `You are a creative content QA analyst reviewing a ${typeLabel} build.
+Title: "${input.title}". Genre: ${input.genre}. Art Style: ${input.artStyle}.
+
+CONTENT SUMMARY:
+${input.contentSummary}
+
+Rate this build on each of these ${categories.length} categories. Score each 1-10.
+Categories: ${categories.join(', ')}
+
+Return ONLY this JSON (no fences):
+{"overallScore":8,"categories":[{"name":"Category Name","score":9,"detail":"Brief explanation of score (max 12 words)"}],"summary":"One sentence overall verdict."}
+
+RULES:
+- Be fair but thorough. Award 10/10 only for genuinely excellent work.
+- The detail string for each category must be max 12 words.
+- The summary must be a single sentence.
+- Return exactly ${categories.length} categories in the order given.`;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const result = await model.generateContent(prompt);
+      const qa = JSON.parse(cleanJson(result.response.text()));
+
+      const cats: ScoredQACategory[] = Array.isArray(qa.categories)
+        ? qa.categories.map((c: Record<string, unknown>) => ({
+            name: String(c.name || 'Unknown'),
+            score: Math.max(1, Math.min(10, Number(c.score) || 7)),
+            detail: String(c.detail || ''),
+          }))
+        : categories.map(name => ({ name, score: 7, detail: 'Parse error — default score.' }));
+
+      const overall = Math.max(1, Math.min(10, Number(qa.overallScore) || Math.round(cats.reduce((s, c) => s + c.score, 0) / cats.length)));
+      const summary = String(qa.summary || 'Build passed QA review.');
+
+      onStatus?.(`QA score: ${overall}/10`);
+      return { overallScore: overall, categories: cats, summary };
+    } catch (err) {
+      console.error(`[Content QA] Attempt ${attempt + 1} error:`, err);
+      if (attempt < 2) {
+        onStatus?.(`QA scoring attempt ${attempt + 1} failed — retrying...`);
+        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, attempt)));
+      }
+    }
+  }
+  onStatus?.('Scored QA failed after 3 attempts — using default scores');
+  return {
+    overallScore: 7,
+    categories: categories.map(name => ({ name, score: 7, detail: 'QA scoring failed — default score.' })),
+    summary: 'QA scoring encountered an error. Build completed.',
+  };
+}

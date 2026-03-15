@@ -128,7 +128,7 @@ export function Library({ onBack, onViewPreview, onReForge, onCountChange }: Lib
             <div key={entry.id} className="library-card">
               {/* Thumbnail */}
               {entry.thumbnail && (
-                <div className="library-card-thumb" onClick={() => onViewPreview(entry)}>
+                <div className={`library-card-thumb${getEntryType(entry) === 'comic' ? ' library-card-thumb-comic' : ''}`} onClick={() => onViewPreview(entry)}>
                   <img
                     src={`/api/library/${entry.id}/thumbnail`}
                     alt={entry.name}

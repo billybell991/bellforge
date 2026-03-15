@@ -203,7 +203,7 @@ export function DeployGuide({ apkPath, apkSize, buildId, onStartOver }: DeployGu
           {deploying ? '⏳ Deploying...' : '📱 Push to Phone'}
         </button>
         <button className="deploy-btn secondary" onClick={onStartOver}>
-          ⚒️ Forge Another Game
+          <img src="/bellforge-logo.png" alt="" style={{ width: 18, height: 'auto', verticalAlign: 'middle', marginRight: 6 }} /> Forge Another Game
         </button>
       </div>
     </div>

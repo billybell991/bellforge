@@ -167,7 +167,7 @@ export function EscapeReviewStep({ escapeTheme, theme, artStyle, structure, stor
 
       <div className="wizard-forge-area">
         <button className="forge-btn forge-btn-primary" onClick={onForge} disabled={!ready}>
-          ⚒️ FORGE THIS ESCAPE ROOM
+          <img src="/bellforge-logo.png" alt="" style={{ width: 20, height: 'auto', verticalAlign: 'middle', marginRight: 6 }} /> FORGE THIS ESCAPE ROOM
         </button>
         {!ready && <p className="forge-hint">Complete all steps to unlock the forge.</p>}
       </div>

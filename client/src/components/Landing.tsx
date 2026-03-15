@@ -108,20 +108,10 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
               <h3 className="entertainment-card-title">Comic</h3>
               <p className="entertainment-card-desc">A full comic book — every panel AI-drawn, dialogue auto-placed.</p>
             </div>
-            <div className="entertainment-card" onClick={() => setEntertainmentType('escape')}>
-              <span className="entertainment-card-icon">🔑</span>
-              <h3 className="entertainment-card-title">Escape Room</h3>
-              <p className="entertainment-card-desc">A premium puzzle experience — intricate rooms, cunning riddles, total immersion.</p>
-            </div>
             <div className="entertainment-card" onClick={() => setEntertainmentType('puzzle')}>
               <span className="entertainment-card-icon">🧩</span>
               <h3 className="entertainment-card-title">Jigsaw Puzzle</h3>
               <p className="entertainment-card-desc">A beautiful AI-painted image cut into classic jigsaw pieces — drag, snap, and solve.</p>
-            </div>
-            <div className="entertainment-card" onClick={() => setEntertainmentType('game')}>
-              <span className="entertainment-card-icon">🎮</span>
-              <h3 className="entertainment-card-title">Online Game</h3>
-              <p className="entertainment-card-desc">Craft a playable game — puzzles, platformers, adventures, visual novels, and more.</p>
             </div>
           </div>
         </div>
@@ -149,7 +139,7 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
           <div className="landing-buttons">
             <div className="landing-btn-wrapper">
               <button className="forge-btn forge-btn-manual" onClick={() => onStart(entertainmentType)}>
-                ⚒️ FORGE MY OWN
+                <img src="/bellforge-logo.png" alt="" style={{ width: 20, height: 'auto', verticalAlign: 'middle', marginRight: 6 }} /> FORGE MY OWN
               </button>
               <span className="forge-btn-tooltip">
                 {entertainmentType === 'adventure'

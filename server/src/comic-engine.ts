@@ -10,13 +10,25 @@ export function generateComicPreviewHtml(story: ComicStory): string {
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
 <title>${escapeHtml(story.title)}</title>
+<link rel="manifest" href="data:application/json,${encodeURIComponent(JSON.stringify({
+  name: story.title,
+  short_name: story.title.slice(0, 12),
+  start_url: '.',
+  display: 'standalone',
+  background_color: '#1a1a2e',
+  theme_color: '#e53935',
+  icons: [{ src: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💥</text></svg>', sizes: 'any', type: 'image/svg+xml' }],
+}))}">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#e53935">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@400;700;900&display=swap');
 
   :root {
-    --comic-bg: #1a1a2e;
+    --comic-bg: #0a0a14;
     --panel-border: #222;
     --bubble-bg: #ffffff;
     --bubble-border: #222;
@@ -27,6 +39,7 @@ export function generateComicPreviewHtml(story: ComicStory): string {
     --title-red: #e53935;
     --title-gold: #ffd700;
     --page-bg: #f5f0e8;
+    --nav-pill-bg: rgba(10, 10, 20, 0.85);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -35,19 +48,42 @@ export function generateComicPreviewHtml(story: ComicStory): string {
     background: var(--comic-bg);
     font-family: 'Nunito', sans-serif;
     color: #222;
-    overflow-x: hidden;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  /* Vignette overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.6) 100%);
+    z-index: 50;
   }
 
   #comic-container {
-    max-width: 100%;
-    margin: 0 auto;
-    padding: 0;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* Page content — stacked for crossfade */
+  #page-content {
+    position: absolute;
+    inset: 0;
   }
 
   /* Cover */
   .cover-page {
     background: #0a0a0a;
-    min-height: 100vh;
+    width: 100%;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -60,7 +96,8 @@ export function generateComicPreviewHtml(story: ComicStory): string {
     inset: 0;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    object-position: center;
   }
   .cover-overlay {
     position: absolute;
@@ -70,118 +107,117 @@ export function generateComicPreviewHtml(story: ComicStory): string {
     pointer-events: none;
   }
   .cover-top {
-    padding: 1.5rem 1.5rem 0;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%);
-    min-height: 22%;
+    padding: 1.2rem 1.2rem 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, transparent 100%);
+    min-height: 20%;
   }
   .cover-publisher {
     font-family: 'Bangers', cursive;
-    font-size: 0.85rem;
-    letter-spacing: 5px;
+    font-size: 0.75rem;
+    letter-spacing: 4px;
     color: var(--title-gold);
     text-transform: uppercase;
     text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.15rem;
   }
   .cover-issue {
     font-family: 'Bangers', cursive;
-    font-size: 0.75rem;
-    color: rgba(255,255,255,0.7);
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.6);
     text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
   }
   .cover-title {
     font-family: 'Bangers', cursive;
-    font-size: clamp(2rem, 8vw, 4rem);
+    font-size: clamp(1.6rem, 6vw, 3rem);
     color: var(--title-red);
     text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 0 0 20px rgba(229,57,53,0.4);
-    letter-spacing: 3px;
+    letter-spacing: 2px;
     line-height: 1.05;
-    margin-top: 0.25rem;
+    margin-top: 0.2rem;
   }
   .cover-bottom {
     margin-top: auto;
-    padding: 0 1.5rem 1.5rem;
-    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%);
-    min-height: 15%;
+    padding: 0 1.2rem 1.2rem;
+    background: linear-gradient(to top, rgba(0,0,0,0.65) 0%, transparent 100%);
+    min-height: 12%;
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
   }
   .cover-subtitle {
-    font-size: 1rem;
-    color: rgba(255,255,255,0.85);
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.8);
     font-style: italic;
     text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
-    max-width: 70%;
+    max-width: 65%;
   }
   .cover-tap {
     font-family: 'Bangers', cursive;
-    font-size: 1.1rem;
+    font-size: 1rem;
     color: var(--title-gold);
     text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
     animation: pulse 2s ease-in-out infinite;
     pointer-events: auto;
   }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
   .cover-fallback {
-    width: 60vw;
-    max-width: 500px;
-    aspect-ratio: 3/4;
-    border: 3px solid var(--title-gold);
-    border-radius: 8px;
+    width: 80%;
+    max-width: 400px;
+    aspect-ratio: 2/3;
+    border: 2px solid var(--title-gold);
+    border-radius: 6px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 1rem;
+    gap: 0.8rem;
     background: linear-gradient(135deg, rgba(229,57,53,0.15) 0%, rgba(255,215,0,0.1) 50%, rgba(26,26,46,0.8) 100%);
     text-align: center;
-    padding: 2rem;
+    padding: 1.5rem;
   }
 
-  /* Page */
+  /* Page — fills the viewport */
   .comic-page {
     background: var(--page-bg);
-    margin: 4px auto;
-    padding: 12px;
+    width: 100%;
+    height: 100%;
+    padding: 8px;
     position: relative;
-    min-height: 90vh;
-    max-width: 900px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
   .page-number {
     position: absolute;
-    bottom: 8px;
-    right: 12px;
+    bottom: 6px;
+    right: 10px;
     font-family: 'Bangers', cursive;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: #999;
+    z-index: 5;
   }
 
   /* Panel grid */
   .panel-grid {
     display: grid;
-    gap: 6px;
-    height: 100%;
-    min-height: 80vh;
+    gap: 5px;
+    flex: 1;
   }
-  .panel-grid.panels-3 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
-  .panel-grid.panels-3 .panel:first-child { grid-column: 1 / -1; }
+  .panel-grid.panels-3 { grid-template-columns: 1fr; grid-template-rows: 1.2fr 1fr 0.8fr; }
   .panel-grid.panels-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
-  .panel-grid.panels-5 { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
-  .panel-grid.panels-5 .panel:nth-child(4) { grid-column: 1 / 2; }
-  .panel-grid.panels-5 .panel:nth-child(5) { grid-column: 2 / 4; }
-  .panel-grid.panels-6 { grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
-  .panel-grid.panels-1 { grid-template-columns: 1fr; }
+  .panel-grid.panels-5 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; }
+  .panel-grid.panels-5 .panel:first-child { grid-column: 1 / -1; }
+  .panel-grid.panels-6 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; }
+  .panel-grid.panels-1 { grid-template-columns: 1fr; grid-template-rows: 1fr; }
   .panel-grid.panels-2 { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
 
   /* Panel */
   .panel {
     border: 3px solid var(--panel-border);
-    border-radius: 4px;
+    border-radius: 3px;
     background: #fff;
     position: relative;
     overflow: hidden;
-    min-height: 120px;
   }
   .panel-art {
     position: absolute;
@@ -191,9 +227,9 @@ export function generateComicPreviewHtml(story: ComicStory): string {
     justify-content: center;
     color: rgba(255,255,255,0.85);
     font-style: italic;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     line-height: 1.4;
-    padding: 12px;
+    padding: 8px;
     text-align: center;
     text-shadow: 0 1px 3px rgba(0,0,0,0.5);
   }
@@ -209,7 +245,7 @@ export function generateComicPreviewHtml(story: ComicStory): string {
     object-fit: cover;
   }
 
-  /* Dialogue positioning grid — bubbles placed in zones away from characters */
+  /* Dialogue positioning */
   .dialogue-layer {
     position: absolute;
     inset: 0;
@@ -220,29 +256,14 @@ export function generateComicPreviewHtml(story: ComicStory): string {
     padding: 6px;
     pointer-events: none;
   }
-  /* Narration: top banner, full width */
-  .bubble-zone-top {
-    align-self: stretch;
-  }
-  /* Speech on left side (speaker is on right) */
-  .bubble-zone-left {
-    align-self: flex-start;
-    max-width: 55%;
-  }
-  /* Speech on right side (speaker is on left) */
-  .bubble-zone-right {
-    align-self: flex-end;
-    max-width: 55%;
-  }
-  /* Center fallback */
-  .bubble-zone-center {
-    align-self: center;
-    max-width: 60%;
-  }
+  .bubble-zone-top { align-self: stretch; }
+  .bubble-zone-left { align-self: flex-start; max-width: 55%; }
+  .bubble-zone-right { align-self: flex-end; max-width: 55%; }
+  .bubble-zone-center { align-self: center; max-width: 60%; }
   .bubble {
     padding: 5px 8px;
     border-radius: 10px;
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     line-height: 1.25;
     word-wrap: break-word;
     opacity: 0.92;
@@ -262,58 +283,139 @@ export function generateComicPreviewHtml(story: ComicStory): string {
     background: var(--narration-bg);
     border: 1px solid var(--narration-border);
     font-style: italic;
-    font-size: 0.68rem;
+    font-size: 0.65rem;
     border-radius: 2px;
     text-align: center;
   }
-  .bubble-speaker {
-    display: none;
-  }
+  .bubble-speaker { display: none; }
 
-  /* Navigation */
+  /* ── Navigation pill — auto-hiding ── */
   #nav-bar {
     position: fixed;
-    bottom: 0;
+    bottom: 12px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(26,26,46,0.95);
-    padding: 8px 16px;
-    border-radius: 12px 12px 0 0;
+    background: var(--nav-pill-bg);
+    padding: 6px 16px;
+    border-radius: 24px;
     display: flex;
-    gap: 12px;
+    gap: 10px;
     align-items: center;
-    z-index: 100;
-    backdrop-filter: blur(8px);
+    z-index: 200;
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.08);
+    opacity: 1;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  #nav-bar.nav-hidden {
+    opacity: 0;
+    transform: translateX(-50%) translateY(8px);
+    pointer-events: none;
   }
   .nav-btn {
     background: none;
-    border: 2px solid var(--title-gold);
+    border: 1.5px solid rgba(255,215,0,0.5);
     color: var(--title-gold);
     font-family: 'Bangers', cursive;
-    font-size: 0.9rem;
-    padding: 4px 12px;
-    border-radius: 4px;
+    font-size: 0.8rem;
+    padding: 3px 10px;
+    border-radius: 14px;
     cursor: pointer;
     transition: all 0.2s;
+    white-space: nowrap;
   }
-  .nav-btn:hover { background: var(--title-gold); color: #1a1a2e; }
-  .nav-btn:disabled { opacity: 0.3; cursor: default; }
-  .nav-btn:disabled:hover { background: none; color: var(--title-gold); }
+  .nav-btn:hover { background: rgba(255,215,0,0.15); border-color: var(--title-gold); }
+  .nav-btn:disabled { opacity: 0.25; cursor: default; }
+  .nav-btn:disabled:hover { background: none; }
   .nav-counter {
-    color: rgba(255,255,255,0.7);
+    color: rgba(255,255,255,0.5);
     font-family: 'Bangers', cursive;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
+    min-width: 48px;
+    text-align: center;
   }
 
-  /* Transitions */
-  .page-enter { animation: slideIn 0.3s ease; }
-  @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: none; } }
+  /* Page transitions */
+  .page-enter { animation: pageFadeIn 0.35s ease; }
+  @keyframes pageFadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* Page thumbnail strip */
+  #thumb-strip {
+    position: fixed;
+    bottom: 52px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    gap: 3px;
+    padding: 5px 10px;
+    background: var(--nav-pill-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    overflow-x: auto;
+    z-index: 199;
+    max-width: 85vw;
+    -webkit-overflow-scrolling: touch;
+  }
+  #thumb-strip.visible { display: flex; }
+  .thumb-item {
+    min-width: 32px;
+    height: 24px;
+    border: 1.5px solid rgba(255,215,0,0.25);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.5);
+    font-family: 'Bangers', cursive;
+    font-size: 0.55rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+  .thumb-item:hover, .thumb-item.active {
+    border-color: var(--title-gold);
+    background: rgba(255,215,0,0.15);
+    color: var(--title-gold);
+  }
+
+  /* Swipe hint */
+  .swipe-hint {
+    position: fixed;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    color: var(--title-gold);
+    font-family: 'Bangers', cursive;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    z-index: 300;
+    animation: fadeHint 3.5s ease forwards;
+    pointer-events: none;
+  }
+  @keyframes fadeHint { 0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
+
+  /* Thumb toggle */
+  .nav-thumb-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.4);
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 2px 4px;
+    transition: color 0.2s;
+  }
+  .nav-thumb-btn:hover { color: var(--title-gold); }
 </style>
 </head>
 <body>
 <div id="comic-container">
   <div id="page-content"></div>
 </div>
+<div id="thumb-strip"></div>
 <div id="nav-bar"></div>
 
 <script>
@@ -324,6 +426,8 @@ export function generateComicPreviewHtml(story: ComicStory): string {
 
   var pageContent = document.getElementById('page-content');
   var navBar = document.getElementById('nav-bar');
+  var thumbStrip = document.getElementById('thumb-strip');
+  var thumbsVisible = false;
 
   function escapeHTML(str) {
     var div = document.createElement('div');
@@ -381,8 +485,8 @@ export function generateComicPreviewHtml(story: ComicStory): string {
 
     // Full-page Gemini composition (dialogue baked in) — the proven approach
     if (page.pageIllustration) {
-      html += '<div style="width:100%;min-height:70vh;position:relative;">';
-      html += '<img src="' + sanitizeImageSrc(page.pageIllustration) + '" alt="Page ' + (idx+1) + '" style="width:100%;height:auto;display:block;border-radius:4px;">';
+      html += '<div style="width:100%;height:100%;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;">';
+      html += '<img src="' + sanitizeImageSrc(page.pageIllustration) + '" alt="Page ' + (idx+1) + '" style="width:100%;height:100%;object-fit:contain;">';
       html += '</div>';
     } else {
       // Fallback: per-panel grid with HTML dialogue overlays
@@ -437,14 +541,15 @@ export function generateComicPreviewHtml(story: ComicStory): string {
 
     pageContent.innerHTML = html;
     pageContent.className = 'page-enter';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
     updateNav();
+    resetNavTimer();
   }
 
   function updateNav() {
     var total = STORY.pages.length;
     var html = '<button class="nav-btn" id="nav-prev"' + (currentIndex <= -1 ? ' disabled' : '') + '>\\u2190 Prev</button>';
     html += '<span class="nav-counter">' + (currentIndex === -1 ? 'Cover' : (currentIndex + 1) + ' / ' + total) + '</span>';
+    html += '<button class="nav-thumb-btn" id="nav-thumbs" title="Page thumbnails">\\u2630</button>';
     html += '<button class="nav-btn" id="nav-next"' + (currentIndex >= total - 1 ? ' disabled' : '') + '>Next \\u2192</button>';
     navBar.innerHTML = html;
 
@@ -456,7 +561,55 @@ export function generateComicPreviewHtml(story: ComicStory): string {
       if (currentIndex === -1) renderPage(0);
       else if (currentIndex < total - 1) renderPage(currentIndex + 1);
     });
+    document.getElementById('nav-thumbs').addEventListener('click', function() {
+      thumbsVisible = !thumbsVisible;
+      updateThumbs();
+    });
+
+    updateThumbs();
   }
+
+  function updateThumbs() {
+    if (!thumbsVisible) {
+      thumbStrip.className = '';
+      return;
+    }
+    thumbStrip.className = 'visible';
+    var html = '<div class="thumb-item' + (currentIndex === -1 ? ' active' : '') + '" data-idx="-1">Cover</div>';
+    for (var t = 0; t < STORY.pages.length; t++) {
+      html += '<div class="thumb-item' + (t === currentIndex ? ' active' : '') + '" data-idx="' + t + '">' + (t + 1) + '</div>';
+    }
+    thumbStrip.innerHTML = html;
+    var thumbItems = thumbStrip.querySelectorAll('.thumb-item');
+    for (var ti = 0; ti < thumbItems.length; ti++) {
+      thumbItems[ti].addEventListener('click', function() {
+        var idx = parseInt(this.getAttribute('data-idx'));
+        if (idx === -1) renderCover();
+        else renderPage(idx);
+      });
+    }
+    // Scroll active thumb into view
+    var active = thumbStrip.querySelector('.active');
+    if (active) active.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }
+
+  // ── Auto-hide nav after inactivity ──
+  var navHideTimer = null;
+  var NAV_HIDE_DELAY = 3000;
+
+  function resetNavTimer() {
+    navBar.classList.remove('nav-hidden');
+    if (navHideTimer) clearTimeout(navHideTimer);
+    if (currentIndex >= 0) { // Don't hide on cover
+      navHideTimer = setTimeout(function() {
+        if (!thumbsVisible) navBar.classList.add('nav-hidden');
+      }, NAV_HIDE_DELAY);
+    }
+  }
+
+  // Show nav on any interaction
+  document.addEventListener('mousemove', resetNavTimer, { passive: true });
+  document.addEventListener('touchstart', resetNavTimer, { passive: true });
 
   // Keyboard navigation
   document.addEventListener('keydown', function(e) {
@@ -470,6 +623,69 @@ export function generateComicPreviewHtml(story: ComicStory): string {
       else if (currentIndex > 0) renderPage(currentIndex - 1);
     }
   });
+
+  // ── Touch swipe navigation ──
+  var touchStartX = 0;
+  var touchStartY = 0;
+  var touchStartTime = 0;
+  var isSwiping = false;
+
+  document.addEventListener('touchstart', function(e) {
+    if (e.touches.length !== 1) return;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    touchStartTime = Date.now();
+    isSwiping = true;
+  }, { passive: true });
+
+  document.addEventListener('touchend', function(e) {
+    if (!isSwiping) return;
+    isSwiping = false;
+    var dx = e.changedTouches[0].clientX - touchStartX;
+    var dy = e.changedTouches[0].clientY - touchStartY;
+    var dt = Date.now() - touchStartTime;
+    // Must be a horizontal swipe: |dx| > 50px, |dx| > |dy|, under 400ms
+    if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) || dt > 400) return;
+    if (dx < 0) {
+      // Swipe left → next page
+      if (currentIndex === -1) renderPage(0);
+      else if (currentIndex < STORY.pages.length - 1) renderPage(currentIndex + 1);
+    } else {
+      // Swipe right → previous page
+      if (currentIndex === 0) renderCover();
+      else if (currentIndex > 0) renderPage(currentIndex - 1);
+    }
+  }, { passive: true });
+
+  // Show swipe hint on first visit (mobile only)
+  if ('ontouchstart' in window) {
+    var hint = document.createElement('div');
+    hint.className = 'swipe-hint';
+    hint.textContent = '\\u2190 Swipe to turn pages \\u2192';
+    document.body.appendChild(hint);
+    setTimeout(function() { if (hint.parentNode) hint.parentNode.removeChild(hint); }, 3500);
+  }
+
+  // ── Service Worker for offline reading ──
+  if ('serviceWorker' in navigator) {
+    var swBlob = new Blob([
+      'self.addEventListener("install", function(e) { self.skipWaiting(); });',
+      'self.addEventListener("activate", function(e) { e.waitUntil(clients.claim()); });',
+      'self.addEventListener("fetch", function(e) {',
+      '  e.respondWith(caches.match(e.request).then(function(r) {',
+      '    return r || fetch(e.request).then(function(resp) {',
+      '      if (resp.status === 200) {',
+      '        var c = resp.clone();',
+      '        caches.open("comic-v1").then(function(cache) { cache.put(e.request, c); });',
+      '      }',
+      '      return resp;',
+      '    });',
+      '  }));',
+      '});',
+    ], { type: 'application/javascript' });
+    var swUrl = URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swUrl).catch(function() {});
+  }
 
   // Boot
   renderCover();

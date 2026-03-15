@@ -132,7 +132,7 @@ export async function phaseConcept(
   const numEndings = Math.max(3, Math.floor(pageCount * 0.25));
   const seedLine = storySeed ? `\nStory seed/premise to incorporate: "${storySeed}"` : '';
 
-  onProgress?.('Asking Gemini to design the story outline...');
+  onProgress?.('Asking Gemini to design the story outline');
 
   const prompt = `You are a master Choose Your Own Adventure book author.
 
@@ -221,7 +221,7 @@ export async function phaseProse(
     const chunk = pages.slice(i, i + chunkSize);
     const chunkNum = Math.floor(i / chunkSize) + 1;
     const totalChunks = Math.ceil(pages.length / chunkSize);
-    onProgress?.(`Writing prose chunk ${chunkNum}/${totalChunks} (${chunk.length} pages)...`);
+    onProgress?.(`Writing prose chunk ${chunkNum}/${totalChunks} (${chunk.length} pages)`);
 
     const prompt = `You are writing prose for a Choose Your Own Adventure book.
 
@@ -320,7 +320,7 @@ export async function phaseQA(
   const pages = story.pages;
 
   // 1. BFS reachability — fix orphan pages
-  onProgress?.('Checking graph integrity...');
+  onProgress?.('Checking graph integrity');
   const reachable = new Set<string>();
   const queue = ['1'];
   while (queue.length > 0) {
@@ -364,7 +364,7 @@ export async function phaseQA(
   }
 
   // 4. Remove impossible item gates
-  onProgress?.('Verifying item gates...');
+  onProgress?.('Verifying item gates');
   const allItems = new Set<string>();
   for (const page of Object.values(pages)) {
     for (const item of page.items) allItems.add(item);
@@ -457,7 +457,7 @@ export async function runAdventurePipeline(
   const t0 = Date.now();
 
   // Phase 1: Concept — with heartbeat so progress doesn't freeze
-  sendProgress(5, `Designing a ${config.cyoaGenre.name} story with ${config.structure.pageCount} pages...`, 'concept');
+  sendProgress(5, `Designing a ${config.cyoaGenre.name} story with ${config.structure.pageCount} pages`, 'concept');
   let conceptPct = 5;
   const conceptHeartbeat = setInterval(() => {
     conceptPct = Math.min(conceptPct + 1, 14);
@@ -477,7 +477,7 @@ export async function runAdventurePipeline(
   // Phase 2: Prose — smooth progress across chunks
   const totalChunks = Math.ceil(concept.page_map.length / 5);
   let chunksDone = 0;
-  sendProgress(18, `Writing vivid prose for ${concept.page_map.length} pages...`, 'prose');
+  sendProgress(18, `Writing vivid prose for ${concept.page_map.length} pages`, 'prose');
   const prose = await phaseProse(concept, config, (msg) => {
     // Track chunk completion from the message
     const chunkMatch = msg.match(/chunk (\d+)\/(\d+)/);
@@ -493,13 +493,13 @@ export async function runAdventurePipeline(
   sendProgress(50, `Prose complete (${elapsed2}s): ${Object.keys(prose).length} pages of narrative written`, 'prose_final');
 
   // Phase 3: Assembly
-  sendProgress(55, 'Assembling story graph...', 'assembly');
+  sendProgress(55, 'Assembling story graph', 'assembly');
   const story = assembleStory(concept, prose, config);
   const endings = Object.values(story.pages).filter(p => p.isEnding).length;
   sendProgress(60, `Story assembled: ${story.totalPages} pages, ${endings} endings`, 'assembly');
 
   // Phase 4: Imagen illustrations for key pages
-  sendProgress(62, 'Generating illustrations with Imagen...', 'illustrations');
+  sendProgress(62, 'Generating illustrations with Imagen', 'illustrations');
   const artPrefix = getArtStylePrefix(config.artStyle.id);
   const themeAtmo: Record<string, string> = {
     horror: 'dark eerie atmosphere, shadows, dim flickering light',
@@ -519,7 +519,7 @@ export async function runAdventurePipeline(
   const totalImages = toIllustrate.length + 1; // +1 for cover
 
   // Cover illustration
-  sendProgress(63, `Painting cover illustration (1/${totalImages})...`, 'illustrations');
+  sendProgress(63, `Painting cover illustration (1/${totalImages})`, 'illustrations');
   const coverPrompt = `${artPrefix} book cover illustration, ${concept.premise}, ${themeStr}, dramatic cinematic composition, ${ANTI_IMG_TEXT}`;
   const coverImg = await generateImage(coverPrompt, '3:4');
   if (coverImg) {
@@ -550,7 +550,7 @@ export async function runAdventurePipeline(
   sendProgress(88, `Illustrations complete: ${imgSuccess}/${totalImages} images generated`, 'illustrations');
 
   // Phase 5: QA & auto-fix
-  sendProgress(89, 'Checking graph integrity...', 'qa_graph');
+  sendProgress(89, 'Checking graph integrity', 'qa_graph');
   const fixedStory = await phaseQA(story, concept, (msg) => {
     if (msg.includes('item gates')) {
       sendProgress(93, msg, 'qa_items');
@@ -559,8 +559,8 @@ export async function runAdventurePipeline(
     }
   });
 
-  sendProgress(95, `QA complete — verifying endings...`, 'qa_endings');
-  sendProgress(96, 'Building interactive viewer...', 'viewer');
+  sendProgress(95, `QA complete — verifying endings`, 'qa_endings');
+  sendProgress(96, 'Building interactive viewer', 'viewer');
 
   const elapsed = Math.floor((Date.now() - t0) / 1000);
   sendProgress(98, `Forge complete in ${elapsed}s: "${fixedStory.title}" — ${fixedStory.totalPages} pages, ${endings} endings`, 'complete');

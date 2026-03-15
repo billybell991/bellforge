@@ -24,7 +24,7 @@ export async function runPuzzlePipeline(
   const artStyle = config.artStyle?.name || 'Painterly';
   const subject = config.puzzleSubject?.name || 'Epic Landscape';
 
-  onProgress(10, 'Designing puzzle prompt...', 'concept');
+  onProgress(10, 'Designing puzzle prompt', 'concept');
 
   // Build the Imagen prompt from subject + art style
   const prompt = `A beautiful, highly detailed ${artStyle} illustration of: ${subject}. ` +

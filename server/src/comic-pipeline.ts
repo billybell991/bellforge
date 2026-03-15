@@ -70,6 +70,62 @@ export interface ComicStory {
 
 // ── Helpers ──
 
+function randomPick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+// ── Creative variety seeds — prevent Gemini from falling into formula patterns ──
+
+const COMIC_NARRATIVE_HOOKS = [
+  'Open in media res — the first page drops you into the middle of chaos, then flashback to explain',
+  'Start from the villain\'s point of view before switching to the hero',
+  'Begin with an ordinary day that goes catastrophically wrong by panel 3',
+  'The hero is already failing when the story opens — they\'ve lost before we even begin',
+  'A mysterious object arrives that changes everything — the story is the fallout',
+  'Two strangers collide in circumstances that bind their fates together',
+  'The story begins at the end — then rewinds to show how we got here',
+  'A seemingly minor decision in panel 1 cascades into life-or-death stakes',
+  'The world has just changed — yesterday\'s rules no longer apply',
+  'An ordinary person witnesses something they cannot un-see',
+  'A promise made long ago comes due at the worst possible moment',
+  'The protagonist wakes up to discover they are the only one who remembers how things used to be',
+];
+
+const COMIC_SCENE_DYNAMICS = [
+  'a frantic chase across rooftops, vehicles, or impossible terrain',
+  'a tense standoff where words are weapons and silence is louder than screaming',
+  'a montage of preparation — gear up, plan, assemble — building anticipation',
+  'a betrayal that reframes everything the reader thought they knew',
+  'a sacrifice that costs the hero something deeply personal',
+  'a reveal that changes the power dynamic entirely',
+  'a fight scene that tells a story through choreography, not just punches',
+  'a quiet emotional moment in the eye of the storm — vulnerability between allies',
+  'a race against a ticking clock with escalating obstacles',
+  'a confrontation where the hero must choose between two people/things they love',
+  'a clever deception, con, or trap being sprung',
+  'an escape from an impossible situation using wit, not strength',
+  'a moment of dark humor that cuts the tension and reveals character',
+  'a dramatic entrance or transformation that changes the tide',
+];
+
+const COMIC_ANTI_FORMULA = [
+  'DO NOT write a story where the protagonist just stands around monologuing. Comics are VISUAL — show action, movement, conflict.',
+  'Avoid the "hero discovers power, fights generic bad guy" formula. Give us moral complexity, unexpected allies, personal stakes.',
+  'No boring exposition dumps. If a character needs to explain something, make them do it WHILE something else is happening.',
+  'Characters should DISAGREE, argue, surprise each other. Friction makes drama.',
+  'Every page should have at least one panel that would make someone stop and say "whoa" — a striking visual, a shocking reveal, a gut-punch line.',
+  'The antagonist should have a point. The best villains make you uncomfortable because they\'re partially right.',
+  'Give the story at least one genuine surprise — something the reader doesn\'t see coming.',
+  'Don\'t just tell a story that COULD be text — use the visual medium. Things should happen that only work in comics: dramatic reveals through panel composition, silent emotional beats, visual metaphors.',
+];
+
+const genreStoryGuide: Record<string, string> = {
+  origin_story: `ORIGIN STORY RULES: The origin should feel EARNED, not given. The hero doesn't just "discover powers" — they face a crucible that forges who they become. Show the COST of becoming a hero. Include at least one moment where the reader questions whether the hero made the right choice. The transformation should be as much psychological as physical.`,
+  team_up: `TEAM-UP RULES: The team should have real friction — different goals, methods, or personalities that clash BEFORE they mesh. Each member should get at least one moment to shine individually. The threat should be something no single hero could face alone — make the teamwork feel necessary, not convenient.`,
+  heist: `HEIST RULES: Show the plan, then show it going wrong. There should be at least one double-cross or unexpected complication. Each crew member should have a specialized skill that gets tested. The tension should build through the planning AND the execution.`,
+  revenge: `REVENGE RULES: Make the reader FEEL the injustice that drives the hero. But also plant seeds of doubt — is revenge worth the cost? The best revenge stories ask whether the hero is becoming the very thing they hate. Include a moment where mercy is an option.`,
+  war_epic: `WAR EPIC RULES: War is chaos, not choreography. Show the human cost — not just the spectacle. Include at least one quiet moment amid the carnage that makes the reader feel the characters' exhaustion and fear. Both sides should feel real, not cartoonish.`,
+  coming_of_age: `COMING OF AGE RULES: The challenge should feel insurmountable FROM THE KID'S perspective (even if adults wouldn't blink). Show growth through choices, not just events. Include a mentor figure who is imperfect. The ending should feel bittersweet — something gained and something left behind.`,
+};
+
 async function askGemini(prompt: string, temperature = 0.8, jsonMode = false): Promise<string | null> {
   if (!model) return null;
 
@@ -141,7 +197,7 @@ async function generateCharacterRefs(
 
   for (let i = 0; i < allChars.length; i++) {
     const char = allChars[i];
-    onProgress?.(`Generating reference portrait ${i + 1}/${allChars.length}: ${char.name}...`);
+    onProgress?.(`Generating reference portrait ${i + 1}/${allChars.length}: ${char.name}`);
 
     const prompt = `${styleAnchor} character reference sheet, single character portrait. ${char.visual}. Front-facing three-quarter view, neutral standing pose, clean simple background, full body visible from head to feet, consistent studio lighting, clear view of face and outfit details. ${ANTI_TEXT}`;
     const img = await generateImage(prompt, '3:4');
@@ -239,6 +295,67 @@ Output JSON:
   return { pass: true, reason: 'QA error — auto-pass' };
 }
 
+async function qaCover(
+  base64Png: string,
+  concept: ComicConcept,
+  charRefs?: CharacterRefs,
+): Promise<PanelQAResult> {
+  if (!model) return { pass: true, reason: 'Gemini unavailable — auto-pass' };
+
+  const imageParts: Array<{ inlineData: { mimeType: string; data: string } } | { text: string }> = [];
+
+  // Add protagonist reference portrait if available
+  const protRef = charRefs?.get(concept.protagonist.name);
+  if (protRef) {
+    imageParts.push({ text: `Reference portrait for protagonist ${concept.protagonist.name}:` });
+    imageParts.push({ inlineData: { mimeType: 'image/png', data: protRef } });
+  }
+
+  imageParts.push({ text: 'Cover image to review:' });
+  imageParts.push({ inlineData: { mimeType: 'image/png', data: base64Png } });
+
+  const refCheck = protRef
+    ? `\n4. CHARACTER_MISMATCH — compare the protagonist against the reference portrait. Flag if hair color/style, clothing, or build clearly doesn't match.`
+    : '';
+
+  const prompt = `You are a comic book cover art QA reviewer. Analyze this cover illustration for quality.
+
+Protagonist: ${concept.protagonist.name} — ${concept.protagonist.visualDescription}
+Title: "${concept.title}"
+
+Check for these issues ONLY:
+1. BROKEN_ANATOMY — severely distorted faces, merged body parts, extra limbs, misshapen hands
+2. POOR_COMPOSITION — protagonist is not clearly visible or doesn't dominate the frame, image is muddy/incoherent
+3. UNWANTED_TEXT — garbled or hallucinated text/letters/words that shouldn't be there (the cover should be pure art with no text)${refCheck}
+
+Be lenient on artistic interpretation — only flag clear, obvious problems.
+Minor style differences are fine. Focus on deal-breakers.
+
+Output JSON:
+{"pass": true} if the cover is acceptable, or
+{"pass": false, "reason": "ISSUE_TYPE: brief description"} if it has a clear problem.`;
+
+  imageParts.push({ text: prompt });
+
+  try {
+    const result = await model.generateContent({
+      contents: [{ role: 'user', parts: imageParts }],
+      generationConfig: {
+        temperature: 0.2,
+        responseMimeType: 'application/json',
+      } as Parameters<typeof model.generateContent>[0] extends { generationConfig?: infer G } ? G : never,
+    });
+    const text = result.response.text();
+    const parsed = parseJsonResponse(text);
+    if (parsed && typeof parsed.pass === 'boolean') {
+      return { pass: parsed.pass, reason: (parsed.reason as string) || '' };
+    }
+  } catch (e) {
+    console.warn('[Cover QA] Gemini error:', String(e).slice(0, 120));
+  }
+  return { pass: true, reason: 'QA error — auto-pass' };
+}
+
 function getArtStylePrefix(artStyleId: string): string {
   const styles: Record<string, string> = {
     cel_shaded: 'cel-shaded comic book illustration, bold black outlines, flat vibrant colors, clean line art,',
@@ -276,15 +393,35 @@ export async function phaseConceptOutline(
   const charLine = characterName ? `\nProtagonist name: "${characterName}"` : '';
   const titleLine = title ? `\nTitle: "${title}"` : '';
 
-  onProgress?.('Designing concept, characters, and story arc...');
+  // Inject creative variety seeds so no two comics feel the same
+  const narrativeHook = randomPick(COMIC_NARRATIVE_HOOKS);
+  const sceneDynamic1 = randomPick(COMIC_SCENE_DYNAMICS);
+  const sceneDynamic2 = randomPick(COMIC_SCENE_DYNAMICS.filter(s => s !== sceneDynamic1));
+  const antiFormula = randomPick(COMIC_ANTI_FORMULA);
+  const genreGuide = genreStoryGuide[config.comicGenre.id] || '';
 
-  const prompt = `You are a master comic book writer. Design the concept and story outline for a comic book.
+  onProgress?.('Designing concept, characters, and story arc');
+
+  const prompt = `You are a master comic book writer who creates stories people can't put down — the kind readers photograph and text to their friends. Creativity seed: ${Date.now()}.
 
 Story type: ${genre}
 The comic has exactly ${pageCount} interior pages.
 Theme/atmosphere: ${themeName}
 Tone: ${tone}
 ${titleLine}${charLine}${seedLine}
+
+═══ CREATIVE SPARKS (use as loose inspiration, don't copy literally) ═══
+Narrative hook idea: "${narrativeHook}"
+Scene dynamics to weave in: "${sceneDynamic1}" and "${sceneDynamic2}"
+
+═══ QUALITY BAR ═══
+${antiFormula}
+${genreGuide}
+- Every page must ADVANCE the story — no filler, no padding, no "walking to the next location" pages.
+- The story should have MOMENTUM — each page ending should make the reader need to see the next one.
+- Characters should talk TO each other, not narrate at the reader. Dialogue drives drama.
+- Include at least one page with a major visual set piece (splash-worthy moment, dramatic reveal, striking composition).
+- The story must feel COMPLETE — satisfying arc with a real ending, not a cliffhanger to nowhere.
 
 Output valid JSON with the concept and a one-line-per-page outline (NO panel scripts — those come later):
 {
@@ -361,7 +498,7 @@ export async function phasePanelScripts(
     const batch = outline.slice(i, i + BATCH_SIZE);
     const batchIdx = Math.floor(i / BATCH_SIZE);
     const pageRange = batch.length === 1 ? `page ${batch[0].pageNumber}` : `pages ${batch[0].pageNumber}-${batch[batch.length - 1].pageNumber}`;
-    onProgress?.(`Writing scripts for ${pageRange} of ${outline.length}...`, batchIdx, totalBatches);
+    onProgress?.(`Writing scripts for ${pageRange} of ${outline.length}`, batchIdx, totalBatches);
 
     const prompt = `You are scripting panel-by-panel layouts for a ${config.comicGenre.name} comic called "${concept.title}".
 
@@ -402,6 +539,12 @@ RULES:
 - In artDirection, position characters on the side matching their speakerPosition (e.g. if speakerPosition is "left", describe the character on the left side of the panel)
 - Keep dialogue punchy — 1-2 short sentences per bubble max. Keep text SIMPLE — avoid long or uncommon words (the AI art generator struggles to spell them).
 - Art direction should be vivid and specific about composition, not style
+
+═══ VISUAL STORYTELLING ═══
+- VARY your panel compositions: don't do 3 static medium shots in a row. Use dramatic angles — bird's eye, worm's eye, over-the-shoulder, extreme close-up, silhouette, reflections.
+- At least one panel per page should have dynamic ACTION — movement, impact, transformation, or dramatic gesture.
+- Use the environment: characters interact WITH their surroundings, not just standing in front of backgrounds.
+- Facial expressions carry emotion — describe them specifically ("gritted teeth, wide eyes" not just "angry face").
 
 Output ONLY the JSON array.`;
 
@@ -499,7 +642,7 @@ export async function phaseQA(
   concept: ComicConcept,
   onProgress?: (msg: string) => void,
 ): Promise<ComicStory> {
-  onProgress?.('Checking panel continuity...');
+  onProgress?.('Checking panel continuity');
 
   // Fix empty pages
   for (const page of story.pages) {
@@ -518,7 +661,7 @@ export async function phaseQA(
   story.pages.forEach((p, i) => { p.pageNumber = i + 1; });
   story.totalPages = story.pages.length;
 
-  onProgress?.('Verifying story flow...');
+  onProgress?.('Verifying story flow');
 
   return story;
 }
@@ -537,7 +680,7 @@ export async function runComicPipeline(
   const t0 = Date.now();
 
   // Phase 1a: Concept + story outline (lightweight — small JSON)
-  sendProgress(5, `Crafting a ${config.comicGenre.name} comic concept...`, 'story');
+  sendProgress(5, `Crafting a ${config.comicGenre.name} comic concept`, 'story');
   const outlineResult = await phaseConceptOutline(config, (msg) => sendProgress(8, msg, 'story'));
   if (!outlineResult) {
     sendProgress(0, 'Failed to generate comic concept — Gemini did not return valid JSON');
@@ -549,7 +692,7 @@ export async function runComicPipeline(
   sendProgress(12, `Concept ready (${elapsed1}s): "${concept.title}" — ${outline.length} pages, ${concept.characters.length + 1} characters`, 'story');
 
   // Phase 1b: Detailed panel scripts (chunked — 4 pages per Gemini call)
-  sendProgress(15, `Writing panel scripts for ${outline.length} pages...`, 'script');
+  sendProgress(15, `Writing panel scripts for ${outline.length} pages`, 'script');
   const beats = await phasePanelScripts(concept, outline, config, (msg, batchIdx, totalBatches) => {
     const pct = 15 + Math.floor(((batchIdx + 1) / totalBatches) * 12);
     sendProgress(pct, msg, 'script');
@@ -559,7 +702,7 @@ export async function runComicPipeline(
   sendProgress(28, `Scripts complete (${elapsed2}s): ${beats.length} pages fully scripted`, 'layouts');
 
   // Phase 2: Assembly
-  sendProgress(30, 'Designing page layouts...', 'layouts');
+  sendProgress(30, 'Designing page layouts', 'layouts');
   const story = assembleComic(concept, beats, config);
   const totalPanels = story.pages.reduce((sum, p) => sum + p.panels.length, 0);
   sendProgress(32, `Assembled: ${story.totalPages} pages, ${totalPanels} panels`, 'layouts');
@@ -577,20 +720,45 @@ export async function runComicPipeline(
   ].join('. ');
 
   // 3a: Character reference portraits — establishes visual ground truth
-  sendProgress(33, `Generating ${concept.characters.length + 1} character reference portraits...`, 'char_refs');
+  sendProgress(33, `Generating ${concept.characters.length + 1} character reference portraits`, 'char_refs');
   const charRefs = await generateCharacterRefs(concept, styleAnchor, (msg) => {
     sendProgress(34, msg, 'char_refs');
   });
   sendProgress(35, `Character refs: ${charRefs.size} portraits generated`, 'char_refs');
 
   // 3b: Cover — ANTI_TEXT (pure art only). HTML overlays title/publisher/issue.
-  sendProgress(36, 'Generating cover artwork...', 'cover_art');
+  // QA/retry loop — same pattern as interior panels.
+  sendProgress(36, 'Generating cover artwork', 'cover_art');
   const coverPrompt = `${styleAnchor} A dramatic, cinematic comic book cover illustration. ${concept.protagonist.visualDescription} dominates the composition in a powerful, dynamic hero pose. Rich detailed background that evokes the story's mood and setting. Dramatic lighting, bold colors, professional comic book illustration quality. Composition should leave space at the top 20% for a title overlay and bottom-left for a publisher badge. ${ANTI_TEXT}`;
-  const coverImg = await generateImage(coverPrompt, '3:4');
-  if (coverImg) {
-    story.coverIllustration = `data:image/png;base64,${coverImg}`;
+  const MAX_COVER_RETRIES = 2;
+  let bestCover: string | null = null;
+  for (let attempt = 0; attempt <= MAX_COVER_RETRIES; attempt++) {
+    const coverImg = await generateImage(coverPrompt, '3:4');
+    if (!coverImg) {
+      console.warn(`[Cover Art] Imagen failed (attempt ${attempt + 1})`);
+      if (attempt < MAX_COVER_RETRIES) await sleep(2000);
+      continue;
+    }
+    if (!bestCover) bestCover = coverImg;
+
+    const qa = await qaCover(coverImg, concept, charRefs);
+    if (qa.pass) {
+      bestCover = coverImg;
+      console.log(`[Cover QA] PASS${attempt > 0 ? ` (retry ${attempt})` : ''}`);
+      break;
+    } else {
+      bestCover = coverImg;
+      console.warn(`[Cover QA] FAIL — ${qa.reason}${attempt < MAX_COVER_RETRIES ? ' → retrying' : ' → accepting best'}`);
+      if (attempt < MAX_COVER_RETRIES) {
+        sendProgress(38, `Cover QA issue: ${qa.reason} — retrying...`, 'cover_art');
+        await sleep(2000);
+      }
+    }
   }
-  sendProgress(40, coverImg ? 'Cover artwork generated' : 'Cover generation failed — using fallback', 'cover_art');
+  if (bestCover) {
+    story.coverIllustration = `data:image/png;base64,${bestCover}`;
+  }
+  sendProgress(40, bestCover ? 'Cover artwork generated' : 'Cover generation failed — using fallback', 'cover_art');
 
   // 3c: Interior panels — dialogue baked into each panel's art prompt
   // Image generator composes speech bubbles, thought bubbles, and narration boxes naturally.", "oldString": "  // 3c: Interior panels — individual panel illustrations with QA/retry loop\n  // ANTI_TEXT keeps panels clean of AI-hallucinated text; HTML viewer overlays\n  // dialogue bubbles, thought bubbles, and narration boxes via CSS.
@@ -608,7 +776,7 @@ export async function runComicPipeline(
       const panel = page.panels[j];
       panelsDone++;
       const pct = 42 + Math.floor((panelsDone / totalPanelImages) * 28);
-      sendProgress(pct, `Drawing panel ${panelsDone}/${totalPanelImages} (page ${i + 1})...`, 'panel_art');
+      sendProgress(pct, `Drawing panel ${panelsDone}/${totalPanelImages} (page ${i + 1})`, 'panel_art');
 
       // Focus character references on who actually appears in this panel
       const panelCharNames = [...new Set(
@@ -650,7 +818,7 @@ export async function runComicPipeline(
       let bestReason = '';
 
       for (let attempt = 0; attempt <= MAX_PANEL_RETRIES; attempt++) {
-        const panelImg = await generateImage(panelPrompt, '4:3');
+        const panelImg = await generateImage(panelPrompt, '3:4');
         if (!panelImg) {
           console.warn(`[Panel Art] Page ${i + 1} Panel ${j + 1}: Imagen failed (attempt ${attempt + 1})`);
           if (attempt < MAX_PANEL_RETRIES) await sleep(2000);
@@ -691,10 +859,10 @@ export async function runComicPipeline(
   const retryNote = qaRetries > 0 ? ` (${qaRetries} QA retries)` : '';
   sendProgress(70, `Art complete: ${imagesGenerated}/${totalPanelImages} panel illustrations generated${retryNote}`, 'panel_art');
 
-  sendProgress(75, 'Finalizing pages...', 'text_overlay');
+  sendProgress(75, 'Finalizing pages', 'text_overlay');
 
   // Phase 5: QA
-  sendProgress(82, 'Checking panel continuity...', 'qa_panels');
+  sendProgress(82, 'Checking panel continuity', 'qa_panels');
   const fixedStory = await phaseQA(story, concept, (msg) => {
     if (msg.includes('story flow')) {
       sendProgress(88, msg, 'qa_story');
@@ -703,7 +871,7 @@ export async function runComicPipeline(
     }
   });
 
-  sendProgress(92, 'Assembling comic viewer...', 'viewer');
+  sendProgress(92, 'Assembling comic viewer', 'viewer');
 
   const elapsed = Math.floor((Date.now() - t0) / 1000);
   sendProgress(98, `Forge complete in ${elapsed}s: "${fixedStory.title}" — ${fixedStory.totalPages} pages, ${totalPanels} panels`, 'complete');

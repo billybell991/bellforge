@@ -2,6 +2,7 @@ import type { QAReport } from '../types';
 
 interface QAPanelProps {
   report: QAReport;
+  onDismiss?: () => void;
 }
 
 function scoreColor(score: number): string {
@@ -11,7 +12,7 @@ function scoreColor(score: number): string {
   return '#ef5350';
 }
 
-export function QAPanel({ report }: QAPanelProps) {
+export function QAPanel({ report, onDismiss }: QAPanelProps) {
   const overall = report.overallScore;
   const overallColor = scoreColor(overall);
 
@@ -64,10 +65,18 @@ export function QAPanel({ report }: QAPanelProps) {
       </div>
 
       <div className="qa-stats-row">
-        <span className="qa-stat">🎨 {imgSuccess}/{imgTotal} images</span>
+        {imgs && <span className="qa-stat">🎨 {imgSuccess}/{imgTotal} images</span>}
         <span className="qa-stat">⏱️ {timeStr}</span>
-        {report.config && <span className="qa-stat">🎬 {report.config.roomCount} scenes</span>}
+        {report.config && report.config.roomCount > 0 && (
+          <span className="qa-stat">🎬 {report.config.roomCount} {imgs ? 'scenes' : 'pages'}</span>
+        )}
       </div>
+
+      {onDismiss && (
+        <button className="qa-dismiss-btn" onClick={onDismiss}>
+          Continue to Preview →
+        </button>
+      )}
     </div>
   );
 }

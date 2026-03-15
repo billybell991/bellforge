@@ -111,7 +111,7 @@ export function PuzzleReviewStep({ puzzleSubject, artStyle, structure, onEditSte
 
       <div className="wizard-forge-area">
         <button className="forge-btn forge-btn-primary" onClick={onForge} disabled={!ready}>
-          ⚒️ FORGE THIS PUZZLE
+          <img src="/bellforge-logo.png" alt="" style={{ width: 20, height: 'auto', verticalAlign: 'middle', marginRight: 6 }} /> FORGE THIS PUZZLE
         </button>
         {!ready && <p className="forge-hint">Pick a subject and art style to unlock the forge.</p>}
       </div>

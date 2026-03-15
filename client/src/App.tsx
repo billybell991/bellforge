@@ -696,7 +696,7 @@ export default function App() {
               title="Return to build in progress"
             >
               <span className="build-pulse" />
-              ⚒️ Building {buildPercent}%
+              <img src="/bellforge-logo.png" alt="" style={{ width: 16, height: 'auto', verticalAlign: 'middle', marginRight: 4 }} /> Building {buildPercent}%
             </button>
           )}
           <button className="forge-header-library" onClick={handleGoToLibrary}>
