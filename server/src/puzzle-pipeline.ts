@@ -15,22 +15,118 @@ export interface PuzzleResult {
 
 type ProgressCallback = (percent: number, message: string, stage?: string) => void;
 
+function randomPick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+
+// ── Creative variety for puzzle imagery ──
+
+// Scene composition seeds — force different compositions for the same subject
+const PUZZLE_COMPOSITIONS = [
+  'dramatic bird\'s-eye view looking straight down',
+  'sweeping panoramic vista with dramatic depth from foreground to background',
+  'intimate close-up with extraordinary detail and texture',
+  'golden hour lighting with long shadows and warm amber glow',
+  'moody twilight scene with deep blues and purples, first stars appearing',
+  'misty atmospheric scene with layers of fog creating depth',
+  'vibrant aerial perspective with rich details at every scale',
+  'dramatic stormy atmosphere with shafts of light breaking through',
+  'serene dawn scene with soft pastel colors and mirror-still reflections',
+  'lush and overgrown, nature reclaiming everything in its path',
+  'crisp autumn scene with rich reds, oranges, and golds',
+  'moonlit nightscape with silver highlights and deep indigo shadows',
+];
+
+// Subject-specific scene ideas to prevent the same image every time
+const PUZZLE_SCENE_DNA: Record<string, string[]> = {
+  landscape: [
+    'a hidden valley with a waterfall cascading into a crystalline lake, surrounded by ancient trees draped in moss',
+    'a winding mountain path through alpine meadows, with snow-capped peaks reflected in a glacial tarn',
+    'terraced rice paddies glowing emerald green, with mist rolling through a valley at sunrise',
+    'a dramatic coastal cliff with crashing waves, a lighthouse perched on the edge, seabirds wheeling',
+    'a lavender field stretching to the horizon, with a stone farmhouse and cypress trees against a golden sky',
+    'a volcanic landscape with steam vents, obsidian rock formations, and an otherworldly aurora overhead',
+    'a tropical river winding through dense jungle, with exotic birds and butterflies among giant ferns',
+  ],
+  fantasy_scene: [
+    'a dragon\'s hoard — mountains of gold coins, jeweled goblets, and glowing artifacts in a vast underground cavern',
+    'a floating island garden connected by crystal bridges, with waterfalls pouring into the clouds below',
+    'an enchanted forest clearing where mushrooms glow in concentric rings and fireflies spell out ancient words',
+    'a wizard\'s tower library with spiral staircases, floating books, astronomical instruments, and a phoenix perched by a window',
+    'an underwater elven city with bioluminescent coral architecture, schools of jewel-colored fish, and kelp forests',
+    'a marketplace in a tree-canopy city, with rope bridges, lantern-lit stalls, and exotic creatures for sale',
+    'a frost giant\'s throne room carved from a glacier, with frozen waterfalls and aurora light streaming through ice windows',
+  ],
+  animal: [
+    'a pride of lions resting on sun-warmed rocks at golden hour, cubs playing while adults survey the savanna',
+    'a snow leopard perched on a Himalayan cliff ledge, with prayer flags whipping in the wind behind it',
+    'a family of elephants crossing a river at sunset, water splashing in golden light, egrets flying alongside',
+    'an octopus in a coral reef, tentacles exploring, surrounded by clownfish and sea anemones in dappled light',
+    'a red fox in a winter forest, breath misting, surrounded by snow-covered firs and a pale pink sky',
+    'a hummingbird hovering at a tropical flower, wings frozen mid-beat, with dewdrops catching rainbow light',
+    'wolves howling on a ridge silhouetted against a massive full moon, northern lights dancing overhead',
+  ],
+  space: [
+    'a nebula nursery — pillars of cosmic gas in impossible colors, with newborn stars glowing within',
+    'a ringed gas giant viewed from its largest moon, with ice geysers erupting and a distant sun on the horizon',
+    'an asteroid field with a derelict alien megastructure, covered in bioluminescent space coral',
+    'a binary sunset over a crystal desert, with geometric alien ruins casting impossibly long shadows',
+    'a space station orbiting a black hole, accretion disk painting everything in orange and violet light',
+    'the Milky Way arching over an alien landscape of glass spires and methane lakes, aurora rippling overhead',
+  ],
+  cityscape: [
+    'a rain-slicked Tokyo alley at night, neon signs reflected in puddles, steam rising from ramen stalls',
+    'a Venetian canal at golden hour, gondolas gliding past colorful buildings draped in flowers',
+    'a rooftop garden above a massive city, with skyscrapers fading into sunset haze and string lights overhead',
+    'a middle-eastern souk at twilight, with hanging lanterns, spice pyramids, and ornate doorways',
+    'a futuristic city built into a canyon wall, with floating transport pods and bioluminescent architecture',
+    'a snow-covered European village at Christmas, with warm windows, a frozen river, and a stone bridge',
+  ],
+  abstract: [
+    'an explosion of liquid color — mercury, gold, and sapphire blue swirling in complex fluid dynamics',
+    'geometric fractals blooming like flowers, each iteration more intricate, in a spectrum of warm-to-cool colors',
+    'a macro photograph of crystalline structures — bismuth rainbow staircases at impossible scales',
+    'layered torn paper in gradient hues, revealing different textures and patterns at each depth',
+    'neural network visualization — interconnected glowing nodes forming organic branching structures',
+    'marbled paper swirls in deep ocean colors — teal, navy, gold — with fine white veining',
+  ],
+  underwater: [
+    'a coral reef teeming with life — a sea turtle gliding past a wall of tropical fish, with sunbeams piercing the blue',
+    'a deep-sea bioluminescent garden — glowing jellyfish, anglerfish lanterns, and phosphorescent plankton trails',
+    'a sunken pirate ship covered in coral and sea fans, with treasure spilling from broken holds, manta rays circling',
+    'a kelp forest cathedral — golden kelp fronds swaying in shafts of sunlight, harbor seals playing among the columns',
+    'an underwater volcanic vent with extremophile gardens — tube worms, white crabs, and clouds of minerals',
+    'a frozen lake seen from below — air bubbles trapped in layers of ice above, strange shapes moving in the dark',
+  ],
+};
+
+function getPuzzleSceneSeed(subjectId: string): string {
+  const seeds = PUZZLE_SCENE_DNA[subjectId];
+  if (seeds?.length) return randomPick(seeds);
+  return '';
+}
+
 export async function runPuzzlePipeline(
   config: PuzzleConfig,
   onProgress: ProgressCallback
 ): Promise<PuzzleResult | null> {
-  const title = `${config.puzzleSubject.name} Puzzle`;
   const pieceCount = config.structure.pieceCount || 25;
   const artStyle = config.artStyle?.name || 'Painterly';
   const subject = config.puzzleSubject?.name || 'Epic Landscape';
 
   onProgress(10, 'Designing puzzle prompt', 'concept');
 
-  // Build the Imagen prompt from subject + art style
-  const prompt = `A beautiful, highly detailed ${artStyle} illustration of: ${subject}. ` +
-    `This image will be used for a jigsaw puzzle, so it should be rich in color and detail ` +
-    `across the entire composition with no large blank areas. Square 1:1 composition, ` +
-    `vibrant and visually engaging from edge to edge.`;
+  // Creative variety — different scene and composition every time
+  const sceneSeed = getPuzzleSceneSeed(config.puzzleSubject?.id || 'landscape');
+  const composition = randomPick(PUZZLE_COMPOSITIONS);
+  const sceneDesc = sceneSeed || subject;
+  const title = `${subject} Puzzle`;
+
+  // Build the Imagen prompt with creative variety
+  const prompt = `A breathtaking, museum-quality ${artStyle} illustration: ${sceneDesc}. ` +
+    `Composition: ${composition}. ` +
+    `This image will be used as a jigsaw puzzle, so it MUST have rich detail, color variation, ` +
+    `and visual interest across EVERY region — no large blank or uniform areas. ` +
+    `Every corner should have something interesting to look at. Square 1:1 composition, ` +
+    `vibrant and visually stunning from edge to edge. The kind of image you'd frame and hang on a wall.`;
 
   console.log(`[Puzzle] Imagen prompt: ${prompt.slice(0, 120)}...`);
 
