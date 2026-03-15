@@ -46,79 +46,98 @@ export function generateComicPreviewHtml(story: ComicStory): string {
 
   /* Cover */
   .cover-page {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    background: #0a0a0a;
     min-height: 100vh;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 2rem;
-    text-align: center;
     cursor: pointer;
     position: relative;
+    overflow: hidden;
+  }
+  .cover-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .cover-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    pointer-events: none;
+  }
+  .cover-top {
+    padding: 1.5rem 1.5rem 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%);
+    min-height: 22%;
   }
   .cover-publisher {
     font-family: 'Bangers', cursive;
-    font-size: 0.9rem;
-    letter-spacing: 4px;
+    font-size: 0.85rem;
+    letter-spacing: 5px;
     color: var(--title-gold);
     text-transform: uppercase;
-    margin-bottom: 0.5rem;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+    margin-bottom: 0.25rem;
   }
   .cover-issue {
     font-family: 'Bangers', cursive;
-    font-size: 0.8rem;
-    color: rgba(255,255,255,0.6);
-    margin-bottom: 1rem;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.7);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
   }
   .cover-title {
     font-family: 'Bangers', cursive;
-    font-size: 3.5rem;
+    font-size: clamp(2rem, 8vw, 4rem);
     color: var(--title-red);
-    text-shadow: 3px 3px 0 #000, -1px -1px 0 #000;
+    text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 0 0 20px rgba(229,57,53,0.4);
     letter-spacing: 3px;
-    line-height: 1.1;
-    margin-bottom: 0.5rem;
+    line-height: 1.05;
+    margin-top: 0.25rem;
+  }
+  .cover-bottom {
+    margin-top: auto;
+    padding: 0 1.5rem 1.5rem;
+    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%);
+    min-height: 15%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
   }
   .cover-subtitle {
-    font-size: 1.1rem;
-    color: rgba(255,255,255,0.8);
+    font-size: 1rem;
+    color: rgba(255,255,255,0.85);
     font-style: italic;
-    margin-bottom: 2rem;
-    max-width: 500px;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+    max-width: 70%;
   }
-  .cover-art-placeholder {
+  .cover-tap {
+    font-family: 'Bangers', cursive;
+    font-size: 1.1rem;
+    color: var(--title-gold);
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+    animation: pulse 2s ease-in-out infinite;
+    pointer-events: auto;
+  }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+  .cover-fallback {
     width: 60vw;
     max-width: 500px;
     aspect-ratio: 3/4;
     border: 3px solid var(--title-gold);
     border-radius: 8px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: rgba(255,255,255,0.5);
-    font-style: italic;
-    font-size: 0.9rem;
-    margin-bottom: 2rem;
+    gap: 1rem;
     background: linear-gradient(135deg, rgba(229,57,53,0.15) 0%, rgba(255,215,0,0.1) 50%, rgba(26,26,46,0.8) 100%);
-    box-shadow: 0 0 40px rgba(229,57,53,0.2), inset 0 0 60px rgba(0,0,0,0.3);
-    position: relative;
-    overflow: hidden;
+    text-align: center;
+    padding: 2rem;
   }
-  .cover-art-placeholder::before {
-    content: '';
-    position: absolute;
-    inset: 8px;
-    border: 1px solid rgba(255,215,0,0.2);
-    border-radius: 4px;
-  }
-  .cover-tap {
-    font-family: 'Bangers', cursive;
-    font-size: 1.2rem;
-    color: var(--title-gold);
-    animation: pulse 2s ease-in-out infinite;
-  }
-  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
 
   /* Page */
   .comic-page {
@@ -321,16 +340,27 @@ export function generateComicPreviewHtml(story: ComicStory): string {
   function renderCover() {
     currentIndex = -1;
     var html = '<div class="cover-page" id="cover-click">';
-    html += '<div class="cover-publisher">BellForge Comics</div>';
-    html += '<div class="cover-issue">Issue #' + (STORY.issueNumber || 1) + '</div>';
     if (STORY.coverIllustration) {
-      html += '<div class="cover-art-placeholder" style="border:none;background:none;"><img src="' + sanitizeImageSrc(STORY.coverIllustration) + '" alt="Cover" style="width:100%;height:100%;object-fit:cover;border-radius:8px;"></div>';
-    } else {
+      html += '<img class="cover-bg" src="' + sanitizeImageSrc(STORY.coverIllustration) + '" alt="Cover">';
+      html += '<div class="cover-overlay">';
+      html += '<div class="cover-top">';
+      html += '<div class="cover-publisher">BellForge Comics</div>';
+      html += '<div class="cover-issue">Issue #' + (STORY.issueNumber || 1) + '</div>';
       html += '<h1 class="cover-title">' + escapeHTML(STORY.title) + '</h1>';
-      html += '<div class="cover-subtitle">' + escapeHTML(STORY.subtitle) + '</div>';
-      html += '<div class="cover-art-placeholder">\u2726 ' + escapeHTML(STORY.title) + ' \u2726</div>';
+      html += '</div>';
+      html += '<div class="cover-bottom">';
+      html += '<div class="cover-subtitle">' + escapeHTML(STORY.subtitle || '') + '</div>';
+      html += '<div class="cover-tap">Tap to read \u2192</div>';
+      html += '</div>';
+      html += '</div>';
+    } else {
+      html += '<div class="cover-fallback">';
+      html += '<div class="cover-publisher">BellForge Comics</div>';
+      html += '<h1 class="cover-title">' + escapeHTML(STORY.title) + '</h1>';
+      html += '<div class="cover-subtitle">' + escapeHTML(STORY.subtitle || '') + '</div>';
+      html += '<div class="cover-tap">Tap to read \u2192</div>';
+      html += '</div>';
     }
-    html += '<div class="cover-tap">Tap to read \\u2192</div>';
     html += '</div>';
     pageContent.innerHTML = html;
     pageContent.className = 'page-enter';

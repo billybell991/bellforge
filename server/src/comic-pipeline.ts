@@ -1,6 +1,6 @@
 // ── AI Comics Pipeline ──
 // Generates a complete comic book via Gemini + Imagen
-// Cover: 100% Gemini (title + comic chrome, NO ANTI_TEXT)
+// Cover: ANTI_TEXT (pure art, no text) — HTML overlays title/publisher/issue
 // Interior: Per-PANEL illustrations with dialogue BAKED IN (speech bubbles, thought bubbles, narration boxes composed by the image generator)
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -565,9 +565,9 @@ export async function runComicPipeline(
   sendProgress(32, `Assembled: ${story.totalPages} pages, ${totalPanels} panels`, 'layouts');
 
   // Phase 3: Art generation via Imagen
-  // Per-panel illustrations: simple scene art with ANTI_TEXT (no text/bubbles).
-  // HTML viewer handles multi-panel grid layout + dialogue overlays via CSS.
-  // Cover: 100% Gemini composition with title text, NO ANTI_TEXT.
+  // Interior panels: dialogue baked into each panel's art prompt.
+  // Cover: ANTI_TEXT (art only) — HTML overlays title/publisher/issue.
+  // Cover: ANTI_TEXT (pure art) — HTML overlays title/publisher/issue.
   const artPrefix = getArtStylePrefix(config.artStyle.id);
   // Style anchor — stays identical across every panel for visual consistency
   const styleAnchor = `${artPrefix} white gutters, cinematic lighting`;
@@ -583,9 +583,9 @@ export async function runComicPipeline(
   });
   sendProgress(35, `Character refs: ${charRefs.size} portraits generated`, 'char_refs');
 
-  // 3b: Cover — NO ANTI_TEXT, Gemini renders title + comic book design elements
+  // 3b: Cover — ANTI_TEXT (pure art only). HTML overlays title/publisher/issue.
   sendProgress(36, 'Generating cover artwork...', 'cover_art');
-  const coverPrompt = `${styleAnchor} Design this as a complete, professional comic book cover that looks like an authentic published comic book. Include ALL standard comic cover elements: publisher logo box, issue number, barcode, price stamp. The title of the comic is "${concept.title}" — render it prominently. ${concept.protagonist.visualDescription} should dominate the composition in a dramatic pose. The title should NOT cover the hero's face.`;
+  const coverPrompt = `${styleAnchor} A dramatic, cinematic comic book cover illustration. ${concept.protagonist.visualDescription} dominates the composition in a powerful, dynamic hero pose. Rich detailed background that evokes the story's mood and setting. Dramatic lighting, bold colors, professional comic book illustration quality. Composition should leave space at the top 20% for a title overlay and bottom-left for a publisher badge. ${ANTI_TEXT}`;
   const coverImg = await generateImage(coverPrompt, '3:4');
   if (coverImg) {
     story.coverIllustration = `data:image/png;base64,${coverImg}`;

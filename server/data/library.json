@@ -213,5 +213,48 @@
     "buildId": "b76e726d-86f4-4017-a74f-30b56e437160",
     "apkSize": "30939 KB",
     "createdAt": "2026-03-15T01:10:51.005Z"
+  },
+  {
+    "id": "d1d81e31-d1fe-4914-aaae-137ac1f74007",
+    "name": "The Heart of Unmaking",
+    "rating": 0,
+    "entertainmentType": "comic",
+    "config": {
+      "comicGenre": {
+        "id": "origin_story",
+        "name": "Origin Story",
+        "icon": "🌟",
+        "description": "A hero is born — powers discovered, destiny revealed",
+        "tag": "FLAGSHIP"
+      },
+      "theme": {
+        "id": "horror",
+        "name": "Horror / Supernatural",
+        "icon": "👻",
+        "description": "Dark atmospheres and spine-tingling mysteries",
+        "color": "#ff3d00"
+      },
+      "artStyle": {
+        "id": "cel_shaded",
+        "name": "Cel-Shaded / Toonish",
+        "icon": "🎨",
+        "description": "Bold outlines, flat colors, cartoon charm",
+        "recommended": true
+      },
+      "structure": {
+        "pageCount": 4,
+        "panelStyle": "classic",
+        "tone": "action"
+      },
+      "story": {
+        "title": "The Heart of Unmaking",
+        "characterName": "Vesper",
+        "setting": "The Endless Sunder, a vast subterranean abyss where the walls are not rock but ossified grief, forming grotesque, fleshy 'reefs' that pulse with a barely audible, ancient rhythm.",
+        "description": "Vesper, the last of her bloodline, is tasked with sculpting from the petrified anguish that crystals on the Sunder's organic walls, hoping to anchor the encroaching void. But every attempt to understand and bind the abyss only reveals deeper, more horrifying truths, subtly warping Vesper’s perception of reality and making the next ritual a completely alien terror."
+      }
+    },
+    "buildId": "3cd7fafc-8ab0-4442-a0bc-e9428f4ae97a",
+    "apkSize": "31924 KB",
+    "createdAt": "2026-03-15T01:44:49.848Z"
   }
 ]
