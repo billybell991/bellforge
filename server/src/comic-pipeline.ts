@@ -556,6 +556,21 @@ function getPanelStyleRules(panelStyle: string): PanelStyleRules {
   return styles[panelStyle] || styles.classic;
 }
 
+/**
+ * Choose image aspect ratio to match the panel's grid cell shape,
+ * preventing letterboxing / white-space gaps.
+ */
+function getPanelAspectRatio(panelStyle: string, panelCount: number, panelIndex: number): string {
+  if (panelStyle === 'strip') return '4:3';  // wide horizontal panels
+  if (panelStyle === 'classic') return '4:3'; // 3 panels stacked in 1 column → landscape cells
+  // manga — varies by panel count and position
+  if (panelCount <= 2) return '3:4'; // 1-2 panels fill the page tall
+  if (panelCount === 3) return '4:3'; // 3 panels in 1 column → landscape
+  // 4+ panels in a 2-col grid → roughly square cells
+  if (panelCount >= 5 && panelIndex === 0) return '4:3'; // first panel spans full width
+  return '1:1'; // 4-6 panels in 2x2 or 2x3 → square cells
+}
+
 // ── Tone → dialogue & script style ──
 function getToneScriptDirections(tone: string): string {
   const directions: Record<string, string> = {
@@ -1128,10 +1143,11 @@ export async function runComicPipeline(
         ? `\nDialogue to render IN the image:\n${dialogueLines.join('\n')}\nIMPORTANT: Render these speech/thought/narration elements as part of the comic art. Place bubbles near their speakers without covering faces. Each speech or thought bubble must have exactly ONE tail, and it must point directly at the speaker's face. Do NOT add any other text or dialogue beyond what is listed above.`
         : '\nThis panel has NO dialogue — do not add any text, speech bubbles, or captions.';
 
-      const panelPrompt = `${styleAnchor} single comic book panel illustration. ${panel.artDirection}. Setting: ${page.setting}. ${charAnchorBlock}.${dialogueBlock}`;
+      const safeZone = 'COMPOSITION RULE: Keep all important content (faces, speech bubbles, text, key objects) within the center 85% of the image. Leave the outer edges as safe-bleed area with only background.';
+      const panelPrompt = `${styleAnchor} single comic book panel illustration. ${panel.artDirection}. Setting: ${page.setting}. ${charAnchorBlock}. ${safeZone}${dialogueBlock}`;
 
-      // Panel aspect ratio depends on panel style
-      const panelAspect = config.structure.panelStyle === 'strip' ? '4:3' : '3:4';
+      // Panel aspect ratio matches the grid cell shape to avoid letterboxing
+      const panelAspect = getPanelAspectRatio(config.structure.panelStyle, page.panels.length, j);
 
       // Generate with QA/retry loop
       let bestImg: string | null = null;

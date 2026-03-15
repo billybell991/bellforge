@@ -26,6 +26,7 @@ interface ComicWizardContainerProps {
 export function ComicWizardContainer(props: ComicWizardContainerProps) {
   const allFilled = !!(props.comicGenre && props.theme && props.artStyle && props.story.title);
   const [currentStep, setCurrentStep] = useState<WizardStep>(allFilled ? 'review' : 'genre');
+  const [surpriseGenerating, setSurpriseGenerating] = useState(false);
 
   const stepIndex = COMIC_WIZARD_STEPS.findIndex((s) => s.id === currentStep);
 
@@ -125,7 +126,9 @@ export function ComicWizardContainer(props: ComicWizardContainerProps) {
             value={props.story}
             onChange={props.onStoryChange}
             genreHint={props.comicGenre?.name}
-            themeHint={props.theme?.name}            entertainmentType="comic"          />
+            themeHint={props.theme?.name}            entertainmentType="comic"            hideButton
+            onGeneratingChange={setSurpriseGenerating}
+          />
         )}
         {currentStep === 'review' && (
           <ComicReviewStep
@@ -151,6 +154,20 @@ export function ComicWizardContainer(props: ComicWizardContainerProps) {
           <button className="nav-btn back" onClick={goBack}>
             ← Back
           </button>
+          {currentStep === 'story' && (
+            <button className="surprise-btn" onClick={() => {
+              setSurpriseGenerating(true);
+              fetch('/api/gemini/story', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ genreHint: props.comicGenre?.name, themeHint: props.theme?.name }),
+              }).then(r => r.json()).then(data => {
+                if (data.story) props.onStoryChange(data.story);
+              }).finally(() => setSurpriseGenerating(false));
+            }} disabled={surpriseGenerating}>
+              {surpriseGenerating ? '🤖 Weaving...' : '✨ Surprise Me'}
+            </button>
+          )}
           <button className="nav-btn next" onClick={goNext} disabled={!canProceed}>
             Next →
           </button>

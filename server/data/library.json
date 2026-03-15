@@ -1,36 +1,5 @@
 [
   {
-    "id": "7376a5b5-28cf-46ba-b646-4cd1002347c6",
-    "name": "gus the goldendoodle eating socks at a fancy restaurant Puzzle",
-    "rating": 0,
-    "entertainmentType": "puzzle",
-    "config": {
-      "puzzleSubject": {
-        "id": "custom",
-        "name": "gus the goldendoodle eating socks at a fancy restaurant",
-        "icon": "✨",
-        "description": "gus the goldendoodle eating socks at a fancy restaurant",
-        "tag": "NEW"
-      },
-      "artStyle": {
-        "id": "cel_shaded",
-        "name": "Cel-Shaded / Toonish",
-        "icon": "🎨",
-        "description": "Bold outlines, flat colors, cartoon charm",
-        "recommended": true
-      },
-      "structure": {
-        "pieceCount": 25,
-        "difficulty": "medium",
-        "rotation": false
-      }
-    },
-    "buildId": "775826da-f532-48f4-a992-226a27c57621",
-    "apkSize": "2384 KB",
-    "createdAt": "2026-03-15T12:04:38.546Z",
-    "thumbnail": "775826da-f532-48f4-a992-226a27c57621.png"
-  },
-  {
     "id": "47d346b2-64a1-4c06-bbd5-14ba57c38d4d",
     "name": "The Verdant Maw",
     "rating": 0,
@@ -201,5 +170,137 @@
     "apkSize": "56337 KB",
     "createdAt": "2026-03-15T14:34:29.923Z",
     "thumbnail": "acf67215-3b44-4eb2-9ce9-aedb6d4f9ac5.png"
+  },
+  {
+    "id": "899e2ff9-d694-4139-9bb1-5f4a7737a336",
+    "name": "Reflection's Maw",
+    "rating": 0,
+    "entertainmentType": "comic",
+    "config": {
+      "comicGenre": {
+        "id": "origin_story",
+        "name": "Origin Story",
+        "icon": "🌟",
+        "description": "A hero is born — powers discovered, destiny revealed",
+        "tag": "FLAGSHIP"
+      },
+      "theme": {
+        "id": "horror",
+        "name": "Horror / Supernatural",
+        "icon": "👻",
+        "description": "Dark atmospheres and spine-tingling mysteries",
+        "color": "#ff3d00"
+      },
+      "artStyle": {
+        "id": "cel_shaded",
+        "name": "Cel-Shaded / Toonish",
+        "icon": "🎨",
+        "description": "Bold outlines, flat colors, cartoon charm",
+        "recommended": true
+      },
+      "structure": {
+        "pageCount": 5,
+        "panelStyle": "manga",
+        "tone": "horror"
+      },
+      "story": {
+        "title": "Reflection's Maw",
+        "characterName": "Malakor",
+        "setting": "A crumbling, forgotten manor where every reflective surface – be it a tarnished silver spoon, a puddle of rainwater, or the sheen on a widow's tear – shows not your own image, but an echo of the damned.",
+        "description": "Malakor, a disgraced soul-binder, seeks to atone for a heinous pact by severing a single, spectral thread binding a forgotten victim to an infernal plane. He must navigate the manor's ever-shifting, reflected realities, where each discovered truth or broken curse doesn't resolve the haunting, but instead unravels the fabric of existence itself, twisting the manor's spectral inhabitants and Malakor's own sanity into ever more grotesque forms."
+      }
+    },
+    "buildId": "c4f5be6e-3c06-48b0-9019-2d4d8c56f0da",
+    "apkSize": "54599 KB",
+    "createdAt": "2026-03-15T15:30:45.112Z",
+    "thumbnail": "c4f5be6e-3c06-48b0-9019-2d4d8c56f0da.png"
+  },
+  {
+    "id": "3cd6cb6f-13f8-423d-b12c-1dc3ebde76bf",
+    "name": "Viscera of Self",
+    "rating": 0,
+    "entertainmentType": "comic",
+    "config": {
+      "comicGenre": {
+        "id": "origin_story",
+        "name": "Origin Story",
+        "icon": "🌟",
+        "description": "A hero is born — powers discovered, destiny revealed",
+        "tag": "FLAGSHIP"
+      },
+      "theme": {
+        "id": "horror",
+        "name": "Horror / Supernatural",
+        "icon": "👻",
+        "description": "Dark atmospheres and spine-tingling mysteries",
+        "color": "#ff3d00"
+      },
+      "artStyle": {
+        "id": "cel_shaded",
+        "name": "Cel-Shaded / Toonish",
+        "icon": "🎨",
+        "description": "Bold outlines, flat colors, cartoon charm",
+        "recommended": true
+      },
+      "structure": {
+        "pageCount": 4,
+        "panelStyle": "manga",
+        "tone": "dramatic"
+      },
+      "story": {
+        "title": "Viscera of Self",
+        "characterName": "K'tharr",
+        "setting": "The churning, membranous void within the forgotten god-beast, Xylos, where reality itself weeps viscous truths and silence devours all sound.",
+        "description": "K'tharr, a mute alchemist, navigates the abyssal depths, brewing shimmering, foul elixirs from the pulsating humors of Xylos. These concoctions allow K'tharr to perceive and gather fragmented essences — solidified sorrows, whispered echoes, and dislocated fragments of consciousness — believing them keys to an escape or forgotten power. However, each painstakingly collected piece reconstructs not a path to salvation, but the horrifying, grotesque true identity that was violently torn apart upon K'tharr's arrival within the primordial horror."
+      }
+    },
+    "buildId": "ebece2c8-ea48-465c-baff-72e85aa6ed9e",
+    "apkSize": "44606 KB",
+    "createdAt": "2026-03-15T16:16:58.789Z",
+    "thumbnail": "ebece2c8-ea48-465c-baff-72e85aa6ed9e.png"
+  },
+  {
+    "id": "50a564d4-acdf-4e95-8ee9-c6ad4cb09221",
+    "name": "The Heartwood's Hunger",
+    "rating": 0,
+    "entertainmentType": "comic",
+    "config": {
+      "comicGenre": {
+        "id": "origin_story",
+        "name": "Origin Story",
+        "icon": "🌟",
+        "description": "A hero is born — powers discovered, destiny revealed",
+        "tag": "FLAGSHIP"
+      },
+      "theme": {
+        "id": "horror",
+        "name": "Horror / Supernatural",
+        "icon": "👻",
+        "description": "Dark atmospheres and spine-tingling mysteries",
+        "color": "#ff3d00"
+      },
+      "artStyle": {
+        "id": "cel_shaded",
+        "name": "Cel-Shaded / Toonish",
+        "icon": "🎨",
+        "description": "Bold outlines, flat colors, cartoon charm",
+        "recommended": true
+      },
+      "structure": {
+        "pageCount": 5,
+        "panelStyle": "manga",
+        "tone": "dramatic"
+      },
+      "story": {
+        "title": "The Heartwood's Hunger",
+        "characterName": "Vessel-Shard",
+        "setting": "The colossal, petrified husk of the world-tree, *Ygg-Dread*, stretches into the black heavens, its hollow core a cathedral of groaning, ossified wood and whispering shadows that promise eternal entanglement.",
+        "description": "Vessel-Shard, a sentient amalgamation of a dozen cursed souls bound into one flesh, must descend into the abyssal heart of the Ygg-Dread, a colossal, sentient tree whose very substance is woven from forgotten nightmares. The tree doesn't merely house ancient evils; it actively hungers for the identity of any who dare tread its labyrinthine passages, promising to unravel Vessel-Shard's fragmented self into the horrifying tapestry of its own consciousness, where the 'lasers' are the burning psychic echoes of its countless victims."
+      }
+    },
+    "buildId": "54732137-44d5-40fd-8428-d1eebac9d6f4",
+    "apkSize": "56875 KB",
+    "createdAt": "2026-03-15T16:17:05.023Z",
+    "thumbnail": "54732137-44d5-40fd-8428-d1eebac9d6f4.png"
   }
 ]

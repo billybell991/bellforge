@@ -7,13 +7,16 @@ interface StoryStepProps {
   themeHint?: string;
   entertainmentType?: EntertainmentType;
   onChange: (s: StoryConfig) => void;
+  hideButton?: boolean;
+  onGeneratingChange?: (generating: boolean) => void;
 }
 
-export function StoryStep({ value, genreHint, themeHint, entertainmentType, onChange }: StoryStepProps) {
+export function StoryStep({ value, genreHint, themeHint, entertainmentType, onChange, hideButton, onGeneratingChange }: StoryStepProps) {
   const [generating, setGenerating] = useState(false);
 
   async function handleSurprise() {
     setGenerating(true);
+    onGeneratingChange?.(true);
     try {
       const res = await fetch('/api/gemini/story', {
         method: 'POST',
@@ -28,6 +31,7 @@ export function StoryStep({ value, genreHint, themeHint, entertainmentType, onCh
       // Shouldn't happen — server has built-in fallback bank
     } finally {
       setGenerating(false);
+      onGeneratingChange?.(false);
     }
   }
 
@@ -89,11 +93,13 @@ export function StoryStep({ value, genreHint, themeHint, entertainmentType, onCh
         </div>
       </div>
 
-      <div style={{ textAlign: 'center' }}>
-        <button className="surprise-btn" onClick={handleSurprise} disabled={generating}>
-          {generating ? '🤖 Weaving your tale...' : '✨ Surprise Me — AI-Generated Story'}
-        </button>
-      </div>
+      {!hideButton && (
+        <div style={{ textAlign: 'center' }}>
+          <button className="surprise-btn" onClick={handleSurprise} disabled={generating}>
+            {generating ? '🤖 Weaving your tale...' : '✨ Surprise Me — AI-Generated Story'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

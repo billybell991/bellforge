@@ -26,6 +26,7 @@ interface CYOAWizardContainerProps {
 export function CYOAWizardContainer(props: CYOAWizardContainerProps) {
   const allFilled = !!(props.cyoaGenre && props.theme && props.artStyle && props.story.title);
   const [currentStep, setCurrentStep] = useState<WizardStep>(allFilled ? 'review' : 'genre');
+  const [surpriseGenerating, setSurpriseGenerating] = useState(false);
 
   const stepIndex = CYOA_WIZARD_STEPS.findIndex((s) => s.id === currentStep);
 
@@ -125,7 +126,9 @@ export function CYOAWizardContainer(props: CYOAWizardContainerProps) {
             value={props.story}
             onChange={props.onStoryChange}
             genreHint={props.cyoaGenre?.name}
-            themeHint={props.theme?.name}            entertainmentType="adventure"          />
+            themeHint={props.theme?.name}            entertainmentType="adventure"            hideButton
+            onGeneratingChange={setSurpriseGenerating}
+          />
         )}
         {currentStep === 'review' && (
           <CYOAReviewStep
@@ -151,6 +154,20 @@ export function CYOAWizardContainer(props: CYOAWizardContainerProps) {
           <button className="nav-btn back" onClick={goBack}>
             ← Back
           </button>
+          {currentStep === 'story' && (
+            <button className="surprise-btn" onClick={() => {
+              setSurpriseGenerating(true);
+              fetch('/api/gemini/story', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ genreHint: props.cyoaGenre?.name, themeHint: props.theme?.name }),
+              }).then(r => r.json()).then(data => {
+                if (data.story) props.onStoryChange(data.story);
+              }).finally(() => setSurpriseGenerating(false));
+            }} disabled={surpriseGenerating}>
+              {surpriseGenerating ? '🤖 Weaving...' : '✨ Surprise Me'}
+            </button>
+          )}
           <button className="nav-btn next" onClick={goNext} disabled={!canProceed}>
             Next →
           </button>
