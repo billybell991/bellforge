@@ -369,6 +369,87 @@ function getArtStylePrefix(artStyleId: string): string {
   return styles[artStyleId] || 'professional comic book illustration, bold black outlines, clean line art, dynamic composition,';
 }
 
+// ── Theme → atmosphere cues for art prompts ──
+function getThemeAtmosphere(themeId: string): string {
+  const atmo: Record<string, string> = {
+    horror: 'dark eerie atmosphere, deep shadows, unsettling lighting, muted desaturated palette with sickly greens and blood reds, fog and decay',
+    fantasy: 'rich magical atmosphere, warm golden and jewel-toned lighting, lush enchanted environments, ethereal glow effects',
+    scifi: 'sleek futuristic atmosphere, cool blue and chrome lighting, holographic displays, high-tech minimalist environments',
+    mystery: 'moody noir-tinged atmosphere, dramatic chiaroscuro lighting, muted earth tones punctuated by sharp highlights, rain-slicked surfaces',
+    cozy: 'warm inviting atmosphere, soft golden-hour lighting, pastel and earth tones, gentle shadows, comfortable lived-in environments',
+    cyberpunk: 'neon-drenched dystopian atmosphere, harsh artificial lighting, magenta/cyan/electric blue palette, rain-slicked streets reflecting neon signs',
+    steampunk: 'warm brass and copper atmosphere, amber gaslight glow, steam and cog motifs, sepia-to-gold color palette, Victorian industrial aesthetic',
+    postapoc: 'bleak desolate atmosphere, harsh washed-out lighting, dusty muted palette with rust and ash tones, crumbling overgrown structures',
+  };
+  return atmo[themeId] || '';
+}
+
+// ── Tone → art direction cues ──
+function getToneArtCues(tone: string): string {
+  const cues: Record<string, string> = {
+    action: 'kinetic dynamic composition, motion blur, impact frames, dramatic foreshortening, explosive energy, speed lines',
+    dramatic: 'emotionally charged composition, intimate camera angles, expressive faces front and center, heavy use of shadow for mood',
+    comedic: 'exaggerated expressions, bright snappy composition, playful visual gags, lively body language, comedic timing through panel pacing',
+    horror: 'claustrophobic framing, extreme close-ups on faces showing terror, things lurking at panel edges, oppressive darkness creeping in, body horror details',
+  };
+  return cues[tone] || '';
+}
+
+// ── Panel Style → layout & composition rules ──
+interface PanelStyleRules {
+  panelCount: string;        // instruction for number of panels
+  layoutInstructions: string; // how panels should be arranged
+  artCues: string;           // style-specific art direction
+  scriptPrompt: string;      // instructions for the script-writing phase
+}
+
+function getPanelStyleRules(panelStyle: string): PanelStyleRules {
+  const styles: Record<string, PanelStyleRules> = {
+    classic: {
+      panelCount: 'exactly 3 panels per page',
+      layoutInstructions: 'Traditional American comic grid layout: clean rectangular panels of roughly equal size arranged in orderly rows, with even white gutters between them.',
+      artCues: 'classic American comic composition, rectangular panel framing, balanced symmetric layouts',
+      scriptPrompt: `Panel layout: Classic American comic grid. 3 rectangular panels per page.
+- Panel 1: Establishing/wide shot — sets the scene with a broader view
+- Panel 2: Mid-shot — drives the action or conversation forward
+- Panel 3: Close-up or reaction — emotional punch or cliffhanger for the page turn`,
+    },
+    manga: {
+      panelCount: '3 to 5 panels per page (vary the count page-to-page for dynamic pacing — NOT the same count every page)',
+      layoutInstructions: 'Dynamic Japanese manga layout: panels vary dramatically in size and shape. Use tall narrow panels, wide cinematic panels, small reaction panels, and occasional full-page splash moments. Panels should feel like they FLOW into each other.',
+      artCues: 'manga-style dynamic composition, dramatic angles, speed lines for motion, exaggerated perspective, emotional intensity',
+      scriptPrompt: `Panel layout: Japanese manga style. 3-5 panels per page — VARY the count!
+- Use dramatic size contrast: one large dominant panel + smaller reaction panels, or a sequence of rapid small panels for tension
+- Include speed lines, dramatic angles (extreme low angle, bird's eye), and manga-specific techniques (chibi reactions, screentone-style shading, sweat drops)
+- Composition should feel DYNAMIC — panels burst out of the grid, imagery can bleed to panel edges
+- Emotional beats get BIG panels. Quick action gets SMALL rapid panels.`,
+    },
+    strip: {
+      panelCount: 'exactly 2 or 3 wide horizontal panels per page (newspaper comic strip format)',
+      layoutInstructions: 'Horizontal newspaper comic strip layout: wide panels stacked vertically (each panel is wider than it is tall). Clean, even spacing. Reading flows left-to-right, top-to-bottom like a daily comic strip.',
+      artCues: 'wide horizontal panel composition, landscape framing, characters positioned for left-to-right reading flow, newspaper comic strip aesthetic',
+      scriptPrompt: `Panel layout: Newspaper comic strip format. 2-3 WIDE horizontal panels per page.
+- Each panel is wider than it is tall (landscape orientation within the panel)
+- Panel 1: Setup — establish the situation or show the start of a gag
+- Panel 2: Development — escalation, reaction, or the turn
+- Panel 3 (if present): Punchline, payoff, or dramatic beat
+- Think newspaper strips: clean, horizontally-composed, characters interacting left-to-right`,
+    },
+  };
+  return styles[panelStyle] || styles.classic;
+}
+
+// ── Tone → dialogue & script style ──
+function getToneScriptDirections(tone: string): string {
+  const directions: Record<string, string> = {
+    action: `TONE: ACTION — Dialogue should be SHORT, punchy, urgent. Characters bark orders, make split-second decisions, throw one-liners mid-fight. Don't stop to explain — show it. Every page should feel like it's MOVING. Art direction should emphasize kinetic energy: impacts, speed, explosions, dramatic poses.`,
+    dramatic: `TONE: DRAMATIC — Dialogue should be emotionally resonant. Characters reveal feelings, confront each other, make difficult choices. Give space for silence — not every panel needs dialogue. Art direction should emphasize faces, body language, and intimate moments. Let the art BREATHE.`,
+    comedic: `TONE: COMEDIC — Dialogue should be witty, snappy, and have comedic timing. Characters banter, misunderstand each other, and get into absurd situations. Use visual gags in art direction. Exaggerated expressions are encouraged. The reader should laugh at least once per page.`,
+    horror: `TONE: HORROR — Dialogue should be sparse, unsettling, and dread-inducing. Characters whisper, stammer, and trail off. What they DON'T say matters more than what they do. Art direction should be claustrophobic, with things lurking at edges. Build dread through what's almost visible.`,
+  };
+  return directions[tone] || directions.action;
+}
+
 // ── Phase 1a: Concept & Story Outline (lightweight — no panel scripts) ──
 
 interface PageOutline {
@@ -402,12 +483,15 @@ export async function phaseConceptOutline(
 
   onProgress?.('Designing concept, characters, and story arc');
 
+  const panelRules = getPanelStyleRules(config.structure.panelStyle);
+
   const prompt = `You are a master comic book writer who creates stories people can't put down — the kind readers photograph and text to their friends. Creativity seed: ${Date.now()}.
 
 Story type: ${genre}
 The comic has exactly ${pageCount} interior pages.
-Theme/atmosphere: ${themeName}
-Tone: ${tone}
+Theme/atmosphere: ${themeName} — THIS MUST PERMEATE EVERY SCENE: settings, mood, visual descriptions, character behavior. A "${themeName}" comic should FEEL unmistakably ${themeName} on every single page.
+Tone: ${tone} — the tone shapes HOW the story is told (pacing, dialogue style, emotional register)
+Panel style: ${config.structure.panelStyle} — ${panelRules.layoutInstructions}
 ${titleLine}${charLine}${seedLine}
 
 ═══ CREATIVE SPARKS (use as loose inspiration, don't copy literally) ═══
@@ -448,7 +532,8 @@ Output valid JSON with the concept and a one-line-per-page outline (NO panel scr
 }
 
 CRITICAL RULES:
-- The visualDescription for each character must be hyper-specific and consistent — it will be pasted verbatim into EVERY art prompt
+- The visualDescription for each character must be hyper-specific and consistent — it will be pasted verbatim into EVERY art prompt. Clothing, gear, and accessories should FIT the ${themeName} theme.
+- Every "setting" in the outline must DRIP with ${themeName} atmosphere — describe specific environmental details that make the theme unmistakable
 - Story should have a clear arc: hook → escalation → climax → resolution
 - outline must have exactly ${pageCount} entries
 - Keep outline descriptions short — just enough to convey what happens
@@ -494,6 +579,10 @@ export async function phasePanelScripts(
     ...concept.characters.map(c => `${c.name} (${c.role}): ${c.visualDescription}`),
   ].join('\n');
 
+  const panelRules = getPanelStyleRules(config.structure.panelStyle);
+  const toneDirections = getToneScriptDirections(config.structure.tone);
+  const themeAtmo = getThemeAtmosphere(config.theme.id);
+
   for (let i = 0; i < outline.length; i += BATCH_SIZE) {
     const batch = outline.slice(i, i + BATCH_SIZE);
     const batchIdx = Math.floor(i / BATCH_SIZE);
@@ -501,6 +590,8 @@ export async function phasePanelScripts(
     onProgress?.(`Writing scripts for ${pageRange} of ${outline.length}`, batchIdx, totalBatches);
 
     const prompt = `You are scripting panel-by-panel layouts for a ${config.comicGenre.name} comic called "${concept.title}".
+Theme atmosphere: ${config.theme.name}${themeAtmo ? ` — ${themeAtmo}` : ''}
+${toneDirections}
 
 Characters:
 ${charBlock}
@@ -508,7 +599,9 @@ ${charBlock}
 Story outline for these pages:
 ${batch.map(p => `Page ${p.pageNumber}: [${p.setting}] ${p.description}`).join('\n')}
 
-For each page, write exactly 3 panels with detailed art direction and dialogue.
+For each page, write ${panelRules.panelCount} with detailed art direction and dialogue.
+
+${panelRules.scriptPrompt}
 
 Output valid JSON array:
 [
@@ -530,7 +623,7 @@ Output valid JSON array:
 ]
 
 RULES:
-- Exactly 3 panels per page: one establishing/wide shot, one mid/action shot, one close-up/reaction shot
+- ${panelRules.panelCount}
 - "speech" for spoken dialogue OUT LOUD to another character (the default — use this most of the time)
 - "thought" for RARE private inner monologue ONLY — use sparingly (max 1 per page, and only when a character is alone or hiding their true feelings). Do NOT use thought bubbles for normal reactions or observations.
 - "narration" for scene-setting captions or omniscient narrator (e.g. "Meanwhile..." or "Three hours later..."). Keep narration SHORT — 1 sentence max.
@@ -713,7 +806,10 @@ export async function runComicPipeline(
   // Cover: ANTI_TEXT (pure art) — HTML overlays title/publisher/issue.
   const artPrefix = getArtStylePrefix(config.artStyle.id);
   // Style anchor — stays identical across every panel for visual consistency
-  const styleAnchor = `${artPrefix} white gutters, cinematic lighting`;
+  const themeAtmo = getThemeAtmosphere(config.theme.id);
+  const toneArtCues = getToneArtCues(config.structure.tone);
+  const panelRules = getPanelStyleRules(config.structure.panelStyle);
+  const styleAnchor = `${artPrefix} ${panelRules.artCues}, ${themeAtmo ? themeAtmo + ',' : ''} ${toneArtCues ? toneArtCues + ',' : ''} cinematic lighting`;
   const charBlock = [
     `${concept.protagonist.name}: ${concept.protagonist.visualDescription}`,
     ...concept.characters.map(c => `${c.name}: ${c.visualDescription}`),
@@ -813,12 +909,15 @@ export async function runComicPipeline(
 
       const panelPrompt = `${styleAnchor} single comic book panel illustration. ${panel.artDirection}. Setting: ${page.setting}. ${charAnchorBlock}.${dialogueBlock}`;
 
+      // Panel aspect ratio depends on panel style
+      const panelAspect = config.structure.panelStyle === 'strip' ? '4:3' : '3:4';
+
       // Generate with QA/retry loop
       let bestImg: string | null = null;
       let bestReason = '';
 
       for (let attempt = 0; attempt <= MAX_PANEL_RETRIES; attempt++) {
-        const panelImg = await generateImage(panelPrompt, '3:4');
+        const panelImg = await generateImage(panelPrompt, panelAspect);
         if (!panelImg) {
           console.warn(`[Panel Art] Page ${i + 1} Panel ${j + 1}: Imagen failed (attempt ${attempt + 1})`);
           if (attempt < MAX_PANEL_RETRIES) await sleep(2000);
