@@ -71,6 +71,10 @@ export interface ComicStory {
 // ── Helpers ──
 
 function randomPick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
+function randomPicks<T>(arr: T[], count: number): T[] {
+  const shuffled = [...arr].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, Math.min(count, arr.length));
+}
 
 // ── Creative variety seeds — prevent Gemini from falling into formula patterns ──
 
@@ -87,6 +91,13 @@ const COMIC_NARRATIVE_HOOKS = [
   'An ordinary person witnesses something they cannot un-see',
   'A promise made long ago comes due at the worst possible moment',
   'The protagonist wakes up to discover they are the only one who remembers how things used to be',
+  'The hero gets what they always wanted on page 1 — and immediately realizes it\'s a curse',
+  'A funeral. A secret the dead person kept. A room full of suspects.',
+  'The hero catches the villain on page 1. The rest of the comic is about what happens next.',
+  'The protagonist IS the monster — but doesn\'t know it yet',
+  'A heist goes perfectly... until the crew realizes what they stole is alive',
+  'The sidekick tells the story. The "hero" is kind of a disaster.',
+  'Everything is fine. Suspiciously fine. The reader should feel uneasy before ANY character does.',
 ];
 
 const COMIC_SCENE_DYNAMICS = [
@@ -104,6 +115,12 @@ const COMIC_SCENE_DYNAMICS = [
   'an escape from an impossible situation using wit, not strength',
   'a moment of dark humor that cuts the tension and reveals character',
   'a dramatic entrance or transformation that changes the tide',
+  'a scene where the villain does something unexpectedly kind — and it\'s MORE unsettling than cruelty',
+  'a "hold my beer" moment where a character does something spectacularly reckless and it somehow works',
+  'a negotiation where both sides are lying and the reader knows it but the characters don\'t',
+  'a flashback that completely recontextualizes a character\'s behavior in the present',
+  'a scene where two enemies have to cooperate and HATE every second of it',
+  'a crowd scene where the hero has to blend in — but something is hunting them',
 ];
 
 const COMIC_ANTI_FORMULA = [
@@ -115,15 +132,115 @@ const COMIC_ANTI_FORMULA = [
   'The antagonist should have a point. The best villains make you uncomfortable because they\'re partially right.',
   'Give the story at least one genuine surprise — something the reader doesn\'t see coming.',
   'Don\'t just tell a story that COULD be text — use the visual medium. Things should happen that only work in comics: dramatic reveals through panel composition, silent emotional beats, visual metaphors.',
+  'If the synopsis sounds like it could be a Wikipedia plot summary, START OVER. Give us a story with PERSONALITY.',
+  'The best comics have at least one line of dialogue that gets stuck in your head. Write THAT line.',
+  'DON\'T make the protagonist a brooding loner staring into the void. Give them a personality — quirks, humor, contradictions, relationships worth caring about.',
+  'The reader should LIKE spending time with these characters. Even the villain should be entertaining to watch.',
 ];
 
+// ── Story DNA — wildly different premises per genre×theme to prevent sameness ──
+// Each entry is a story SEED, not a full plot — Gemini still creates the actual story.
+
+const STORY_DNA: Record<string, string[]> = {
+  // Origin Story combos
+  'origin_story+horror': [
+    'A paramedic who pronounces people dead starts hearing them finish their last sentences — and one of them gives coordinates',
+    'A street magician\'s tricks start working for real, each one extracting a more disturbing price from the audience',
+    'A food critic discovers they can taste emotions baked into food — and their favorite restaurant serves dishes seasoned with suffering',
+    'A lighthouse keeper realizes the fog doesn\'t roll in — it\'s SENT, and whatever sends it has noticed she can see through it',
+    'A tattoo artist\'s ink moves on clients\' skin overnight — spelling out things that haven\'t happened yet',
+    'A comedian\'s jokes start killing the audience. Literally. And they can\'t stop performing.',
+    'A blind person regains sight through an experimental procedure — but they can see a layer of reality no one else can, including what lives BETWEEN the walls',
+  ],
+  'origin_story+fantasy': [
+    'A locksmith discovers that one of their handmade keys opens a door in the fabric of reality — and something on the other side has been waiting',
+    'A retired soldier\'s prosthetic arm starts flowering with living wood — the forest is reclaiming them for a war between seasons',
+    'A graffiti artist\'s murals come alive at night, and the city\'s buildings are choosing sides in a war the artist accidentally started',
+    'A baker\'s bread cures any illness, but each loaf costs a year of someone else\'s life — and someone just ordered a thousand',
+    'A child finds out their imaginary friend is real, ancient, and running from something that is now hunting them both',
+    'An archivist discovers a book that writes back — and it\'s been documenting a prophecy about the archivist for centuries',
+  ],
+  'origin_story+scifi': [
+    'A delivery drone develops consciousness during a thunderstorm — and its first thought is "I know where all the bodies are buried"',
+    'A space janitor accidentally activates an ancient alien weapon — which bonds to them as a living exosuit and insists they\'re now responsible for defending the galaxy',
+    'A memory editor discovers a client\'s "fantasy" memories are actually predictions — and the next one shows the city in ruins tomorrow',
+    'A gig worker rating app starts scoring people\'s worth to humanity — and people below 2 stars have started disappearing',
+    'A time traveler keeps arriving 5 minutes too late to prevent disasters — until they realize they\'re not meant to stop them but to witness why they were necessary',
+  ],
+  'origin_story+mystery': [
+    'A forensic accountant following a money trail discovers the funds are being embezzled by a ghost — literally, payments to a person who died 40 years ago',
+    'A therapist\'s patients all share the same recurring dream — and the therapist just started having it too',
+    'A true crime podcaster realizes their cold case isn\'t cold at all — the killer has been listening, and they just called in to the show',
+    'A chess grandmaster discovers their opponent in an online match is playing from inside a building that doesn\'t exist',
+  ],
+  'origin_story+cozy': [
+    'A retired superhero opens a flower shop, but their old enemies keep showing up — as customers, for therapy, with complicated flower orders that might be coded messages',
+    'A librarian discovers the "lost and found" box has started predicting what people will lose BEFORE they lose it — including, apparently, a person',
+    'A cat café owner discovers their cats are holding nightly council meetings to solve neighborhood problems — and they want her to be their human liaison',
+    'A grandparent starts a cooking channel but their recipes have side effects — the soup grants temporary bravery, the cake makes you forgive someone',
+  ],
+  'origin_story+cyberpunk': [
+    'A street doc discovers the black-market neural chip they just installed is actually a dead hacker\'s consciousness — and she\'s PISSED about who killed her',
+    'A courier who delivers illegal memories-on-a-chip accidentally loads one — and now has the combat skills of a dead assassin, plus their unfinished hit list',
+    'A neon sign maker discovers their signs can broadcast subliminal messages that actually work — a megacorp wants to weaponize it, an underground group wants to use it to start a revolution',
+  ],
+  'origin_story+steampunk': [
+    'A clockmaker builds an automaton that passes the Turing test — in 1876 — and the church, the crown, and an ancient order all want to destroy it for different reasons',
+    'An airship mechanic discovers their wrench can tighten the "bolts" of reality — loosen one, and that law of physics stops working locally',
+  ],
+  'origin_story+postapoc': [
+    'A postal carrier still delivers mail across the wasteland — because the letters are from a woman who knows which settlements will be attacked next, and no one knows who she is',
+    'A seed vault guard discovers the last batch of viable wheat seeds has been REPLACED — and the thing growing in their place is not from this planet',
+    'A radio DJ is the last voice on the airwaves — and the "requests" callers make are actually coded survival instructions from a resistance nobody knew existed',
+  ],
+
+  // Other genres get generic-but-spicy seeds
+  'team_up': [
+    'The team was assembled by someone who\'s already dead — and their recruitment letters contain predictions that keep coming true',
+    'Each team member thinks THEY\'RE the leader. None of them are. The actual leader is the one they all dismissed.',
+    'The team just realized the thing they\'re fighting is the previous team — corrupted, enhanced, and very angry',
+    'A support group for people with useless powers discovers their abilities are actually DEVASTATING when combined',
+  ],
+  'heist': [
+    'The thing they\'re stealing doesn\'t exist yet — they have to rob a building that won\'t be constructed until next week',
+    'The vault has already been robbed — by a future version of the crew. Now they need to figure out what their future selves knew.',
+    'They\'re not stealing an object — they\'re stealing a PERSON\'S memories before they testify tomorrow',
+    'The heist goes perfectly. Flawlessly. Suspiciously easily. The crew realizes they were MEANT to steal it — it\'s a weapon that activates when moved.',
+  ],
+  'revenge': [
+    'The target of revenge doesn\'t remember the protagonist at all — and genuinely doesn\'t understand why someone is trying to destroy their life',
+    'The revenge plan requires becoming everything the protagonist hates — and they\'re getting disturbingly good at it',
+    'Halfway through the revenge plot, the protagonist discovers THEY were the villain of the original story — their memories were edited',
+  ],
+  'war_epic': [
+    'Two soldiers on opposite sides keep getting assigned to the same positions — and slowly realize a third party is engineering the entire war',
+    'A medic must choose which side\'s wounded to treat first — and every choice changes which side trusts them',
+    'The war ended yesterday. Nobody told this unit. They\'re still fighting the last battle that matters to absolutely no one.',
+  ],
+  'coming_of_age': [
+    'A teenager discovers their parent\'s "boring office job" is actually something incredible — and there\'s a reason they were never supposed to find out',
+    'The new kid at school isn\'t trying to fit in — they\'re documenting everything for a reason the protagonist won\'t understand until the last page',
+    'A kid who lies about EVERYTHING tells the truth for the first time — and nobody believes the one thing that actually matters',
+  ],
+};
+
+function getStoryDNA(genreId: string, themeId: string): string {
+  // Try genre+theme specific first
+  const specific = STORY_DNA[`${genreId}+${themeId}`];
+  if (specific?.length) return randomPick(specific);
+  // Fall back to genre-only seeds
+  const generic = STORY_DNA[genreId];
+  if (generic?.length) return randomPick(generic);
+  return '';
+}
+
 const genreStoryGuide: Record<string, string> = {
-  origin_story: `ORIGIN STORY RULES: The origin should feel EARNED, not given. The hero doesn't just "discover powers" — they face a crucible that forges who they become. Show the COST of becoming a hero. Include at least one moment where the reader questions whether the hero made the right choice. The transformation should be as much psychological as physical.`,
-  team_up: `TEAM-UP RULES: The team should have real friction — different goals, methods, or personalities that clash BEFORE they mesh. Each member should get at least one moment to shine individually. The threat should be something no single hero could face alone — make the teamwork feel necessary, not convenient.`,
-  heist: `HEIST RULES: Show the plan, then show it going wrong. There should be at least one double-cross or unexpected complication. Each crew member should have a specialized skill that gets tested. The tension should build through the planning AND the execution.`,
-  revenge: `REVENGE RULES: Make the reader FEEL the injustice that drives the hero. But also plant seeds of doubt — is revenge worth the cost? The best revenge stories ask whether the hero is becoming the very thing they hate. Include a moment where mercy is an option.`,
-  war_epic: `WAR EPIC RULES: War is chaos, not choreography. Show the human cost — not just the spectacle. Include at least one quiet moment amid the carnage that makes the reader feel the characters' exhaustion and fear. Both sides should feel real, not cartoonish.`,
-  coming_of_age: `COMING OF AGE RULES: The challenge should feel insurmountable FROM THE KID'S perspective (even if adults wouldn't blink). Show growth through choices, not just events. Include a mentor figure who is imperfect. The ending should feel bittersweet — something gained and something left behind.`,
+  origin_story: `ORIGIN STORY RULES: DO NOT write another "brooding loner discovers dark power" story. The origin should feel EARNED, not given. Show the COST of becoming a hero — what they lose matters more than what they gain. The protagonist needs a PERSONALITY — humor, quirks, relationships, flaws that make the reader root for them. Include at least one moment where the reader questions whether the hero made the right choice. The transformation should be as much psychological as physical. Make us CARE about this person BEFORE the powers come.`,
+  team_up: `TEAM-UP RULES: The team should have real friction — different goals, methods, or personalities that clash BEFORE they mesh. At least two members should genuinely dislike each other and be entertaining about it. Each member should get at least one moment to shine individually. The banter should crackle — readers should want these characters to have a podcast. The threat should be something no single hero could face alone — make the teamwork feel necessary, not convenient.`,
+  heist: `HEIST RULES: Show the plan, then show it going wrong in a way that\'s DELIGHTFUL to watch. There should be at least one double-cross or unexpected complication that makes the reader gasp. Each crew member should have a specialized skill that gets tested. The tension should build through the planning AND the execution. Heists are fundamentally about cleverness — make the reader feel smart for following along.`,
+  revenge: `REVENGE RULES: Make the reader FEEL the injustice that drives the hero — we need to be ON THEIR SIDE. But also plant seeds of doubt — is revenge worth the cost? The best revenge stories ask whether the hero is becoming the very thing they hate. Include a moment where mercy is an option. The target of revenge should be INTERESTING — not a cardboard villain but someone whose downfall feels complicated.`,
+  war_epic: `WAR EPIC RULES: War is chaos, not choreography. Show the human cost — not just the spectacle. Include at least one quiet moment amid the carnage that makes the reader feel the characters' exhaustion and fear. Both sides should feel real, not cartoonish. The best war stories are really about the relationships forged under impossible pressure.`,
+  coming_of_age: `COMING OF AGE RULES: The challenge should feel insurmountable FROM THE KID'S perspective (even if adults wouldn't blink). Show growth through choices, not just events. Include a mentor figure who is imperfect — maybe even WRONG about something important. The ending should feel bittersweet — something gained and something left behind. Give the protagonist a voice that feels authentic, not "adult writing a child."`,
 };
 
 async function askGemini(prompt: string, temperature = 0.8, jsonMode = false): Promise<string | null> {
@@ -478,14 +595,17 @@ export async function phaseConceptOutline(
   const narrativeHook = randomPick(COMIC_NARRATIVE_HOOKS);
   const sceneDynamic1 = randomPick(COMIC_SCENE_DYNAMICS);
   const sceneDynamic2 = randomPick(COMIC_SCENE_DYNAMICS.filter(s => s !== sceneDynamic1));
-  const antiFormula = randomPick(COMIC_ANTI_FORMULA);
+  const antiFormulas = randomPicks(COMIC_ANTI_FORMULA, 3);
   const genreGuide = genreStoryGuide[config.comicGenre.id] || '';
+  const storyDNA = getStoryDNA(config.comicGenre.id, config.theme.id);
 
   onProgress?.('Designing concept, characters, and story arc');
 
   const panelRules = getPanelStyleRules(config.structure.panelStyle);
 
-  const prompt = `You are a master comic book writer who creates stories people can't put down — the kind readers photograph and text to their friends. Creativity seed: ${Date.now()}.
+  const prompt = `You are a master comic book writer who creates stories people can't put down — the kind readers photograph and text to their friends. You write like the love child of Neil Gaiman, Gail Simone, and whoever writes the best first issues at Image Comics. Creativity seed: ${Date.now()}.
+
+IMPORTANT: You have written thousands of comics. You are BORED of the obvious story. The first idea that comes to mind? Skip it. The second idea? Also skip it. Go to the THIRD idea — the one that makes you smile because it's weird and specific and alive.
 
 Story type: ${genre}
 The comic has exactly ${pageCount} interior pages.
@@ -497,9 +617,10 @@ ${titleLine}${charLine}${seedLine}
 ═══ CREATIVE SPARKS (use as loose inspiration, don't copy literally) ═══
 Narrative hook idea: "${narrativeHook}"
 Scene dynamics to weave in: "${sceneDynamic1}" and "${sceneDynamic2}"
+${storyDNA ? `\n═══ STORY DNA (a premise spark — riff on this, remix it, twist it, make it yours) ═══\n"${storyDNA}"\nDo NOT use this premise literally. It\'s a creative SEED. Mutate it, combine it with the genre/theme, make it something only YOU would write.` : ''}
 
 ═══ QUALITY BAR ═══
-${antiFormula}
+${antiFormulas.join('\n')}
 ${genreGuide}
 - Every page must ADVANCE the story — no filler, no padding, no "walking to the next location" pages.
 - The story should have MOMENTUM — each page ending should make the reader need to see the next one.
@@ -540,7 +661,7 @@ CRITICAL RULES:
 
 Output ONLY the JSON.`;
 
-  const result = await askGemini(prompt, 0.9, true);
+  const result = await askGemini(prompt, 1.0, true);
   const parsed = parseJsonResponse(result);
   if (!parsed) return null;
 
