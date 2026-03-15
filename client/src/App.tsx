@@ -14,6 +14,16 @@ import { Library } from './components/Library';
 import { EmberField } from './components/EmberField';
 import { DebugButton } from './components/DebugButton';
 
+// Per-browser identity for scoping the library
+function getClientId(): string {
+  let id = localStorage.getItem('bellforge-client-id');
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem('bellforge-client-id', id);
+  }
+  return id;
+}
+
 // Maps server stage IDs to friendly phase labels for the build banner
 function friendlyPhaseLabel(stage: string): string {
   const labels: Record<string, string> = {
@@ -195,7 +205,9 @@ export default function App() {
   // ── Library count fetcher ──
   const fetchLibraryCount = useCallback(async () => {
     try {
-      const res = await fetch('/api/library');
+      const res = await fetch('/api/library', {
+        headers: { 'X-Client-Id': getClientId() },
+      });
       const data = await res.json();
       setLibraryCount(data.entries?.length || 0);
     } catch { /* server may be down */ }
@@ -492,7 +504,7 @@ export default function App() {
         : '/api/forge';
       const res = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Client-Id': getClientId() },
         body: JSON.stringify(payload),
       });
       const data = await res.json();

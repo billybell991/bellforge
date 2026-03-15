@@ -1,6 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { LibraryEntry, GameConfig, AdventureConfig, ComicConfig, PuzzleConfig, EscapeConfig, EntertainmentType } from '../types';
 
+function getClientId(): string {
+  let id = localStorage.getItem('bellforge-client-id');
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem('bellforge-client-id', id);
+  }
+  return id;
+}
+
 function getEntryType(entry: LibraryEntry): EntertainmentType {
   if (entry.entertainmentType) return entry.entertainmentType;
   if ('cyoaGenre' in entry.config) return 'adventure';
@@ -50,7 +59,9 @@ export function Library({ onBack, onViewPreview, onReForge, onCountChange }: Lib
 
   const fetchLibrary = useCallback(async () => {
     try {
-      const res = await fetch('/api/library');
+      const res = await fetch('/api/library', {
+        headers: { 'X-Client-Id': getClientId() },
+      });
       const data = await res.json();
       const list = data.entries || [];
       setEntries(list);
@@ -69,7 +80,7 @@ export function Library({ onBack, onViewPreview, onReForge, onCountChange }: Lib
   const handleRate = async (id: string, rating: number) => {
     await fetch(`/api/library/${id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Client-Id': getClientId() },
       body: JSON.stringify({ rating }),
     });
     setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, rating } : e)));
@@ -79,7 +90,7 @@ export function Library({ onBack, onViewPreview, onReForge, onCountChange }: Lib
     if (!editName.trim()) return;
     await fetch(`/api/library/${id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Client-Id': getClientId() },
       body: JSON.stringify({ name: editName.trim() }),
     });
     setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, name: editName.trim() } : e)));
@@ -87,7 +98,7 @@ export function Library({ onBack, onViewPreview, onReForge, onCountChange }: Lib
   };
 
   const handleDelete = async (id: string) => {
-    await fetch(`/api/library/${id}`, { method: 'DELETE' });
+    await fetch(`/api/library/${id}`, { method: 'DELETE', headers: { 'X-Client-Id': getClientId() } });
     setEntries((prev) => {
       const next = prev.filter((e) => e.id !== id);
       onCountChange?.(next.length);

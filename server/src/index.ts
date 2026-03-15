@@ -52,6 +52,7 @@ interface BuildRecord {
   apkPath?: string;
   previewHtml?: string;
   lastProgress?: Record<string, unknown>;
+  clientId?: string; // tracks which browser started this build
 }
 
 const builds = new Map<string, BuildRecord>();
@@ -68,6 +69,7 @@ interface LibraryEntry {
   apkSize: string;
   createdAt: string;
   thumbnail?: string; // filename in data/thumbnails/
+  clientId?: string; // scopes entry to the browser that created it
 }
 
 const LIBRARY_PATH = join(process.cwd(), 'data', 'library.json');
@@ -242,8 +244,9 @@ function getPipelineStages(config: Record<string, unknown>): PipelineStage[] {
 app.post('/api/forge', async (req, res) => {
   const config = req.body;
   const buildId = uuidv4();
+  const clientId = req.headers['x-client-id'] as string | undefined;
 
-  builds.set(buildId, { config, status: 'queued', progress: 0 });
+  builds.set(buildId, { config, status: 'queued', progress: 0, clientId });
   res.json({ buildId });
 
   // Wait for WebSocket connection before starting pipeline
@@ -254,8 +257,9 @@ app.post('/api/forge', async (req, res) => {
 app.post('/api/forge/adventure', async (req, res) => {
   const config = req.body as AdventureConfig;
   const buildId = uuidv4();
+  const clientId = req.headers['x-client-id'] as string | undefined;
 
-  builds.set(buildId, { config, status: 'queued', progress: 0 });
+  builds.set(buildId, { config, status: 'queued', progress: 0, clientId });
   res.json({ buildId });
 
   waitForClient(buildId, 5000).then(() => runAdventureBuild(buildId, config));
@@ -265,8 +269,9 @@ app.post('/api/forge/adventure', async (req, res) => {
 app.post('/api/forge/comic', async (req, res) => {
   const config = req.body as ComicConfig;
   const buildId = uuidv4();
+  const clientId = req.headers['x-client-id'] as string | undefined;
 
-  builds.set(buildId, { config, status: 'queued', progress: 0 });
+  builds.set(buildId, { config, status: 'queued', progress: 0, clientId });
   res.json({ buildId });
 
   waitForClient(buildId, 5000).then(() => runComicBuild(buildId, config));
@@ -276,8 +281,9 @@ app.post('/api/forge/comic', async (req, res) => {
 app.post('/api/forge/escape', async (req, res) => {
   const config = req.body as EscapeConfig;
   const buildId = uuidv4();
+  const clientId = req.headers['x-client-id'] as string | undefined;
 
-  builds.set(buildId, { config, status: 'queued', progress: 0 });
+  builds.set(buildId, { config, status: 'queued', progress: 0, clientId });
   res.json({ buildId });
 
   waitForClient(buildId, 5000).then(() => runEscapeBuild(buildId, config));
@@ -287,8 +293,9 @@ app.post('/api/forge/escape', async (req, res) => {
 app.post('/api/forge/puzzle', async (req, res) => {
   const config = req.body as PuzzleConfig;
   const buildId = uuidv4();
+  const clientId = req.headers['x-client-id'] as string | undefined;
 
-  builds.set(buildId, { config, status: 'queued', progress: 0 });
+  builds.set(buildId, { config, status: 'queued', progress: 0, clientId });
   res.json({ buildId });
 
   waitForClient(buildId, 5000).then(() => runPuzzleBuild(buildId, config));
@@ -457,8 +464,10 @@ app.post('/api/gemini/auto-config', async (_req, res) => {
 // ── Library Endpoints ──
 
 // List all saved games
-app.get('/api/library', (_req, res) => {
-  res.json({ entries: library });
+app.get('/api/library', (req, res) => {
+  const clientId = req.headers['x-client-id'] as string | undefined;
+  const filtered = clientId ? library.filter((e) => !e.clientId || e.clientId === clientId) : library;
+  res.json({ entries: filtered });
 });
 
 // Serve thumbnail images
@@ -486,6 +495,7 @@ app.post('/api/library', (req, res) => {
     res.status(400).json({ error: 'Build not found or not complete' });
     return;
   }
+  const clientId = (req.headers['x-client-id'] as string | undefined) || build.clientId;
 
   // Prevent duplicate saves of the same build
   if (library.some((e) => e.buildId === buildId)) {
@@ -508,6 +518,7 @@ app.post('/api/library', (req, res) => {
     buildId,
     apkSize: build.apkPath ? '~10 MB' : '0',
     createdAt: new Date().toISOString(),
+    clientId,
   };
 
   if (existing >= 0) {
@@ -967,6 +978,7 @@ async function runPipeline(buildId: string, config: Record<string, unknown>) {
       apkSize: apkSizeStr,
       createdAt: new Date().toISOString(),
       thumbnail: undefined as string | undefined,
+      clientId: record.clientId,
     };
     // Save title background as thumbnail
     if (gameImages.titleBg) {
@@ -1044,6 +1056,7 @@ async function runAdventureBuild(buildId: string, config: AdventureConfig) {
       apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
       createdAt: new Date().toISOString(),
       thumbnail: undefined as string | undefined,
+      clientId: record.clientId,
     };
     // Save cover illustration as thumbnail
     if (result.story.coverIllustration) {
@@ -1142,6 +1155,7 @@ async function runComicBuild(buildId: string, config: ComicConfig) {
       apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
       createdAt: new Date().toISOString(),
       thumbnail: undefined as string | undefined,
+      clientId: record.clientId,
     };
     // Save cover illustration as thumbnail
     if (result.story.coverIllustration) {
@@ -1247,6 +1261,7 @@ async function runEscapeBuild(buildId: string, config: EscapeConfig) {
       buildId,
       apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
       createdAt: new Date().toISOString(),
+      clientId: record.clientId,
     };
     if (existing >= 0) {
       library[existing] = entry;
@@ -1346,6 +1361,7 @@ async function runPuzzleBuild(buildId: string, config: PuzzleConfig) {
       apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
       createdAt: new Date().toISOString(),
       thumbnail: thumbnailFile,
+      clientId: record.clientId,
     };
     if (existing >= 0) {
       library[existing] = entry;
