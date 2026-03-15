@@ -3,6 +3,7 @@ import type { QAReport } from '../types';
 interface QAPanelProps {
   report: QAReport;
   onDismiss?: () => void;
+  entertainmentType?: string;
 }
 
 function scoreColor(score: number): string {
@@ -12,7 +13,15 @@ function scoreColor(score: number): string {
   return '#ef5350';
 }
 
-export function QAPanel({ report, onDismiss }: QAPanelProps) {
+const TYPE_LABELS: Record<string, string> = {
+  comic: 'Comic',
+  adventure: 'Adventure',
+  puzzle: 'Puzzle',
+  escape: 'Escape Room',
+  game: 'Game',
+};
+
+export function QAPanel({ report, onDismiss, entertainmentType }: QAPanelProps) {
   const overall = report.overallScore;
   const overallColor = scoreColor(overall);
 
@@ -74,7 +83,7 @@ export function QAPanel({ report, onDismiss }: QAPanelProps) {
 
       {onDismiss && (
         <button className="qa-dismiss-btn" onClick={onDismiss}>
-          Continue to Preview →
+          Continue to {TYPE_LABELS[entertainmentType || ''] || 'Preview'} →
         </button>
       )}
     </div>

@@ -85,7 +85,7 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
     return (
       <div className="qa-interstitial">
         <h1 className="preview-title">{titleLabel}</h1>
-        <QAPanel report={qaReport} onDismiss={() => setQaDismissed(true)} />
+        <QAPanel report={qaReport} onDismiss={() => setQaDismissed(true)} entertainmentType={entertainmentType} />
       </div>
     );
   }

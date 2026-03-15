@@ -1160,13 +1160,21 @@ async function runComicBuild(buildId: string, config: ComicConfig) {
   // Scored QA report
   const qaStartedAt = Date.now();
   sendProgress(buildId, { type: 'progress', stage: 'qa', name: '📊 Generating QA confidence report', percent: 95, detail: '', timestamp: Date.now() });
-  const comicPages = result.story.pages.map(p => `Page ${p.pageNumber}: ${p.setting} (${p.panels.length} panels)`).join('\n');
+  const comicPages = result.story.pages.map(p => {
+    const panelDetails = p.panels.map(panel => {
+      const dialogueLines = (panel.dialogue || [])
+        .map(d => d.type === 'narration' ? `[Narration: "${d.text}"]` : `${d.speaker}: "${d.text}"`)
+        .join(' | ');
+      return `  Panel ${panel.panelNumber}: ${panel.artDirection.slice(0, 80)}${panel.artDirection.length > 80 ? '...' : ''}${dialogueLines ? `\n    Dialogue: ${dialogueLines}` : ''}`;
+    }).join('\n');
+    return `Page ${p.pageNumber} [${p.setting}]:\n${panelDetails}`;
+  }).join('\n');
   const scored = await qaContentReport({
     entertainmentType: 'comic',
     title,
     genre: config.comicGenre.name,
     artStyle: config.artStyle.name,
-    contentSummary: `A ${result.story.totalPages}-page comic book. Synopsis: ${result.concept.synopsis}. Protagonist: ${result.concept.protagonist.name} — ${result.concept.protagonist.description}. Characters: ${result.concept.characters.map(c => `${c.name} (${c.role})`).join(', ')}.\nPages:\n${comicPages}`,
+    contentSummary: `A ${result.story.totalPages}-page ${config.artStyle.name} comic book (${config.structure.panelStyle} panel style, ${config.structure.tone} tone).\nSynopsis: ${result.concept.synopsis}\nProtagonist: ${result.concept.protagonist.name} — ${result.concept.protagonist.description}\nCharacters: ${result.concept.characters.map(c => `${c.name} (${c.role}): ${c.description}`).join('; ')}\n\nFull Page Breakdown:\n${comicPages}`,
   }, (msg) => {
     sendProgress(buildId, { type: 'progress', stage: 'qa', name: `📊 ${msg}`, percent: 96, detail: '', timestamp: Date.now() });
   });

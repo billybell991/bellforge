@@ -242,7 +242,8 @@ export function generateComicPreviewHtml(story: ComicStory): string {
   .panel-art img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
+    background: #000;
   }
 
   /* Dialogue positioning */

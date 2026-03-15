@@ -567,6 +567,41 @@ function getToneScriptDirections(tone: string): string {
   return directions[tone] || directions.action;
 }
 
+// ── Page-count-aware pacing guide ──
+function getPacingGuide(pageCount: number): string {
+  if (pageCount <= 5) {
+    return `This is a SHORT comic (${pageCount} pages). Structure it like a short film:
+- Page 1: Cold open — drop the reader into the situation immediately, no setup pages
+- Pages 2-${pageCount - 1}: Escalating conflict — every page raises the stakes significantly
+- Page ${pageCount}: Climax AND resolution on the same page — land the punch
+- NO slow burns. NO lengthy introductions. Every single panel must earn its space.
+- Think: Twilight Zone episode compressed to ${pageCount} pages.`;
+  }
+  if (pageCount <= 10) {
+    const midpoint = Math.ceil(pageCount / 2);
+    return `This is a STANDARD comic (${pageCount} pages). Classic three-act structure:
+- Pages 1-2: ACT 1 — Hook the reader. Establish the protagonist, their world, and the inciting incident.
+- Pages 3-${midpoint}: ACT 2A — Rising action. The protagonist pursues their goal, faces obstacles, meets allies/enemies.
+- Pages ${midpoint + 1}-${pageCount - 2}: ACT 2B — Complications mount. The stakes get personal. A major setback or twist.
+- Pages ${pageCount - 1}-${pageCount}: ACT 3 — Climax and resolution. The final confrontation and its aftermath.
+- The MIDPOINT (page ${midpoint}) should have a major revelation, reversal, or escalation.
+- Do NOT resolve the main conflict before page ${pageCount - 1}.`;
+  }
+  // 11+ pages
+  const act1End = Math.ceil(pageCount * 0.2);
+  const midpoint = Math.ceil(pageCount / 2);
+  const act2End = Math.ceil(pageCount * 0.75);
+  return `This is an EXTENDED comic (${pageCount} pages). You have room for depth — USE IT:
+- Pages 1-${act1End}: ACT 1 — Establish the world, protagonist, and stakes. End act 1 with the inciting incident that launches the main conflict.
+- Pages ${act1End + 1}-${midpoint}: ACT 2A — The protagonist actively pursues their goal. Introduce subplots, deepen character relationships, build the world.
+- Page ${midpoint}: MIDPOINT TURN — A major revelation, betrayal, or reversal that redefines the stakes. The story should feel DIFFERENT after this page.
+- Pages ${midpoint + 1}-${act2End}: ACT 2B — Consequences of the midpoint. The antagonist gains ground. Allies are tested. The protagonist faces their darkest moment.
+- Pages ${act2End + 1}-${pageCount}: ACT 3 — The final push. Climax on page ${pageCount - 1}, resolution on page ${pageCount}.
+- With ${pageCount} pages you MUST develop B-plots and character moments — don't just stretch a simple plot thin.
+- Each act should feel distinct in tone and energy. The story should breathe AND accelerate.
+- Do NOT resolve the main conflict before page ${pageCount - 2}. The reader should feel tension until near the end.`;
+}
+
 // ── Phase 1a: Concept & Story Outline (lightweight — no panel scripts) ──
 
 interface PageOutline {
@@ -577,7 +612,7 @@ interface PageOutline {
 
 export async function phaseConceptOutline(
   config: ComicConfig,
-  onProgress?: (msg: string) => void,
+  onProgress?: (pct: number, msg: string, stage?: string) => void,
 ): Promise<{ concept: ComicConcept; outline: PageOutline[] } | null> {
   const genre = config.comicGenre.name;
   const themeName = config.theme.name;
@@ -599,7 +634,7 @@ export async function phaseConceptOutline(
   const genreGuide = genreStoryGuide[config.comicGenre.id] || '';
   const storyDNA = getStoryDNA(config.comicGenre.id, config.theme.id);
 
-  onProgress?.('Designing concept, characters, and story arc');
+  onProgress?.(6, `Mixing creative DNA: ${genre} × ${themeName}`, 'story_dna');
 
   const panelRules = getPanelStyleRules(config.structure.panelStyle);
 
@@ -608,11 +643,14 @@ export async function phaseConceptOutline(
 IMPORTANT: You have written thousands of comics. You are BORED of the obvious story. The first idea that comes to mind? Skip it. The second idea? Also skip it. Go to the THIRD idea — the one that makes you smile because it's weird and specific and alive.
 
 Story type: ${genre}
-The comic has exactly ${pageCount} interior pages.
+The comic has EXACTLY ${pageCount} interior pages. NOT ${pageCount - 1}, NOT ${pageCount + 1}. EXACTLY ${pageCount}.
 Theme/atmosphere: ${themeName} — THIS MUST PERMEATE EVERY SCENE: settings, mood, visual descriptions, character behavior. A "${themeName}" comic should FEEL unmistakably ${themeName} on every single page.
 Tone: ${tone} — the tone shapes HOW the story is told (pacing, dialogue style, emotional register)
 Panel style: ${config.structure.panelStyle} — ${panelRules.layoutInstructions}
 ${titleLine}${charLine}${seedLine}
+
+═══ PACING GUIDE FOR ${pageCount} PAGES ═══
+${getPacingGuide(pageCount)}
 
 ═══ CREATIVE SPARKS (use as loose inspiration, don't copy literally) ═══
 Narrative hook idea: "${narrativeHook}"
@@ -656,12 +694,15 @@ CRITICAL RULES:
 - The visualDescription for each character must be hyper-specific and consistent — it will be pasted verbatim into EVERY art prompt. Clothing, gear, and accessories should FIT the ${themeName} theme.
 - Every "setting" in the outline must DRIP with ${themeName} atmosphere — describe specific environmental details that make the theme unmistakable
 - Story should have a clear arc: hook → escalation → climax → resolution
-- outline must have exactly ${pageCount} entries
+- outline MUST have EXACTLY ${pageCount} entries (pageNumber 1 through ${pageCount}). If you output fewer or more, the build WILL FAIL.
+- DO NOT rush to the ending — use ALL ${pageCount} pages. The climax should land around page ${Math.max(2, pageCount - 2)}-${Math.max(3, pageCount - 1)}, with resolution on the final page.
 - Keep outline descriptions short — just enough to convey what happens
 
 Output ONLY the JSON.`;
 
+  onProgress?.(7, `Gemini is writing the concept (${pageCount} pages, ${config.structure.panelStyle} style)`, 'story_concept');
   const result = await askGemini(prompt, 1.0, true);
+  onProgress?.(9, 'Parsing concept and character designs', 'story_concept');
   const parsed = parseJsonResponse(result);
   if (!parsed) return null;
 
@@ -678,7 +719,66 @@ Output ONLY the JSON.`;
     concept.title = config.story.title;
   }
 
-  const outline = (parsed.outline as unknown as PageOutline[]) || [];
+  let outline = (parsed.outline as unknown as PageOutline[]) || [];
+
+  onProgress?.(10, `Got ${outline.length}/${pageCount} pages — "${concept.title}"`, 'story_outline');
+
+  // ── Enforce exact page count — Gemini often returns fewer pages than requested ──
+  if (outline.length !== pageCount) {
+    onProgress?.(10, `Outline has ${outline.length} pages, need ${pageCount} — expanding story`, 'story_repair');
+    console.warn(`[Comic] Gemini returned ${outline.length} outline pages, expected ${pageCount} — repairing`);
+    if (outline.length > pageCount) {
+      // Trim excess pages
+      outline = outline.slice(0, pageCount);
+    } else if (outline.length < pageCount) {
+      // Expand: ask Gemini to fill in the missing pages
+      const missingCount = pageCount - outline.length;
+      const expandPrompt = `You are continuing a comic story outline. The story is: "${concept.title}" — ${(parsed.synopsis as string) || ''}.
+
+Existing outline (${outline.length} pages):
+${outline.map(p => `Page ${p.pageNumber}: [${p.setting}] ${p.description}`).join('\n')}
+
+The story needs EXACTLY ${pageCount} total pages but only has ${outline.length}. Write ${missingCount} more outline entries to complete the story properly.
+
+RULES:
+- DO NOT simply repeat or pad — each new page must meaningfully advance the plot.
+- The story should build to a climax around page ${Math.max(2, pageCount - 2)} and resolve by page ${pageCount}.
+- If the existing outline already has a resolution, ADD complicating developments BEFORE the resolution (insert rising action, not epilogue padding).
+- Settings must drip with ${themeName} atmosphere.
+
+Output ONLY a JSON array of the ${missingCount} new page entries:
+[{ "pageNumber": ${outline.length + 1}, "setting": "...", "description": "..." }]`;
+
+      const expandResult = await askGemini(expandPrompt, 0.9, true);
+      const expandParsed = parseJsonResponse(expandResult);
+      if (expandParsed) {
+        const newPages = (Array.isArray(expandParsed) ? expandParsed : (expandParsed as Record<string, unknown>).pages || expandParsed.outline || []) as PageOutline[];
+        // Insert new pages before the final page (resolution) if the outline already had one
+        if (outline.length >= 2 && newPages.length > 0) {
+          const resolution = outline.pop()!;
+          outline.push(...newPages);
+          outline.push(resolution);
+        } else {
+          outline.push(...newPages);
+        }
+      }
+      // If still short, pad with continuation pages
+      while (outline.length < pageCount) {
+        const lastPage = outline[outline.length - 1];
+        outline.push({
+          pageNumber: outline.length + 1,
+          setting: lastPage?.setting || 'The story continues',
+          description: `The consequences unfold — new complications arise from page ${outline.length}'s events`,
+        });
+      }
+      // Trim if expanded too much
+      outline = outline.slice(0, pageCount);
+    }
+    // Re-number all pages sequentially
+    outline.forEach((p, i) => { p.pageNumber = i + 1; });
+    onProgress?.(11, `Outline repaired: ${outline.length} pages ready`, 'story_outline');
+    console.log(`[Comic] Outline repaired: now ${outline.length} pages`);
+  }
 
   return { concept, outline };
 }
@@ -894,8 +994,8 @@ export async function runComicPipeline(
   const t0 = Date.now();
 
   // Phase 1a: Concept + story outline (lightweight — small JSON)
-  sendProgress(5, `Crafting a ${config.comicGenre.name} comic concept`, 'story');
-  const outlineResult = await phaseConceptOutline(config, (msg) => sendProgress(8, msg, 'story'));
+  sendProgress(5, `Igniting creative sparks for ${config.comicGenre.name} × ${config.theme.name}`, 'story_dna');
+  const outlineResult = await phaseConceptOutline(config, (pct, msg, stage) => sendProgress(pct, msg, stage));
   if (!outlineResult) {
     sendProgress(0, 'Failed to generate comic concept — Gemini did not return valid JSON');
     return null;
@@ -903,7 +1003,7 @@ export async function runComicPipeline(
   const { concept, outline } = outlineResult;
 
   const elapsed1 = Math.floor((Date.now() - t0) / 1000);
-  sendProgress(12, `Concept ready (${elapsed1}s): "${concept.title}" — ${outline.length} pages, ${concept.characters.length + 1} characters`, 'story');
+  sendProgress(12, `"${concept.title}" — ${outline.length} pages, ${concept.characters.length + 1} characters (${elapsed1}s)`, 'story_chars');
 
   // Phase 1b: Detailed panel scripts (chunked — 4 pages per Gemini call)
   sendProgress(15, `Writing panel scripts for ${outline.length} pages`, 'script');

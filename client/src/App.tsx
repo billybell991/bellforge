@@ -47,6 +47,11 @@ function friendlyPhaseLabel(stage: string): string {
     qa_items: 'Verifying item gates...',
     qa_endings: 'Confirming endings...',
     // Comic pipeline
+    story_dna: 'Mixing creative DNA...',
+    story_concept: 'Gemini is writing the concept...',
+    story_outline: 'Building the story outline...',
+    story_repair: 'Expanding the story to fill all pages...',
+    story_chars: 'Locking in character designs...',
     story: 'Crafting the story...',
     script: 'Writing panel scripts...',
     layouts: 'Designing page layouts...',
@@ -55,7 +60,7 @@ function friendlyPhaseLabel(stage: string): string {
     panel_art: 'Drawing the panels...',
     text_overlay: 'Adding dialogue...',
     qa_panels: 'Reviewing panel quality...',
-    qa_story: 'Checking story flow...',
+    qa_story: 'Checking story flow...', 
     // Escape room pipeline
     escape: 'Building the escape room...',
     puzzles: 'Crafting the puzzles...',

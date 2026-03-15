@@ -1,1 +1,205 @@
-[]
+[
+  {
+    "id": "7376a5b5-28cf-46ba-b646-4cd1002347c6",
+    "name": "gus the goldendoodle eating socks at a fancy restaurant Puzzle",
+    "rating": 0,
+    "entertainmentType": "puzzle",
+    "config": {
+      "puzzleSubject": {
+        "id": "custom",
+        "name": "gus the goldendoodle eating socks at a fancy restaurant",
+        "icon": "✨",
+        "description": "gus the goldendoodle eating socks at a fancy restaurant",
+        "tag": "NEW"
+      },
+      "artStyle": {
+        "id": "cel_shaded",
+        "name": "Cel-Shaded / Toonish",
+        "icon": "🎨",
+        "description": "Bold outlines, flat colors, cartoon charm",
+        "recommended": true
+      },
+      "structure": {
+        "pieceCount": 25,
+        "difficulty": "medium",
+        "rotation": false
+      }
+    },
+    "buildId": "775826da-f532-48f4-a992-226a27c57621",
+    "apkSize": "2384 KB",
+    "createdAt": "2026-03-15T12:04:38.546Z",
+    "thumbnail": "775826da-f532-48f4-a992-226a27c57621.png"
+  },
+  {
+    "id": "47d346b2-64a1-4c06-bbd5-14ba57c38d4d",
+    "name": "The Verdant Maw",
+    "rating": 0,
+    "entertainmentType": "comic",
+    "config": {
+      "comicGenre": {
+        "id": "origin_story",
+        "name": "Origin Story",
+        "icon": "🌟",
+        "description": "A hero is born — powers discovered, destiny revealed",
+        "tag": "FLAGSHIP"
+      },
+      "theme": {
+        "id": "horror",
+        "name": "Horror / Supernatural",
+        "icon": "👻",
+        "description": "Dark atmospheres and spine-tingling mysteries",
+        "color": "#ff3d00"
+      },
+      "artStyle": {
+        "id": "pixel_art",
+        "name": "Pixel Art / Retro",
+        "icon": "👾",
+        "description": "Nostalgic 8-bit and 16-bit aesthetics"
+      },
+      "structure": {
+        "pageCount": 4,
+        "panelStyle": "manga",
+        "tone": "action"
+      },
+      "story": {
+        "title": "The Verdant Maw",
+        "characterName": "Morwen",
+        "setting": "Within the cavernous, pulsating heartwood of the colossal Dread-Yew, an ancient arboreal prison where living shadows cling to ossified branches reaching into a perpetual, suffocating twilight.",
+        "description": "Morwen awakens disoriented, compelled to ascend the Dread-Yew, driven by a mournful hum and a gnawing sense of loss. They encounter unsettling echoes and fragmented memories, slowly piecing together a horrifying truth: the tree is not merely a haunted place, but the monstrous manifestation of their own unending grief. This is the origin of the entity they have become, its very existence fueled by their eternal denial."
+      }
+    },
+    "buildId": "2dbf1066-a8a6-4f7c-9157-0e32067b5dcc",
+    "apkSize": "40912 KB",
+    "createdAt": "2026-03-15T12:07:00.418Z",
+    "thumbnail": "2dbf1066-a8a6-4f7c-9157-0e32067b5dcc.png"
+  },
+  {
+    "id": "55dabfd4-2c12-4d24-842b-3aa7c46aebc8",
+    "name": "The Unravelling Courier",
+    "rating": 0,
+    "entertainmentType": "comic",
+    "config": {
+      "comicGenre": {
+        "id": "origin_story",
+        "name": "Origin Story",
+        "icon": "🌟",
+        "description": "A hero is born — powers discovered, destiny revealed",
+        "tag": "FLAGSHIP"
+      },
+      "theme": {
+        "id": "horror",
+        "name": "Horror / Supernatural",
+        "icon": "👻",
+        "description": "Dark atmospheres and spine-tingling mysteries",
+        "color": "#ff3d00"
+      },
+      "artStyle": {
+        "id": "noir",
+        "name": "Noir / Black & White",
+        "icon": "🎬",
+        "description": "High contrast, dramatic shadows"
+      },
+      "structure": {
+        "pageCount": 4,
+        "panelStyle": "manga",
+        "tone": "horror"
+      },
+      "story": {
+        "title": "The Unravelling Courier",
+        "characterName": "Marrowen",
+        "setting": "A perpetually shifting labyrinth of calcified dread and spectral sinew forms perilous bridges spanning the screaming, fathomless maw of the Non-Existence.",
+        "description": "Marrowen, once a mortal trying to reclaim a lost soul, became eternally bound to deliver cursed pleas and forgotten relics across these temporal chasms. Each passage warps not only the parcels, but Marrowen's own timeline, causing them to simultaneously exist across fragmented pasts, presents, and dreadful futures, never truly solidifying."
+      }
+    },
+    "buildId": "7613c67a-1ec1-452b-b2de-c14b87813143",
+    "apkSize": "44969 KB",
+    "createdAt": "2026-03-15T12:49:33.635Z",
+    "thumbnail": "7613c67a-1ec1-452b-b2de-c14b87813143.png"
+  },
+  {
+    "id": "f81b22ba-f58b-42b5-ab97-8be3926c552a",
+    "name": "Feasting on Unreality",
+    "rating": 0,
+    "entertainmentType": "comic",
+    "config": {
+      "comicGenre": {
+        "id": "origin_story",
+        "name": "Origin Story",
+        "icon": "🌟",
+        "description": "A hero is born — powers discovered, destiny revealed",
+        "tag": "FLAGSHIP"
+      },
+      "theme": {
+        "id": "horror",
+        "name": "Horror / Supernatural",
+        "icon": "👻",
+        "description": "Dark atmospheres and spine-tingling mysteries",
+        "color": "#ff3d00"
+      },
+      "artStyle": {
+        "id": "noir",
+        "name": "Noir / Black & White",
+        "icon": "🎬",
+        "description": "High contrast, dramatic shadows"
+      },
+      "structure": {
+        "pageCount": 4,
+        "panelStyle": "manga",
+        "tone": "horror"
+      },
+      "story": {
+        "title": "Feasting on Unreality",
+        "characterName": "Grimalkin",
+        "setting": "The Sunder-Vaults, a cluster of derelict landmasses perpetually adrift in the Gloom, are morbidly linked by bridges woven from the chitinous limbs of colossal, unseen entities.",
+        "description": "Grimalkin, an ancient, hunched figure, toils ceaselessly on the lowest Sunder-Vault, extracting ichor and viscera from the pulsing roots and the unfortunate souls who stumble onto them. Their \"dishes\" are not for sustenance, but for the temporary inoculation against the Gloom's creeping madness and the parasitic Entities that hunt in the void between the Vaults. However, each unholy mouthful slowly unravels the eater's perception of reality, revealing that the true horror lies in the fundamental non-existence of everything they cherish."
+      }
+    },
+    "buildId": "3d023c83-1905-4435-a963-c8c79b51a6b5",
+    "apkSize": "46244 KB",
+    "createdAt": "2026-03-15T13:05:02.068Z",
+    "thumbnail": "3d023c83-1905-4435-a963-c8c79b51a6b5.png"
+  },
+  {
+    "id": "51b7eb9e-17a7-4064-b29a-1328ff27a66d",
+    "name": "The Sleepwalker's Bloom",
+    "rating": 0,
+    "entertainmentType": "comic",
+    "config": {
+      "comicGenre": {
+        "id": "origin_story",
+        "name": "Origin Story",
+        "icon": "🌟",
+        "description": "A hero is born — powers discovered, destiny revealed",
+        "tag": "FLAGSHIP"
+      },
+      "theme": {
+        "id": "horror",
+        "name": "Horror / Supernatural",
+        "icon": "👻",
+        "description": "Dark atmospheres and spine-tingling mysteries",
+        "color": "#ff3d00"
+      },
+      "artStyle": {
+        "id": "noir",
+        "name": "Noir / Black & White",
+        "icon": "🎬",
+        "description": "High contrast, dramatic shadows"
+      },
+      "structure": {
+        "pageCount": 5,
+        "panelStyle": "manga",
+        "tone": "dramatic"
+      },
+      "story": {
+        "title": "The Sleepwalker's Bloom",
+        "characterName": "Threnody",
+        "setting": "The Husk of the Whispering Orb, a bone-white ossuary of impossible angles, forever adrift in the Aetheric Gulf where stillborn stars hum blasphemous hymns.",
+        "description": "Threnody, a cartographer plagued by sleepwalking episodes that engrave impossible symbols onto her flesh, unwittingly charts the origins of cosmic entities that whisper to her in slumber. She believes destroying the source of these night-journeys within the legendary Husk of the Whispering Orb will free her from its parasitic influence. However, her attempted 'rescue' from this curse is precisely the final step needed to complete the entity's horrific origin within her."
+      }
+    },
+    "buildId": "acf67215-3b44-4eb2-9ce9-aedb6d4f9ac5",
+    "apkSize": "56337 KB",
+    "createdAt": "2026-03-15T14:34:29.923Z",
+    "thumbnail": "acf67215-3b44-4eb2-9ce9-aedb6d4f9ac5.png"
+  }
+]

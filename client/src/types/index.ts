@@ -265,17 +265,17 @@ export const ADVENTURE_BUILD_STAGES: BuildStage[] = [
 ];
 
 export const COMIC_BUILD_STAGES: BuildStage[] = [
-  { id: 'story', name: 'Crafting Story Beats', percent: 5, icon: '📝' },
+  { id: 'story_dna', name: 'Mixing Creative DNA', percent: 5, icon: '🧬' },
+  { id: 'story_concept', name: 'Gemini → Writing Concept', percent: 7, icon: '💡' },
+  { id: 'story_outline', name: 'Building Story Outline', percent: 10, icon: '📋' },
+  { id: 'story_chars', name: 'Locking Character Designs', percent: 12, icon: '👤' },
   { id: 'script', name: 'Writing Panel Scripts', percent: 15, icon: '✍️' },
-  { id: 'layouts', name: 'Designing Page Layouts', percent: 25, icon: '📐' },
-  { id: 'cover_art', name: 'AI Bridge → Generating Cover', percent: 35, icon: '🎨' },
-  { id: 'panel_art', name: 'AI Bridge → Drawing Panels', percent: 45, icon: '🖼️' },
-  { id: 'panel_art_mid', name: 'AI Bridge → Interior Pages', percent: 55, icon: '✨' },
-  { id: 'panel_art_final', name: 'AI Bridge → Final Pages', percent: 65, icon: '🎭' },
-  { id: 'text_overlay', name: 'Rendering Speech Bubbles', percent: 75, icon: '💬' },
-  { id: 'qa_panels', name: 'QA — Panel Continuity', percent: 82, icon: '🔍' },
-  { id: 'qa_story', name: 'QA — Story Flow', percent: 88, icon: '📖' },
-  { id: 'viewer', name: 'Assembling Comic Viewer', percent: 95, icon: '📱' },
+  { id: 'layouts', name: 'Designing Page Layouts', percent: 28, icon: '📐' },
+  { id: 'char_refs', name: 'Sketching Character Portraits', percent: 33, icon: '🖊️' },
+  { id: 'cover_art', name: 'AI Bridge → Painting Cover', percent: 36, icon: '🎨' },
+  { id: 'panel_art', name: 'AI Bridge → Drawing Panels', percent: 42, icon: '🖼️' },
+  { id: 'text_overlay', name: 'Composing Dialogue', percent: 75, icon: '💬' },
+  { id: 'qa', name: 'QA — Confidence Report', percent: 95, icon: '🔍' },
   { id: 'complete', name: 'Comic Complete!', percent: 100, icon: '🎉' },
 ];
 
