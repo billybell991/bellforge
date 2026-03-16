@@ -560,7 +560,7 @@ function getPanelStyleRules(panelStyle: string): PanelStyleRules {
  * Choose image aspect ratio to match the panel's grid cell shape,
  * preventing letterboxing / white-space gaps.
  */
-function getPanelAspectRatio(panelStyle: string, panelCount: number, panelIndex: number): string {
+function getPanelAspectRatio(panelStyle: string, panelCount: number, panelIndex: number): '1:1' | '16:9' | '9:16' | '3:4' | '4:3' {
   if (panelStyle === 'strip') return '4:3';  // wide horizontal panels
   if (panelStyle === 'classic') return '4:3'; // 3 panels stacked in 1 column → landscape cells
   // manga — varies by panel count and position
