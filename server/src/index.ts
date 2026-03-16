@@ -23,7 +23,13 @@ import { runComicPipeline } from './comic-pipeline.js';
 import { generateComicPreviewHtml } from './comic-engine.js';
 import { runEscapePipeline, generateEscapePreviewHtml } from './escape-pipeline.js';
 import { runPuzzlePipeline, generatePuzzlePreviewHtml } from './puzzle-pipeline.js';
+import { runWordSearchPipeline, generateWordSearchPreviewHtml } from './wordsearch-pipeline.js';
+import { runCrosswordPipeline, generateCrosswordPreviewHtml } from './crossword-pipeline.js';
+import { runJumblePipeline, generateJumblePreviewHtml } from './jumble-pipeline.js';
 import type { CreativeBrief, CreativePalette, CreativeRoom, CreativeItem, PuzzleConnection } from './gemini.js';
+import type { WordSearchConfig } from './pipeline/types.js';
+import type { CrosswordConfig } from './pipeline/types.js';
+import type { JumbleConfig } from './pipeline/types.js';
 
 const execFileAsync = promisify(execFile);
 const ADB = 'C:\\Users\\bbell\\AppData\\Local\\Android\\Sdk\\platform-tools\\adb.exe';
@@ -63,7 +69,7 @@ interface LibraryEntry {
   id: string;
   name: string;
   rating: number; // 0-5 stars
-  entertainmentType: 'game' | 'adventure' | 'comic' | 'escape' | 'puzzle';
+  entertainmentType: 'game' | 'adventure' | 'comic' | 'escape' | 'puzzle' | 'wordsearch' | 'crossword' | 'jumble';
   config: unknown;
   buildId: string;
   apkSize: string;
@@ -299,6 +305,42 @@ app.post('/api/forge/puzzle', async (req, res) => {
   res.json({ buildId });
 
   waitForClient(buildId, 5000).then(() => runPuzzleBuild(buildId, config));
+});
+
+// Start a Word Search build
+app.post('/api/forge/wordsearch', async (req, res) => {
+  const config = req.body as WordSearchConfig;
+  const buildId = uuidv4();
+  const clientId = req.headers['x-client-id'] as string | undefined;
+
+  builds.set(buildId, { config, status: 'queued', progress: 0, clientId });
+  res.json({ buildId });
+
+  waitForClient(buildId, 5000).then(() => runWordSearchBuild(buildId, config));
+});
+
+// Start a Crossword build
+app.post('/api/forge/crossword', async (req, res) => {
+  const config = req.body as CrosswordConfig;
+  const buildId = uuidv4();
+  const clientId = req.headers['x-client-id'] as string | undefined;
+
+  builds.set(buildId, { config, status: 'queued', progress: 0, clientId });
+  res.json({ buildId });
+
+  waitForClient(buildId, 5000).then(() => runCrosswordBuild(buildId, config));
+});
+
+// Start a Jumble build
+app.post('/api/forge/jumble', async (req, res) => {
+  const config = req.body as JumbleConfig;
+  const buildId = uuidv4();
+  const clientId = req.headers['x-client-id'] as string | undefined;
+
+  builds.set(buildId, { config, status: 'queued', progress: 0, clientId });
+  res.json({ buildId });
+
+  waitForClient(buildId, 5000).then(() => runJumbleBuild(buildId, config));
 });
 
 // Get build status
@@ -1402,6 +1444,277 @@ async function runPuzzleBuild(buildId: string, config: PuzzleConfig) {
         theme: 'N/A',
         artStyle: config.artStyle.name,
         roomCount: config.structure.pieceCount,
+        title,
+      },
+      timing: { startedAt: qaStartedAt, completedAt: Date.now() },
+    },
+  });
+}
+
+async function runWordSearchBuild(buildId: string, config: WordSearchConfig) {
+  const record = builds.get(buildId)!;
+  record.status = 'building';
+
+  const result = await runWordSearchPipeline(config, (pct, msg, stage) => {
+    sendProgress(buildId, {
+      type: 'progress',
+      stage: stage || 'wordsearch',
+      name: msg,
+      percent: pct,
+      detail: '',
+      timestamp: Date.now(),
+    });
+  });
+
+  if (!result) {
+    sendProgress(buildId, {
+      type: 'error',
+      message: 'Word search generation failed.',
+    });
+    record.status = 'error';
+    return;
+  }
+
+  const previewHtml = generateWordSearchPreviewHtml(result, config);
+  record.status = 'complete';
+  record.progress = 100;
+  record.previewHtml = previewHtml;
+
+  try { savePreviewHtml(buildId, previewHtml); } catch (err) { console.error('Failed to save word search preview:', err); }
+
+  const title = result.title || `${config.wordSearchCategory.name} Word Search`;
+  if (!library.some((e) => e.buildId === buildId)) {
+    const existing = library.findIndex((e) => e.name === title);
+    const entry: LibraryEntry = {
+      id: existing >= 0 ? library[existing].id : uuidv4(),
+      name: title,
+      rating: existing >= 0 ? library[existing].rating : 0,
+      entertainmentType: 'wordsearch',
+      config: config,
+      buildId,
+      apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
+      createdAt: new Date().toISOString(),
+      clientId: record.clientId,
+    };
+    if (existing >= 0) {
+      library[existing] = entry;
+      console.log(`  \ud83d\udcda Updated word search "${entry.name}" in library (replaced previous build)`);
+    } else {
+      library.push(entry);
+      console.log(`  \ud83d\udcda Auto-saved word search "${entry.name}" to library`);
+    }
+    saveLibrary(library);
+  }
+
+  // Scored QA report
+  const qaStartedAt = Date.now();
+  sendProgress(buildId, { type: 'progress', stage: 'qa', name: '\ud83d\udcca Generating QA confidence report', percent: 95, detail: '', timestamp: Date.now() });
+  const scored = await qaContentReport({
+    entertainmentType: 'wordsearch',
+    title,
+    genre: config.wordSearchCategory.name,
+    artStyle: 'N/A',
+    contentSummary: `A ${config.structure.gridSize}x${config.structure.gridSize} word search with ${result.words.length} words. Topic: ${config.wordSearchCategory.name}. Diagonals: ${config.structure.allowDiagonals ? 'yes' : 'no'}. Backwards: ${config.structure.allowBackwards ? 'yes' : 'no'}.`,
+  }, (msg) => {
+    sendProgress(buildId, { type: 'progress', stage: 'qa', name: `\ud83d\udcca ${msg}`, percent: 96, detail: '', timestamp: Date.now() });
+  });
+
+  sendProgress(buildId, {
+    type: 'complete',
+    percent: 100,
+    apkPath: '',
+    apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
+    previewUrl: `/api/preview/${buildId}`,
+    qaReport: {
+      overallScore: scored.overallScore,
+      categories: scored.categories,
+      summary: scored.summary,
+      images: null,
+      config: {
+        genre: config.wordSearchCategory.name,
+        theme: 'N/A',
+        artStyle: 'N/A',
+        roomCount: config.structure.wordCount,
+        title,
+      },
+      timing: { startedAt: qaStartedAt, completedAt: Date.now() },
+    },
+  });
+}
+
+async function runCrosswordBuild(buildId: string, config: CrosswordConfig) {
+  const record = builds.get(buildId)!;
+  record.status = 'building';
+
+  const result = await runCrosswordPipeline(config, (pct, msg, stage) => {
+    sendProgress(buildId, {
+      type: 'progress',
+      stage: stage || 'crossword',
+      name: msg,
+      percent: pct,
+      detail: '',
+      timestamp: Date.now(),
+    });
+  });
+
+  if (!result) {
+    sendProgress(buildId, {
+      type: 'error',
+      message: 'Crossword generation failed.',
+    });
+    record.status = 'error';
+    return;
+  }
+
+  const previewHtml = generateCrosswordPreviewHtml(result, config);
+  record.status = 'complete';
+  record.progress = 100;
+  record.previewHtml = previewHtml;
+
+  try { savePreviewHtml(buildId, previewHtml); } catch (err) { console.error('Failed to save crossword preview:', err); }
+
+  const title = result.title || `${config.crosswordCategory.name} Crossword`;
+  if (!library.some((e) => e.buildId === buildId)) {
+    const existing = library.findIndex((e) => e.name === title);
+    const entry: LibraryEntry = {
+      id: existing >= 0 ? library[existing].id : uuidv4(),
+      name: title,
+      rating: existing >= 0 ? library[existing].rating : 0,
+      entertainmentType: 'crossword',
+      config: config,
+      buildId,
+      apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
+      createdAt: new Date().toISOString(),
+      clientId: record.clientId,
+    };
+    if (existing >= 0) {
+      library[existing] = entry;
+      console.log(`  \ud83d\udcda Updated crossword "${entry.name}" in library (replaced previous build)`);
+    } else {
+      library.push(entry);
+      console.log(`  \ud83d\udcda Auto-saved crossword "${entry.name}" to library`);
+    }
+    saveLibrary(library);
+  }
+
+  const qaStartedAt = Date.now();
+  sendProgress(buildId, { type: 'progress', stage: 'qa', name: '\ud83d\udcca Generating QA confidence report', percent: 95, detail: '', timestamp: Date.now() });
+  const scored = await qaContentReport({
+    entertainmentType: 'crossword',
+    title,
+    genre: config.crosswordCategory.name,
+    artStyle: 'N/A',
+    contentSummary: `A ${config.structure.gridSize}x${config.structure.gridSize} crossword with ${result.entries.length} clues. Topic: ${config.crosswordCategory.name}. Difficulty: ${config.structure.difficulty}.`,
+  }, (msg) => {
+    sendProgress(buildId, { type: 'progress', stage: 'qa', name: `\ud83d\udcca ${msg}`, percent: 96, detail: '', timestamp: Date.now() });
+  });
+
+  sendProgress(buildId, {
+    type: 'complete',
+    percent: 100,
+    apkPath: '',
+    apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
+    previewUrl: `/api/preview/${buildId}`,
+    qaReport: {
+      overallScore: scored.overallScore,
+      categories: scored.categories,
+      summary: scored.summary,
+      images: null,
+      config: {
+        genre: config.crosswordCategory.name,
+        theme: 'N/A',
+        artStyle: 'N/A',
+        roomCount: config.structure.clueCount,
+        title,
+      },
+      timing: { startedAt: qaStartedAt, completedAt: Date.now() },
+    },
+  });
+}
+
+async function runJumbleBuild(buildId: string, config: JumbleConfig) {
+  const record = builds.get(buildId)!;
+  record.status = 'building';
+
+  const result = await runJumblePipeline(config, (pct, msg, stage) => {
+    sendProgress(buildId, {
+      type: 'progress',
+      stage: stage || 'jumble',
+      name: msg,
+      percent: pct,
+      detail: '',
+      timestamp: Date.now(),
+    });
+  });
+
+  if (!result) {
+    sendProgress(buildId, {
+      type: 'error',
+      message: 'Jumble generation failed.',
+    });
+    record.status = 'error';
+    return;
+  }
+
+  const previewHtml = generateJumblePreviewHtml(result, config);
+  record.status = 'complete';
+  record.progress = 100;
+  record.previewHtml = previewHtml;
+
+  try { savePreviewHtml(buildId, previewHtml); } catch (err) { console.error('Failed to save jumble preview:', err); }
+
+  const title = result.title || `${config.jumbleCategory.name} Jumble`;
+  if (!library.some((e) => e.buildId === buildId)) {
+    const existing = library.findIndex((e) => e.name === title);
+    const entry: LibraryEntry = {
+      id: existing >= 0 ? library[existing].id : uuidv4(),
+      name: title,
+      rating: existing >= 0 ? library[existing].rating : 0,
+      entertainmentType: 'jumble',
+      config: config,
+      buildId,
+      apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
+      createdAt: new Date().toISOString(),
+      clientId: record.clientId,
+    };
+    if (existing >= 0) {
+      library[existing] = entry;
+      console.log(`  \ud83d\udcda Updated jumble "${entry.name}" in library (replaced previous build)`);
+    } else {
+      library.push(entry);
+      console.log(`  \ud83d\udcda Auto-saved jumble "${entry.name}" to library`);
+    }
+    saveLibrary(library);
+  }
+
+  const qaStartedAt = Date.now();
+  sendProgress(buildId, { type: 'progress', stage: 'qa', name: '\ud83d\udcca Generating QA confidence report', percent: 95, detail: '', timestamp: Date.now() });
+  const scored = await qaContentReport({
+    entertainmentType: 'jumble',
+    title,
+    genre: config.jumbleCategory.name,
+    artStyle: 'N/A',
+    contentSummary: `A newspaper-style jumble with ${result.words.length} scrambled words. Topic: ${config.jumbleCategory.name}. Difficulty: ${config.structure.difficulty}. Final answer: "${result.finalAnswer}". Includes cartoon illustration.`,
+  }, (msg) => {
+    sendProgress(buildId, { type: 'progress', stage: 'qa', name: `\ud83d\udcca ${msg}`, percent: 96, detail: '', timestamp: Date.now() });
+  });
+
+  sendProgress(buildId, {
+    type: 'complete',
+    percent: 100,
+    apkPath: '',
+    apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
+    previewUrl: `/api/preview/${buildId}`,
+    qaReport: {
+      overallScore: scored.overallScore,
+      categories: scored.categories,
+      summary: scored.summary,
+      images: null,
+      config: {
+        genre: config.jumbleCategory.name,
+        theme: 'N/A',
+        artStyle: 'N/A',
+        roomCount: config.structure.wordCount,
         title,
       },
       timing: { startedAt: qaStartedAt, completedAt: Date.now() },

@@ -1163,7 +1163,7 @@ RULES:
 // ── Generic QA Scored Report for non-game entertainment types ──
 
 interface ContentQAInput {
-  entertainmentType: 'comic' | 'adventure' | 'escape' | 'puzzle';
+  entertainmentType: 'comic' | 'adventure' | 'escape' | 'puzzle' | 'wordsearch' | 'crossword' | 'jumble';
   title: string;
   genre: string;
   artStyle: string;

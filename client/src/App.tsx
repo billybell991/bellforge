@@ -1,12 +1,15 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import type { AppPage, GameConfig, AdventureConfig, ComicConfig, EscapeConfig, PuzzleConfig, EntertainmentType, GenreOption, ThemeOption, ArtStyleOption, StructureConfig, StoryConfig, CYOAGenreOption, CYOAStructureConfig, ComicGenreOption, ComicStructureConfig, EscapeThemeOption, EscapeStructureConfig, PuzzleSubjectOption, PuzzleStructureConfig, LibraryEntry, WSProgressMessage, WSCompleteMessage, QAReport } from './types';
-import { GENRES, THEMES, ART_STYLES, CYOA_GENRES, COMIC_GENRES, ESCAPE_THEMES, PUZZLE_SUBJECTS } from './types';
+import type { AppPage, GameConfig, AdventureConfig, ComicConfig, EscapeConfig, PuzzleConfig, WordSearchConfig, CrosswordConfig, JumbleConfig, EntertainmentType, GenreOption, ThemeOption, ArtStyleOption, StructureConfig, StoryConfig, CYOAGenreOption, CYOAStructureConfig, ComicGenreOption, ComicStructureConfig, EscapeThemeOption, EscapeStructureConfig, PuzzleSubjectOption, PuzzleStructureConfig, WordSearchCategoryOption, WordSearchStructureConfig, CrosswordCategoryOption, CrosswordStructureConfig, JumbleCategoryOption, JumbleStructureConfig, LibraryEntry, WSProgressMessage, WSCompleteMessage, QAReport } from './types';
+import { GENRES, THEMES, ART_STYLES, CYOA_GENRES, COMIC_GENRES, ESCAPE_THEMES, PUZZLE_SUBJECTS, WORDSEARCH_CATEGORIES, CROSSWORD_CATEGORIES, JUMBLE_CATEGORIES } from './types';
 import { Landing } from './components/Landing';
 import { WizardContainer } from './components/WizardContainer';
 import { CYOAWizardContainer } from './components/CYOAWizardContainer';
 import { ComicWizardContainer } from './components/ComicWizardContainer';
 import { EscapeWizardContainer } from './components/EscapeWizardContainer';
 import { PuzzleWizardContainer } from './components/PuzzleWizardContainer';
+import { WordSearchWizardContainer } from './components/WordSearchWizardContainer';
+import { CrosswordWizardContainer } from './components/CrosswordWizardContainer';
+import { JumbleWizardContainer } from './components/JumbleWizardContainer';
 import { BuildProgress } from './components/BuildProgress';
 import { GamePreview } from './components/GamePreview';
 import { DeployGuide } from './components/DeployGuide';
@@ -46,7 +49,7 @@ function friendlyPhaseLabel(stage: string): string {
     gradle_build: 'Building the app...',
     signing: 'Signing the app...',
     // CYOA pipeline
-    concept: 'Dreaming up the story...',
+    concept: 'Brewing up ideas...',
     outline: 'Outlining the adventure...',
     prose: 'Writing the narrative...',
     prose_mid: 'Expanding story branches...',
@@ -80,6 +83,12 @@ function friendlyPhaseLabel(stage: string): string {
     cutting: 'Cutting jigsaw pieces...',
     engine: 'Building the puzzle engine...',
     qa: 'Quality check...',
+    // Word search / crossword pipeline
+    grid: 'Building the grid...',
+    wordsearch: 'Generating word search...',
+    crossword: 'Generating crossword...',
+    jumble: 'Generating jumble...',
+    art: 'Drawing the cartoon...',
     // Shared
     viewer: 'Assembling the viewer...',
     complete: 'Putting on finishing touches...',
@@ -124,6 +133,24 @@ const defaultPuzzleStructure: PuzzleStructureConfig = {
   rotation: false,
 };
 
+const defaultWordSearchStructure: WordSearchStructureConfig = {
+  gridSize: 12,
+  wordCount: 10,
+  allowDiagonals: true,
+  allowBackwards: false,
+};
+
+const defaultCrosswordStructure: CrosswordStructureConfig = {
+  gridSize: 13,
+  clueCount: 12,
+  difficulty: 'medium',
+};
+
+const defaultJumbleStructure: JumbleStructureConfig = {
+  wordCount: 5,
+  difficulty: 'medium',
+};
+
 // ── Build log entry for the progress display ──
 interface BuildLogEntry {
   name: string;
@@ -151,6 +178,15 @@ export default function App() {
   // Puzzle-specific state
   const [puzzleSubject, setPuzzleSubject] = useState<PuzzleSubjectOption | null>(null);
   const [puzzleStructure, setPuzzleStructure] = useState<PuzzleStructureConfig>(defaultPuzzleStructure);
+  // Word Search-specific state
+  const [wordSearchCategory, setWordSearchCategory] = useState<WordSearchCategoryOption | null>(null);
+  const [wordSearchStructure, setWordSearchStructure] = useState<WordSearchStructureConfig>(defaultWordSearchStructure);
+  // Crossword-specific state
+  const [crosswordCategory, setCrosswordCategory] = useState<CrosswordCategoryOption | null>(null);
+  const [crosswordStructure, setCrosswordStructure] = useState<CrosswordStructureConfig>(defaultCrosswordStructure);
+  // Jumble-specific state
+  const [jumbleCategory, setJumbleCategory] = useState<JumbleCategoryOption | null>(null);
+  const [jumbleStructure, setJumbleStructure] = useState<JumbleStructureConfig>(defaultJumbleStructure);
   const [buildId, setBuildId] = useState<string | null>(null);
   const [apkInfo, setApkInfo] = useState<{ path: string; size: string } | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -159,6 +195,7 @@ export default function App() {
   const [autoForgePercent, setAutoForgePercent] = useState(0);
   const [autoForgeStep, setAutoForgeStep] = useState('Warming up the forge...');
   const [autoForgeDetail, setAutoForgeDetail] = useState('');
+  const [pendingAutoForgeBuild, setPendingAutoForgeBuild] = useState(false);
 
   // ── Lifted build progress state (survives page navigation) ──
   const [buildPercent, setBuildPercent] = useState(0);
@@ -200,6 +237,21 @@ export default function App() {
   const puzzleConfig: PuzzleConfig | null =
     puzzleSubject && artStyle
       ? { puzzleSubject, artStyle, structure: puzzleStructure }
+      : null;
+
+  const wordSearchConfig: WordSearchConfig | null =
+    wordSearchCategory
+      ? { wordSearchCategory, structure: wordSearchStructure }
+      : null;
+
+  const crosswordConfig: CrosswordConfig | null =
+    crosswordCategory
+      ? { crosswordCategory, structure: crosswordStructure }
+      : null;
+
+  const jumbleConfig: JumbleConfig | null =
+    jumbleCategory
+      ? { jumbleCategory, structure: jumbleStructure }
       : null;
 
   // ── Library count fetcher ──
@@ -353,6 +405,40 @@ export default function App() {
     setAutoForgeStep('Warming up the forge...');
     setAutoForgeDetail('');
 
+    // Simple puzzle types don't need Gemini auto-config — pick random values instantly
+    if (type === 'wordsearch' || type === 'crossword' || type === 'jumble') {
+      setAutoForgePercent(50);
+      setAutoForgeStep('🎲 Picking a topic...');
+      await new Promise(r => setTimeout(r, 400));
+
+      if (type === 'wordsearch') {
+        const opts = WORDSEARCH_CATEGORIES.filter(c => c.id !== 'custom');
+        const wc = opts[Math.floor(Math.random() * opts.length)];
+        setWordSearchCategory(wc);
+        setWordSearchStructure(defaultWordSearchStructure);
+        setAutoForgePercent(100);
+        setAutoForgeStep(`🔍 ${wc.name} Word Search!`);
+      } else if (type === 'crossword') {
+        const opts = CROSSWORD_CATEGORIES.filter(c => c.id !== 'custom');
+        const cc = opts[Math.floor(Math.random() * opts.length)];
+        setCrosswordCategory(cc);
+        setCrosswordStructure(defaultCrosswordStructure);
+        setAutoForgePercent(100);
+        setAutoForgeStep(`✏️ ${cc.name} Crossword!`);
+      } else {
+        const opts = JUMBLE_CATEGORIES.filter(c => c.id !== 'custom');
+        const jc = opts[Math.floor(Math.random() * opts.length)];
+        setJumbleCategory(jc);
+        setJumbleStructure(defaultJumbleStructure);
+        setAutoForgePercent(100);
+        setAutoForgeStep(`🔀 ${jc.name} Jumble!`);
+      }
+      await new Promise(r => setTimeout(r, 500));
+      setAutoForging(false);
+      setPendingAutoForgeBuild(true);
+      return;
+    }
+
     try {
       const result = await new Promise<Record<string, unknown>>((resolve, reject) => {
         const evtSource = new EventSource('/api/gemini/auto-config/stream');
@@ -493,6 +579,9 @@ export default function App() {
       : entertainmentType === 'comic' ? comicConfig
       : entertainmentType === 'escape' ? escapeConfig
       : entertainmentType === 'puzzle' ? puzzleConfig
+      : entertainmentType === 'wordsearch' ? wordSearchConfig
+      : entertainmentType === 'crossword' ? crosswordConfig
+      : entertainmentType === 'jumble' ? jumbleConfig
       : config;
     if (!payload) return;
 
@@ -501,6 +590,9 @@ export default function App() {
         : entertainmentType === 'comic' ? '/api/forge/comic'
         : entertainmentType === 'escape' ? '/api/forge/escape'
         : entertainmentType === 'puzzle' ? '/api/forge/puzzle'
+        : entertainmentType === 'wordsearch' ? '/api/forge/wordsearch'
+        : entertainmentType === 'crossword' ? '/api/forge/crossword'
+        : entertainmentType === 'jumble' ? '/api/forge/jumble'
         : '/api/forge';
       const res = await fetch(endpoint, {
         method: 'POST',
@@ -526,13 +618,21 @@ export default function App() {
     } catch {
       alert('The forge server is not running here — this is a static demo.\n\nTo forge real games, clone the repo and run it locally:\n  git clone → npm run install:all → npm run dev');
     }
-  }, [config, adventureConfig, comicConfig, escapeConfig, puzzleConfig, entertainmentType, connectWs]);
+  }, [config, adventureConfig, comicConfig, escapeConfig, puzzleConfig, wordSearchConfig, crosswordConfig, jumbleConfig, entertainmentType, connectWs]);
 
   const handleBuildComplete = useCallback((apkPath: string, apkSize: string, previewUrlPath: string) => {
     setApkInfo({ path: apkPath, size: apkSize });
     setPreviewUrl(previewUrlPath);
     setPage('preview');
   }, []);
+
+  // Auto-forge-and-build: when puzzle auto-forge sets config + flag, fire the build
+  useEffect(() => {
+    if (pendingAutoForgeBuild) {
+      setPendingAutoForgeBuild(false);
+      handleForgeIt();
+    }
+  }, [pendingAutoForgeBuild, handleForgeIt]);
 
   const handleGoToDeploy = useCallback(() => {
     setPage('deploy');
@@ -574,6 +674,21 @@ export default function App() {
       setPuzzleSubject(pc.puzzleSubject);
       setArtStyle(pc.artStyle);
       setPuzzleStructure(pc.structure);
+    } else if ('wordSearchCategory' in c) {
+      const wc = c as WordSearchConfig;
+      setEntertainmentType('wordsearch');
+      setWordSearchCategory(wc.wordSearchCategory);
+      setWordSearchStructure(wc.structure);
+    } else if ('crosswordCategory' in c) {
+      const xc = c as CrosswordConfig;
+      setEntertainmentType('crossword');
+      setCrosswordCategory(xc.crosswordCategory);
+      setCrosswordStructure(xc.structure);
+    } else if ('jumbleCategory' in c) {
+      const jc = c as JumbleConfig;
+      setEntertainmentType('jumble');
+      setJumbleCategory(jc.jumbleCategory);
+      setJumbleStructure(jc.structure);
     } else {
       const gc = c as GameConfig;
       setEntertainmentType('game');
@@ -622,6 +737,21 @@ export default function App() {
       setPuzzleSubject(pc.puzzleSubject);
       setArtStyle(pc.artStyle);
       setPuzzleStructure(pc.structure);
+    } else if ('wordSearchCategory' in c) {
+      const wc = c as WordSearchConfig;
+      setEntertainmentType('wordsearch');
+      setWordSearchCategory(wc.wordSearchCategory);
+      setWordSearchStructure(wc.structure);
+    } else if ('crosswordCategory' in c) {
+      const xc = c as CrosswordConfig;
+      setEntertainmentType('crossword');
+      setCrosswordCategory(xc.crosswordCategory);
+      setCrosswordStructure(xc.structure);
+    } else if ('jumbleCategory' in c) {
+      const jc = c as JumbleConfig;
+      setEntertainmentType('jumble');
+      setJumbleCategory(jc.jumbleCategory);
+      setJumbleStructure(jc.structure);
     } else {
       const gc = c as GameConfig;
       setEntertainmentType('game');
@@ -665,6 +795,12 @@ export default function App() {
     setEscapeStructure(defaultEscapeStructure);
     setPuzzleSubject(null);
     setPuzzleStructure(defaultPuzzleStructure);
+    setWordSearchCategory(null);
+    setWordSearchStructure(defaultWordSearchStructure);
+    setCrosswordCategory(null);
+    setCrosswordStructure(defaultCrosswordStructure);
+    setJumbleCategory(null);
+    setJumbleStructure(defaultJumbleStructure);
     setApkInfo(null);
     setPreviewUrl(null);
     setQaReport(null);
@@ -820,6 +956,39 @@ export default function App() {
           />
         )}
 
+        {page === 'wizard' && entertainmentType === 'wordsearch' && (
+          <WordSearchWizardContainer
+            wordSearchCategory={wordSearchCategory}
+            structure={wordSearchStructure}
+            onCategoryChange={setWordSearchCategory}
+            onStructureChange={setWordSearchStructure}
+            onForge={handleForgeIt}
+            onBack={() => setPage('landing')}
+          />
+        )}
+
+        {page === 'wizard' && entertainmentType === 'crossword' && (
+          <CrosswordWizardContainer
+            crosswordCategory={crosswordCategory}
+            structure={crosswordStructure}
+            onCategoryChange={setCrosswordCategory}
+            onStructureChange={setCrosswordStructure}
+            onForge={handleForgeIt}
+            onBack={() => setPage('landing')}
+          />
+        )}
+
+        {page === 'wizard' && entertainmentType === 'jumble' && (
+          <JumbleWizardContainer
+            jumbleCategory={jumbleCategory}
+            structure={jumbleStructure}
+            onCategoryChange={setJumbleCategory}
+            onStructureChange={setJumbleStructure}
+            onForge={handleForgeIt}
+            onBack={() => setPage('landing')}
+          />
+        )}
+
         {page === 'building' && buildId && (
           <BuildProgress
             percent={buildPercent}
@@ -836,7 +1005,7 @@ export default function App() {
             previewUrl={previewUrl}
             apkPath={apkInfo?.path ?? ''}
             apkSize={apkInfo?.size ?? ''}
-            orientation={(entertainmentType === 'adventure' || entertainmentType === 'comic' || entertainmentType === 'escape' || entertainmentType === 'puzzle') ? 'landscape' : (genre?.orientation ?? 'landscape')}
+            orientation={(entertainmentType === 'adventure' || entertainmentType === 'comic' || entertainmentType === 'escape' || entertainmentType === 'puzzle' || entertainmentType === 'wordsearch' || entertainmentType === 'crossword' || entertainmentType === 'jumble') ? 'landscape' : (genre?.orientation ?? 'landscape')}
             onDeploy={handleGoToDeploy}
             onStartOver={handleStartOver}
             onReForge={() => { setBuildActive(false); buildCompletedRef.current = false; setPage('wizard'); }}

@@ -4,7 +4,7 @@
 
 // ── Entertainment Type ──
 
-export type EntertainmentType = 'game' | 'adventure' | 'comic' | 'escape' | 'puzzle';
+export type EntertainmentType = 'game' | 'adventure' | 'comic' | 'escape' | 'puzzle' | 'wordsearch' | 'crossword' | 'jumble';
 
 export interface GameConfig {
   genre: GenreOption;
@@ -351,6 +351,153 @@ export const PUZZLE_BUILD_STAGES: BuildStage[] = [
   { id: 'complete', name: 'Puzzle Complete!', percent: 100, icon: '🎉' },
 ];
 
+// ── Word Search Config ──
+
+export interface WordSearchConfig {
+  wordSearchCategory: WordSearchCategoryOption;
+  structure: WordSearchStructureConfig;
+}
+
+export interface WordSearchStructureConfig {
+  gridSize: number;
+  wordCount: number;
+  allowDiagonals: boolean;
+  allowBackwards: boolean;
+}
+
+export interface WordSearchCategoryOption {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  tag: string;
+}
+
+export const WORDSEARCH_CATEGORIES: WordSearchCategoryOption[] = [
+  { id: 'animals', name: 'Animals', icon: '🦁', description: 'Lions, dolphins, eagles — creatures from every habitat', tag: 'POPULAR' },
+  { id: 'space', name: 'Space & Astronomy', icon: '🚀', description: 'Planets, galaxies, astronauts, and cosmic phenomena', tag: '' },
+  { id: 'food', name: 'Food & Cooking', icon: '🍕', description: 'Ingredients, dishes, and culinary terms from around the world', tag: '' },
+  { id: 'science', name: 'Science', icon: '🔬', description: 'Elements, experiments, theories, and discoveries', tag: '' },
+  { id: 'mythology', name: 'Mythology', icon: '⚡', description: 'Gods, heroes, and legendary creatures from world myths', tag: '' },
+  { id: 'sports', name: 'Sports', icon: '⚽', description: 'Games, athletes, equipment, and sporting terms', tag: '' },
+  { id: 'nature', name: 'Nature', icon: '🌿', description: 'Trees, flowers, ecosystems, weather, and geology', tag: '' },
+  { id: 'history', name: 'History', icon: '🏛️', description: 'Events, figures, civilizations, and eras that shaped the world', tag: '' },
+  { id: 'movies', name: 'Movies & TV', icon: '🎬', description: 'Genres, characters, directors, and cinematic terms', tag: '' },
+  { id: 'technology', name: 'Technology', icon: '💻', description: 'Gadgets, programming, inventions, and digital culture', tag: '' },
+  { id: 'custom', name: 'Custom Topic', icon: '✨', description: 'Describe any topic — the AI will pick the words', tag: 'NEW' },
+];
+
+export const WORDSEARCH_WIZARD_STEPS: { id: WizardStep; label: string; icon: string }[] = [
+  { id: 'genre', label: 'Topic', icon: '📋' },
+  { id: 'structure', label: 'Difficulty', icon: '🔤' },
+  { id: 'review', label: 'Review', icon: '✅' },
+];
+
+export const WORDSEARCH_BUILD_STAGES: BuildStage[] = [
+  { id: 'concept', name: 'Choosing Words', percent: 15, icon: '📝' },
+  { id: 'grid', name: 'Building Grid', percent: 40, icon: '🔤' },
+  { id: 'engine', name: 'Building Word Search Engine', percent: 70, icon: '⚙️' },
+  { id: 'qa', name: 'QA — Verifying Grid', percent: 90, icon: '🔍' },
+  { id: 'complete', name: 'Word Search Complete!', percent: 100, icon: '🎉' },
+];
+
+// ── Crossword Config ──
+
+export interface CrosswordConfig {
+  crosswordCategory: CrosswordCategoryOption;
+  structure: CrosswordStructureConfig;
+}
+
+export interface CrosswordStructureConfig {
+  gridSize: number;
+  clueCount: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+}
+
+export interface CrosswordCategoryOption {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  tag: string;
+}
+
+export const CROSSWORD_CATEGORIES: CrosswordCategoryOption[] = [
+  { id: 'general', name: 'General Knowledge', icon: '🧠', description: 'A mix of trivia, vocabulary, and everyday knowledge', tag: 'POPULAR' },
+  { id: 'science', name: 'Science', icon: '🔬', description: 'Biology, chemistry, physics, and earth sciences', tag: '' },
+  { id: 'geography', name: 'Geography', icon: '🌍', description: 'Countries, capitals, landmarks, and natural features', tag: '' },
+  { id: 'history', name: 'History', icon: '🏛️', description: 'Historical events, figures, and ancient civilizations', tag: '' },
+  { id: 'literature', name: 'Literature', icon: '📚', description: 'Authors, characters, books, and literary terms', tag: '' },
+  { id: 'movies', name: 'Movies & TV', icon: '🎬', description: 'Films, shows, actors, directors, and cinematic terms', tag: '' },
+  { id: 'music', name: 'Music', icon: '🎵', description: 'Instruments, genres, artists, and musical terms', tag: '' },
+  { id: 'food', name: 'Food & Drink', icon: '🍽️', description: 'Cuisines, ingredients, cooking techniques, and beverages', tag: '' },
+  { id: 'nature', name: 'Nature & Animals', icon: '🌿', description: 'Wildlife, plants, ecosystems, and natural phenomena', tag: '' },
+  { id: 'sports', name: 'Sports', icon: '🏆', description: 'Athletes, rules, equipment, and sporting events', tag: '' },
+  { id: 'custom', name: 'Custom Topic', icon: '✨', description: 'Describe any topic — the AI writes the clues', tag: 'NEW' },
+];
+
+export const CROSSWORD_WIZARD_STEPS: { id: WizardStep; label: string; icon: string }[] = [
+  { id: 'genre', label: 'Topic', icon: '📋' },
+  { id: 'structure', label: 'Difficulty', icon: '✏️' },
+  { id: 'review', label: 'Review', icon: '✅' },
+];
+
+export const CROSSWORD_BUILD_STAGES: BuildStage[] = [
+  { id: 'concept', name: 'Writing Clues', percent: 15, icon: '📝' },
+  { id: 'grid', name: 'Building Grid', percent: 40, icon: '✏️' },
+  { id: 'engine', name: 'Building Crossword Engine', percent: 70, icon: '⚙️' },
+  { id: 'qa', name: 'QA — Verifying Grid', percent: 90, icon: '🔍' },
+  { id: 'complete', name: 'Crossword Complete!', percent: 100, icon: '🎉' },
+];
+
+// ── Jumble Config ──
+
+export interface JumbleConfig {
+  jumbleCategory: JumbleCategoryOption;
+  structure: JumbleStructureConfig;
+}
+
+export interface JumbleStructureConfig {
+  wordCount: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+}
+
+export interface JumbleCategoryOption {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  tag: string;
+}
+
+export const JUMBLE_CATEGORIES: JumbleCategoryOption[] = [
+  { id: 'everyday', name: 'Everyday Life', icon: '🏠', description: 'Common words from daily life — perfect for warming up', tag: 'POPULAR' },
+  { id: 'animals', name: 'Animals', icon: '🦁', description: 'Unscramble creatures from every corner of the animal kingdom', tag: '' },
+  { id: 'food', name: 'Food & Cooking', icon: '🍕', description: 'Ingredients, dishes, and kitchen vocabulary all mixed up', tag: '' },
+  { id: 'science', name: 'Science', icon: '🔬', description: 'Lab words, elements, and discoveries — scrambled for brainy solvers', tag: '' },
+  { id: 'sports', name: 'Sports', icon: '⚽', description: 'Athletic terms, games, and equipment in a jumble', tag: '' },
+  { id: 'travel', name: 'Travel & Places', icon: '✈️', description: 'Destinations, landmarks, and travel lingo all scrambled', tag: '' },
+  { id: 'movies', name: 'Movies & TV', icon: '🎬', description: 'Hollywood vocabulary and screen culture in a mix', tag: '' },
+  { id: 'music', name: 'Music', icon: '🎵', description: 'Instruments, genres, and musical terms to unscramble', tag: '' },
+  { id: 'nature', name: 'Nature', icon: '🌿', description: 'Trees, flowers, weather, and the great outdoors — scrambled', tag: '' },
+  { id: 'holidays', name: 'Holidays & Celebrations', icon: '🎉', description: 'Festive words from holidays around the world', tag: '' },
+  { id: 'custom', name: 'Custom Topic', icon: '✨', description: 'Describe any topic — the AI picks the words and punchline', tag: 'NEW' },
+];
+
+export const JUMBLE_WIZARD_STEPS: { id: WizardStep; label: string; icon: string }[] = [
+  { id: 'genre', label: 'Topic', icon: '📋' },
+  { id: 'structure', label: 'Difficulty', icon: '🔀' },
+  { id: 'review', label: 'Review', icon: '✅' },
+];
+
+export const JUMBLE_BUILD_STAGES: BuildStage[] = [
+  { id: 'concept', name: 'Crafting Puzzle', percent: 15, icon: '📝' },
+  { id: 'art', name: 'Drawing Cartoon', percent: 50, icon: '🎨' },
+  { id: 'engine', name: 'Building Jumble Engine', percent: 75, icon: '⚙️' },
+  { id: 'qa', name: 'QA — Verifying Puzzle', percent: 90, icon: '🔍' },
+  { id: 'complete', name: 'Jumble Complete!', percent: 100, icon: '🎉' },
+];
+
 // ── App Page State ──
 
 export type AppPage = 'landing' | 'wizard' | 'building' | 'preview' | 'deploy';
@@ -361,7 +508,7 @@ export interface LibraryEntry {
   id: string;
   name: string;
   rating: number;
-  config: GameConfig | AdventureConfig | ComicConfig | EscapeConfig | PuzzleConfig;
+  config: GameConfig | AdventureConfig | ComicConfig | EscapeConfig | PuzzleConfig | WordSearchConfig | CrosswordConfig | JumbleConfig;
   entertainmentType?: EntertainmentType;
   buildId: string;
   apkSize: string;

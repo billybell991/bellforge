@@ -38,6 +38,21 @@ export interface PuzzleConfig {
   structure: { pieceCount: number; difficulty: string; rotation: boolean };
 }
 
+export interface WordSearchConfig {
+  wordSearchCategory: { id: string; name: string };
+  structure: { gridSize: number; wordCount: number; allowDiagonals: boolean; allowBackwards: boolean };
+}
+
+export interface CrosswordConfig {
+  crosswordCategory: { id: string; name: string };
+  structure: { gridSize: number; clueCount: number; difficulty: string };
+}
+
+export interface JumbleConfig {
+  jumbleCategory: { id: string; name: string };
+  structure: { wordCount: number; difficulty: string };
+}
+
 export interface PipelineContext {
   buildId: string;
   config: GameConfig;

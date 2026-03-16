@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { EntertainmentType } from '../types';
 
+// 'puzzles' is the sub-menu — not a real entertainment type
+type LandingSelection = EntertainmentType | 'puzzles' | null;
+
 interface LandingProps {
   onStart: (type: EntertainmentType) => void;
   onAutoForge: (type: EntertainmentType) => void;
@@ -43,11 +46,36 @@ const PUZZLE_FEATURES = [
   { icon: '🧩', title: 'Drag & Solve', desc: 'Drag, snap, and complete — play right in your browser with touch support.' },
 ];
 
+const WORDSEARCH_FEATURES = [
+  { icon: '📋', title: 'Pick a Topic', desc: 'Animals, space, food, mythology, sports — or describe your own.' },
+  { icon: '🤖', title: 'AI-Picked Words', desc: 'Gemini selects interesting, themed words for every puzzle.' },
+  { icon: '🔤', title: 'Custom Grid', desc: 'Choose grid size, diagonals, backwards — easy to expert.' },
+  { icon: '👆', title: 'Swipe & Find', desc: 'Drag to select words in the grid — plays great on touch and desktop.' },
+];
+
+const CROSSWORD_FEATURES = [
+  { icon: '📋', title: 'Pick a Topic', desc: 'Science, geography, movies, literature — or any custom topic.' },
+  { icon: '🤖', title: 'AI-Written Clues', desc: 'Gemini writes clever clues at your chosen difficulty level.' },
+  { icon: '✏️', title: 'Classic Grid', desc: 'Proper numbered crossword grid with across and down clues.' },
+  { icon: '🧠', title: 'Type & Solve', desc: 'Click a clue, type your answer — auto-checks when complete.' },
+];
+
+const JUMBLE_FEATURES = [
+  { icon: '🔀', title: 'Classic Scramble', desc: 'Unscramble 4-6 jumbled words, then use circled letters to solve the final riddle.' },
+  { icon: '🎨', title: 'Cartoon Panel', desc: 'Each puzzle comes with an AI-drawn newspaper-style cartoon — just like the real thing.' },
+  { icon: '💡', title: 'Punchline Payoff', desc: 'The circled letters rearrange into a clever punchline tied to the cartoon.' },
+  { icon: '🤖', title: 'AI-Crafted Puzzles', desc: 'Gemini writes the words, clues, and cartoon scene — every puzzle is unique.' },
+];
+
 export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: LandingProps) {
   const [taglineVisible, setTaglineVisible] = useState(false);
   const [geminiStatus, setGeminiStatus] = useState<{ available: boolean; hint: string } | null>(null);
-  const [entertainmentType, setEntertainmentType] = useState<EntertainmentType | null>(null);
+  const [selection, setSelection] = useState<LandingSelection>(null);
   const [featureNudge, setFeatureNudge] = useState<string | null>(null);
+
+  // The actual entertainment type (null when at top level or in puzzles sub-menu)
+  const entertainmentType: EntertainmentType | null =
+    selection && selection !== 'puzzles' ? selection : null;
 
   useEffect(() => {
     const timer = setTimeout(() => setTaglineVisible(true), 300);
@@ -58,21 +86,32 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
     return () => clearTimeout(timer);
   }, []);
 
-  const features = entertainmentType === 'adventure' ? ADVENTURE_FEATURES
-    : entertainmentType === 'comic' ? COMIC_FEATURES
-    : entertainmentType === 'escape' ? ESCAPE_FEATURES
-    : entertainmentType === 'puzzle' ? PUZZLE_FEATURES
+  const features = selection === 'adventure' ? ADVENTURE_FEATURES
+    : selection === 'comic' ? COMIC_FEATURES
+    : selection === 'escape' ? ESCAPE_FEATURES
+    : selection === 'puzzle' ? PUZZLE_FEATURES
+    : selection === 'wordsearch' ? WORDSEARCH_FEATURES
+    : selection === 'crossword' ? CROSSWORD_FEATURES
+    : selection === 'jumble' ? JUMBLE_FEATURES
     : GAME_FEATURES;
-  const tagline = !entertainmentType
+  const tagline = !selection
     ? 'AI-Powered Entertainment. Built in Minutes.'
-    : entertainmentType === 'adventure'
+    : selection === 'adventure'
     ? 'Forge Your Adventure. You Are the Hero.'
-    : entertainmentType === 'comic'
+    : selection === 'comic'
     ? 'Forge Your Comic. Every Panel AI-Drawn.'
-    : entertainmentType === 'escape'
+    : selection === 'escape'
     ? 'Forge Your Escape. Crack Every Puzzle.'
-    : entertainmentType === 'puzzle'
+    : selection === 'puzzles'
+    ? 'Forge a Puzzle. Pick Your Challenge.'
+    : selection === 'puzzle'
     ? 'Forge Your Puzzle. Piece by Piece.'
+    : selection === 'wordsearch'
+    ? 'Forge Your Word Search. Find Every Word.'
+    : selection === 'crossword'
+    ? 'Forge Your Crossword. Clue by Clue.'
+    : selection === 'jumble'
+    ? 'Forge Your Jumble. Unscramble the Fun.'
     : 'Forge Your Game. No Code Required.';
 
   return (
@@ -94,30 +133,76 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
       )}
 
       {/* Entertainment Type Selector */}
-      {!entertainmentType && (
+      {!selection && (
         <div className="entertainment-selector">
           <h2 className="entertainment-prompt">The forge is hot. What are we making?</h2>
           <div className="entertainment-cards">
-            <div className="entertainment-card" onClick={() => setEntertainmentType('adventure')}>
+            <div className="entertainment-card" onClick={() => setSelection('adventure')}>
               <span className="entertainment-card-icon">📚</span>
               <h3 className="entertainment-card-title">Adventure</h3>
               <p className="entertainment-card-desc">A branching illustrated storybook — you make the choices.</p>
             </div>
-            <div className="entertainment-card" onClick={() => setEntertainmentType('comic')}>
+            <div className="entertainment-card" onClick={() => setSelection('comic')}>
               <span className="entertainment-card-icon">💥</span>
               <h3 className="entertainment-card-title">Comic</h3>
               <p className="entertainment-card-desc">A full comic book — every panel AI-drawn, dialogue auto-placed.</p>
             </div>
-            <div className="entertainment-card" onClick={() => setEntertainmentType('puzzle')}>
+            <div className="entertainment-card" onClick={() => setSelection('puzzles')}>
               <span className="entertainment-card-icon">🧩</span>
-              <h3 className="entertainment-card-title">Jigsaw Puzzle</h3>
-              <p className="entertainment-card-desc">A beautiful AI-painted image cut into classic jigsaw pieces — drag, snap, and solve.</p>
+              <h3 className="entertainment-card-title">Puzzles</h3>
+              <p className="entertainment-card-desc">Jigsaw puzzles, word searches, crosswords, and jumbles — AI-generated brain teasers.</p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Feature cards + action buttons shown after picking type */}
+      {/* Puzzle Sub-Type Selector */}
+      {selection === 'puzzles' && (
+        <div className="entertainment-selector">
+          <h2 className="entertainment-prompt">Pick your puzzle type</h2>
+          <div className="entertainment-cards">
+            <div className="entertainment-card" onClick={() => setSelection('puzzle')}>
+              <span className="entertainment-card-icon">🖼️</span>
+              <h3 className="entertainment-card-title">Jigsaw Puzzle</h3>
+              <p className="entertainment-card-desc">A beautiful AI-painted image cut into classic jigsaw pieces — drag, snap, and solve.</p>
+            </div>
+            <div className="entertainment-card" onClick={() => setSelection('wordsearch')}>
+              <span className="entertainment-card-icon">🔤</span>
+              <h3 className="entertainment-card-title">Word Search</h3>
+              <p className="entertainment-card-desc">Find hidden words in a grid — themed by topic, with diagonals and backwards options.</p>
+            </div>
+            <div className="entertainment-card" onClick={() => setSelection('crossword')}>
+              <span className="entertainment-card-icon">✏️</span>
+              <h3 className="entertainment-card-title">Crossword</h3>
+              <p className="entertainment-card-desc">AI-written clues on any topic — classic numbered grid with across and down.</p>
+            </div>
+            <div className="entertainment-card" onClick={() => setSelection('jumble')}>
+              <span className="entertainment-card-icon">🔀</span>
+              <h3 className="entertainment-card-title">Jumble</h3>
+              <p className="entertainment-card-desc">Unscramble words, find the circled letters, solve the punchline — with a cartoon!</p>
+            </div>
+          </div>
+          <div className="landing-buttons" style={{ marginTop: 16 }}>
+            <div className="landing-btn-wrapper">
+              <button className="forge-btn forge-btn-auto" onClick={() => {
+                const puzzleTypes: EntertainmentType[] = ['puzzle', 'wordsearch', 'crossword', 'jumble'];
+                const pick = puzzleTypes[Math.floor(Math.random() * puzzleTypes.length)];
+                onAutoForge(pick);
+              }}>
+                🎲 SURPRISE ME
+              </button>
+              <span className="forge-btn-tooltip">
+                Randomly pick a puzzle type and build it — total surprise!
+              </span>
+            </div>
+          </div>
+          <button className="landing-type-switch" onClick={() => setSelection(null)}>
+            ← Choose a different type
+          </button>
+        </div>
+      )}
+
+      {/* Feature cards + action buttons shown after picking a concrete type */}
       {entertainmentType && (
         <>
           <div className="landing-features">
@@ -142,11 +227,7 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
                 <img src="/bellforge-logo.png" alt="" style={{ width: 20, height: 'auto', verticalAlign: 'middle', marginRight: 6 }} /> FORGE MY OWN
               </button>
               <span className="forge-btn-tooltip">
-                {entertainmentType === 'adventure'
-                  ? 'Walk through each step — you pick the genre, theme, art style, and story seed'
-                  : entertainmentType === 'comic'
-                  ? 'Walk through each step — you pick the genre, theme, art style, and story'
-                  : 'Walk through each step — you pick the genre, theme, art style, and story'}
+                Walk through each step — you pick the topic, settings, and style
               </span>
             </div>
             <div className="landing-btn-wrapper">
@@ -154,12 +235,19 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
                 🤖 FORGE FOR ME
               </button>
               <span className="forge-btn-tooltip">
-                Let Gemini AI choose everything and build you a surprise {entertainmentType === 'adventure' ? 'adventure' : entertainmentType === 'comic' ? 'comic' : entertainmentType === 'escape' ? 'escape room' : entertainmentType === 'puzzle' ? 'puzzle' : 'game'}
+                Let Gemini AI choose everything and build you a surprise {entertainmentType === 'adventure' ? 'adventure' : entertainmentType === 'comic' ? 'comic' : entertainmentType === 'escape' ? 'escape room' : entertainmentType === 'puzzle' ? 'puzzle' : entertainmentType === 'wordsearch' ? 'word search' : entertainmentType === 'crossword' ? 'crossword' : entertainmentType === 'jumble' ? 'jumble' : 'game'}
               </span>
             </div>
           </div>
 
-          <button className="landing-type-switch" onClick={() => setEntertainmentType(null)}>
+          <button className="landing-type-switch" onClick={() => {
+            // Go back to puzzle sub-menu if we came from there
+            if (selection === 'puzzle' || selection === 'wordsearch' || selection === 'crossword' || selection === 'jumble') {
+              setSelection('puzzles');
+            } else {
+              setSelection(null);
+            }
+          }}>
             ← Choose a different type
           </button>
         </>

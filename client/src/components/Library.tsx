@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { LibraryEntry, GameConfig, AdventureConfig, ComicConfig, PuzzleConfig, EscapeConfig, EntertainmentType } from '../types';
+import type { LibraryEntry, GameConfig, AdventureConfig, ComicConfig, PuzzleConfig, EscapeConfig, WordSearchConfig, CrosswordConfig, JumbleConfig, EntertainmentType } from '../types';
 
 function getClientId(): string {
   let id = localStorage.getItem('bellforge-client-id');
@@ -23,6 +23,9 @@ const TYPE_BADGES: Record<EntertainmentType, { icon: string; label: string; colo
   comic: { icon: '💥', label: 'Comic', color: '#ff5252' },
   puzzle: { icon: '🧩', label: 'Puzzle', color: '#ab47bc' },
   escape: { icon: '🚪', label: 'Escape Room', color: '#66bb6a' },
+  wordsearch: { icon: '🔍', label: 'Word Search', color: '#29b6f6' },
+  crossword: { icon: '✏️', label: 'Crossword', color: '#ef5350' },
+  jumble: { icon: '🔀', label: 'Jumble', color: '#ffa726' },
 };
 
 function getEntryGenreDisplay(entry: LibraryEntry): { icon: string; name: string } {
@@ -36,6 +39,18 @@ function getEntryGenreDisplay(entry: LibraryEntry): { icon: string; name: string
   if ('puzzleSubject' in c) {
     const pc = c as PuzzleConfig;
     return { icon: '🧩', name: pc.puzzleSubject?.name || 'Puzzle' };
+  }
+  if ('wordSearchCategory' in c) {
+    const wc = c as WordSearchConfig;
+    return { icon: '🔍', name: wc.wordSearchCategory?.name || 'Word Search' };
+  }
+  if ('crosswordCategory' in c) {
+    const xc = c as CrosswordConfig;
+    return { icon: '✏️', name: xc.crosswordCategory?.name || 'Crossword' };
+  }
+  if ('jumbleCategory' in c) {
+    const jc = c as JumbleConfig;
+    return { icon: '🔀', name: jc.jumbleCategory?.name || 'Jumble' };
   }
   if ('escapeTheme' in c) {
     return { icon: '🚪', name: (c as EscapeConfig).escapeTheme?.name || 'Escape Room' };
@@ -211,8 +226,8 @@ export function Library({ onBack, onViewPreview, onReForge, onCountChange }: Lib
 
               {/* Actions */}
               <div className="library-card-actions">
-                <button className="library-action-btn" onClick={() => onViewPreview(entry)} title={getEntryType(entry) === 'game' ? 'Play in browser' : getEntryType(entry) === 'puzzle' ? 'Solve puzzle' : 'Open in viewer'}>
-                  {getEntryType(entry) === 'game' ? '🎮 Play' : getEntryType(entry) === 'puzzle' ? '🧩 Solve' : getEntryType(entry) === 'escape' ? '🚪 Play' : getEntryType(entry) === 'adventure' ? '📖 Read' : '📖 Read'}
+                <button className="library-action-btn" onClick={() => onViewPreview(entry)} title={(['game', 'escape', 'puzzle', 'wordsearch', 'crossword', 'jumble'] as EntertainmentType[]).includes(getEntryType(entry)) ? 'Play' : 'Open in viewer'}>
+                  {(() => { const t = getEntryType(entry); if (t === 'game') return '🎮 Play'; if (t === 'escape') return '🚪 Play'; if (t === 'puzzle' || t === 'wordsearch' || t === 'crossword' || t === 'jumble') return '🧩 Play'; if (t === 'adventure') return '📖 Read'; if (t === 'comic') return '📖 Read'; return '📖 Read'; })()}
                 </button>
                 <button className="library-action-btn library-action-reforge" onClick={() => onReForge(entry)} title="Load settings into the forge and rebuild with latest improvements">
                   🔄 Re-Forge

@@ -13,12 +13,15 @@ function scoreColor(score: number): string {
   return '#ef5350';
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  comic: 'Comic',
-  adventure: 'Adventure',
-  puzzle: 'Puzzle',
-  escape: 'Escape Room',
-  game: 'Game',
+const TYPE_CTA: Record<string, string> = {
+  comic: '📖 Read Your Comic!',
+  adventure: '🗺️ Start Your Adventure!',
+  puzzle: '🧩 Play Your Puzzle!',
+  escape: '🔑 Enter the Escape Room!',
+  game: '🎮 Play Your Game!',
+  wordsearch: '🔍 Play Your Word Search!',
+  crossword: '✏️ Play Your Crossword!',
+  jumble: '🔀 Play Your Jumble!',
 };
 
 export function QAPanel({ report, onDismiss, entertainmentType }: QAPanelProps) {
@@ -83,7 +86,7 @@ export function QAPanel({ report, onDismiss, entertainmentType }: QAPanelProps) 
 
       {onDismiss && (
         <button className="qa-dismiss-btn" onClick={onDismiss}>
-          Continue to {TYPE_LABELS[entertainmentType || ''] || 'Preview'} →
+          {TYPE_CTA[entertainmentType || ''] || '▶️ Check It Out!'}
         </button>
       )}
     </div>

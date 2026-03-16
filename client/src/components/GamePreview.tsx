@@ -18,23 +18,30 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
   const [fullscreen, setFullscreen] = useState(false);
   const [qaDismissed, setQaDismissed] = useState(false);
   const viewerRef = useRef<HTMLDivElement>(null);
-  const isLandscape = true;
   const isAdventure = entertainmentType === 'adventure';
   const isComic = entertainmentType === 'comic';
   const isEscape = entertainmentType === 'escape';
   const isPuzzle = entertainmentType === 'puzzle';
-  const isNonGame = isAdventure || isComic || isEscape || isPuzzle;
+  const isWordSearch = entertainmentType === 'wordsearch';
+  const isCrossword = entertainmentType === 'crossword';
+  const isJumble = entertainmentType === 'jumble';
 
   const titleLabel = isAdventure ? '📚 Your Adventure is Ready!'
     : isComic ? '💥 Your Comic is Ready!'
     : isEscape ? '🔑 Your Escape Room is Ready!'
     : isPuzzle ? '🧩 Your Puzzle is Ready!'
+    : isWordSearch ? '🔍 Your Word Search is Ready!'
+    : isCrossword ? '✏️ Your Crossword is Ready!'
+    : isJumble ? '🔀 Your Jumble is Ready!'
     : '🎮 Your Game is Ready!';
 
   const subtitleLabel = isAdventure ? 'Your adventure book awaits — dive in and explore every path.'
     : isComic ? 'Your comic book is hot off the press — start reading!'
     : isEscape ? 'Step inside and start solving.'
     : isPuzzle ? 'Drag the pieces into place — can you complete the image?'
+    : isWordSearch ? 'Find all the hidden words!'
+    : isCrossword ? 'Fill in the grid — one clue at a time.'
+    : isJumble ? 'Unscramble the words and solve the puzzle!'
     : 'Review the report, then play-test it right here.';
 
   // Sync fullscreen state with browser Fullscreen API events
@@ -91,50 +98,29 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
   }
 
   return (
-    <div className={`preview-screen${isNonGame ? ' preview-screen-compact' : ''}`}>
-      {!isNonGame && (
-        <>
-          <h1 className="preview-title">{titleLabel}</h1>
-          <p className="preview-subtitle">
-            {subtitleLabel}
-          </p>
-        </>
-      )}
+    <div className="preview-screen preview-screen-compact">
+      <h1 className="preview-title">{titleLabel}</h1>
+      <p className="preview-subtitle">
+        {subtitleLabel}
+      </p>
 
       {/* Auto-saved indicator */}
       <div className="preview-auto-saved">
         ✅ Automatically saved to your library
       </div>
 
-      {/* Non-game types: wide viewer (no phone frame) */}
-      {isNonGame ? (
-        <div ref={viewerRef} className={`comic-viewer-frame ${fullscreen ? 'comic-viewer-fullscreen' : ''}`}>
-          <iframe
-            src={previewUrl}
-            className="comic-viewer-screen"
-            title={isComic ? 'Comic Preview' : isAdventure ? 'Adventure Preview' : isEscape ? 'Escape Room Preview' : 'Puzzle Preview'}
-            sandbox="allow-scripts allow-same-origin"
-          />
-        </div>
-      ) : (
-        /* Phone frame with iframe */
-        <div ref={viewerRef} className={`phone-frame ${isLandscape ? 'phone-landscape' : ''} ${fullscreen ? 'phone-fullscreen' : ''}`}>
-          <div className="phone-notch" />
-          <iframe
-            src={previewUrl}
-            className="phone-screen"
-            title="Game Preview"
-            sandbox="allow-scripts"
-          />
-          <div className="phone-home-bar" />
-          {fullscreen && (
-            <div className="fullscreen-hint">Press <kbd>Esc</kbd> to exit fullscreen</div>
-          )}
-        </div>
-      )}
+      {/* Wide viewer — no phone emulator for any type */}
+      <div ref={viewerRef} className={`comic-viewer-frame ${fullscreen ? 'comic-viewer-fullscreen' : ''}`}>
+        <iframe
+          src={previewUrl}
+          className="comic-viewer-screen"
+          title={`${titleLabel.replace(/^\S+\s/, '')} Preview`}
+          sandbox="allow-scripts allow-same-origin"
+        />
+      </div>
 
       {/* Controls */}
-      <div className={`preview-controls${isNonGame ? ' preview-controls-compact' : ''}`}>
+      <div className="preview-controls preview-controls-compact">
         {!isPuzzle && (
           <button
             className="preview-btn preview-btn-secondary"
@@ -143,43 +129,15 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
             {fullscreen ? '✖️ Exit Fullscreen' : '🖥️ Fullscreen'}
           </button>
         )}
-        {!isNonGame && (
-          <button className="preview-btn preview-btn-primary preview-btn-disabled" disabled title="Real APK pipeline coming soon">
-            📲 Push to Phone — Coming Soon
-          </button>
-        )}
-        {isNonGame && onReForge && (
+        {onReForge && (
           <button className="preview-btn preview-btn-secondary" onClick={onReForge}>
             🔄 Re-Forge
           </button>
         )}
-        {isNonGame && (
-          <button className="preview-btn preview-btn-secondary" onClick={onStartOver}>
-            <img src="/bellforge-logo.png" alt="" style={{ width: 14, height: 'auto', verticalAlign: 'middle', marginRight: 4 }} /> New {isComic ? 'Comic' : isAdventure ? 'Adventure' : isPuzzle ? 'Puzzle' : 'Build'}
-          </button>
-        )}
+        <button className="preview-btn preview-btn-secondary" onClick={onStartOver}>
+          <img src="/bellforge-logo.png" alt="" style={{ width: 14, height: 'auto', verticalAlign: 'middle', marginRight: 4 }} /> New {isComic ? 'Comic' : isAdventure ? 'Adventure' : isPuzzle || isWordSearch || isCrossword || isJumble ? 'Puzzle' : 'Build'}
+        </button>
       </div>
-
-      {/* Info */}
-      {!isNonGame && (
-        <div className="preview-info">
-          <span className="preview-info-item">📦 APK: {apkSize}</span>
-          <span className="preview-info-item">📁 {apkPath.split('\\').pop()}</span>
-        </div>
-      )}
-
-      {!isNonGame && (
-        <div className="preview-bottom-actions">
-          {onReForge && (
-            <button className="preview-reforge" onClick={onReForge}>
-              🔄 Re-Forge — Tweak &amp; Rebuild
-            </button>
-          )}
-          <button className="preview-forge-another" onClick={onStartOver}>
-            <img src="/bellforge-logo.png" alt="" style={{ width: 18, height: 'auto', verticalAlign: 'middle', marginRight: 6 }} /> Forge Another Game
-          </button>
-        </div>
-      )}
     </div>
   );
 }
