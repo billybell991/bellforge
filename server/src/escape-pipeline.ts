@@ -573,6 +573,8 @@ This creates cascading discovery moments within each stage.
 
 BOX ELEMENT TYPES: story_card, cipher_wheel, decoder_key, map_fragment, uv_card, torn_note, photo, sealed_envelope, combination_dial, transparency, custom
 
+IMPORTANT — cipher_wheel rendering: The cipher wheel is ALWAYS rendered as two rings of A–Z letters (a standard Caesar cipher wheel). Do NOT describe dates, symbols, numbers, runes, or any other markings on it — they will not appear. Write content/description that accurately reflects what the player sees: an outer ring of A–Z (fixed) and an inner ring of A–Z (rotatable) with a SHIFT counter in the centre.
+
 PUZZLE TYPES (use a diverse mix — at least 4 different types across all stages):
 - code: ${codeLength}-digit numeric code (fields: solution, codeLength)
 - riddle: 4-option multiple choice (fields: riddle, options[], correctOption, wrongFeedback)
