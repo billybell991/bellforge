@@ -1113,6 +1113,18 @@ body {
   box-shadow: var(--glow-orange);
 }
 
+.surprise-btn.generating {
+  border-color: var(--forge-amber);
+  color: var(--forge-amber);
+  cursor: wait;
+  animation: surprise-pulse 2s ease-in-out infinite;
+}
+
+@keyframes surprise-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(245, 158, 11, 0.2); }
+  50%      { box-shadow: 0 0 16px rgba(245, 158, 11, 0.5); }
+}
+
 /* ═══════════════════════════════════════
    REVIEW STEP
    ═══════════════════════════════════════ */
@@ -1735,6 +1747,14 @@ body {
   border-radius: inherit;
   pointer-events: none;
   z-index: 10;
+}
+
+.comic-viewer-landscape {
+  aspect-ratio: 16 / 9;
+  max-width: 98vw;
+  width: 98vw;
+  height: auto;
+  max-height: calc(100vh - 120px);
 }
 
 .comic-viewer-fullscreen {

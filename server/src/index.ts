@@ -21,7 +21,7 @@ import { runAdventurePipeline } from './cyoa-pipeline.js';
 import { generateCYOAPreviewHtml } from './cyoa-engine.js';
 import { runComicPipeline } from './comic-pipeline.js';
 import { generateComicPreviewHtml } from './comic-engine.js';
-import { runEscapePipeline, generateEscapePreviewHtml } from './escape-pipeline.js';
+import { runEscapePipeline } from './escape-pipeline.js';
 import { runPuzzlePipeline, generatePuzzlePreviewHtml } from './puzzle-pipeline.js';
 import { runWordSearchPipeline, generateWordSearchPreviewHtml } from './wordsearch-pipeline.js';
 import { runCrosswordPipeline, generateCrosswordPreviewHtml } from './crossword-pipeline.js';
@@ -1265,11 +1265,13 @@ async function runEscapeBuild(buildId: string, config: EscapeConfig) {
   record.status = 'building';
 
   const result = await runEscapePipeline(config, (pct, msg, stage) => {
+    // Cap pipeline progress at 90% — QA fills 91-100%
+    const cappedPct = Math.min(pct, 90);
     sendProgress(buildId, {
       type: 'progress',
       stage: stage || 'escape',
       name: msg,
-      percent: pct,
+      percent: cappedPct,
       detail: '',
       timestamp: Date.now(),
     });
@@ -1284,7 +1286,7 @@ async function runEscapeBuild(buildId: string, config: EscapeConfig) {
     return;
   }
 
-  const previewHtml = generateEscapePreviewHtml(result);
+  const previewHtml = result.htmlContent;
   record.status = 'complete';
   record.progress = 100;
   record.previewHtml = previewHtml;
@@ -1315,9 +1317,9 @@ async function runEscapeBuild(buildId: string, config: EscapeConfig) {
     saveLibrary(library);
   }
 
-  // Scored QA report
+  // Scored QA report (91-98%)
   const qaStartedAt = Date.now();
-  sendProgress(buildId, { type: 'progress', stage: 'qa', name: '📊 Generating QA confidence report', percent: 95, detail: '', timestamp: Date.now() });
+  sendProgress(buildId, { type: 'progress', stage: 'qa', name: '📊 Generating QA confidence report', percent: 92, detail: '', timestamp: Date.now() });
   const envelopeSummary = result.envelopes.map(e => `Stage ${e.id}: ${e.title} (${e.puzzles.length} puzzles)`).join('\n');
   const scored = await qaContentReport({
     entertainmentType: 'escape',

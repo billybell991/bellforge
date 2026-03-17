@@ -76,7 +76,14 @@ function friendlyPhaseLabel(stage: string): string {
     qa_story: 'Checking story flow...', 
     // Escape room pipeline
     escape: 'Building the escape room...',
+    escape_concept: 'Gemini is designing the escape room...',
+    escape_outline: 'Mapping rooms and puzzles...',
+    validation: 'Validating solvability...',
+    validation_fix: 'Auto-fixing puzzle graph...',
+    art_rooms: 'Painting room backgrounds...',
     puzzles: 'Crafting the puzzles...',
+    puzzles_mid: 'Threading clues...',
+    puzzles_final: 'Polishing hint chains...',
     // Puzzle pipeline
     puzzle: 'Generating the puzzle...',
     illustration: 'Painting the artwork...',

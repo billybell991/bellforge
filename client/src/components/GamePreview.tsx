@@ -99,10 +99,12 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
 
   return (
     <div className="preview-screen preview-screen-compact">
-      <h1 className="preview-title">{titleLabel}</h1>
-      <p className="preview-subtitle">
-        {subtitleLabel}
-      </p>
+      {!isEscape && <h1 className="preview-title">{titleLabel}</h1>}
+      {!isEscape && (
+        <p className="preview-subtitle">
+          {subtitleLabel}
+        </p>
+      )}
 
       {/* Auto-saved indicator */}
       <div className="preview-auto-saved">
@@ -110,7 +112,7 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
       </div>
 
       {/* Wide viewer — no phone emulator for any type */}
-      <div ref={viewerRef} className={`comic-viewer-frame ${fullscreen ? 'comic-viewer-fullscreen' : ''}`}>
+      <div ref={viewerRef} className={`comic-viewer-frame ${isEscape ? 'comic-viewer-landscape' : ''} ${fullscreen ? 'comic-viewer-fullscreen' : ''}`}>
         <iframe
           src={previewUrl}
           className="comic-viewer-screen"

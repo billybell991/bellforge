@@ -1,93 +1,692 @@
-// ── Escape Room Pipeline (stub) ──
-// This will be expanded with full Gemini-driven puzzle generation.
-// For now it returns a minimal placeholder so the forge endpoint works end-to-end.
+﻿// â”€â”€ Escape Room Pipeline â”€â”€
+// Generates a fully interactive escape room via Gemini AI
 
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { EscapeConfig } from './pipeline/types.js';
+import { generateEscapePreviewHtml } from './escape-engine.js';
+import { generateImage } from './imagen.js';
+
+const apiKey = process.env.GEMINI_API_KEY;
+let model: ReturnType<GoogleGenerativeAI['getGenerativeModel']> | null = null;
+
+if (apiKey) {
+  const genAI = new GoogleGenerativeAI(apiKey);
+  model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+}
+
+// â”€â”€ Types (Boxed Escape Room model) â”€â”€
+
+/** A physical item found in the escape room box */
+export interface BoxElement {
+  id: string;
+  name: string;
+  type: 'story_card' | 'cipher_wheel' | 'decoder_key' | 'map_fragment' | 'uv_card' | 'torn_note' | 'photo' | 'sealed_envelope' | 'combination_dial' | 'transparency' | 'custom';
+  icon: string;           // emoji icon for toolbar
+  description: string;    // flavour text when examining
+  content?: string;       // HTML content shown when clicked (card text, note text)
+  imagePrompt?: string;   // prompt for Imagen to generate the item's visual
+  image?: string;         // base64 data URI after generation
+  stage?: number;         // which stage unlocks this item (0 = available from start)
+  usedWith?: string;      // ID of another element this combines with
+  revealsText?: string;   // text revealed when this item is used correctly
+}
+
+/** A puzzle within a stage */
+export interface EscapePuzzle {
+  id: string;
+  name: string;
+  type: 'code' | 'riddle' | 'sequence' | 'combination' | 'cipher' | 'overlay' | 'jigsaw_word';
+  description: string;    // what the player reads as instructions
+  hint: string;           // hint text for when player is stuck
+  clueText?: string;      // where the clue can be found
+  // Which box elements are needed to solve this
+  requiredElements?: string[];
+  // Code puzzle (enter digits)
+  solution?: string;
+  codeLength?: number;
+  // Riddle puzzle (multiple choice)
+  riddle?: string;
+  options?: string[];
+  correctOption?: number;
+  wrongFeedback?: string;
+  // Sequence puzzle (order items)
+  sequence?: string[];
+  // Combination puzzle (set dials)
+  dials?: { label: string; options: string[] }[];
+  // Cipher puzzle (decode text using cipher wheel/decoder key)
+  encodedText?: string;
+  cipherType?: 'caesar' | 'substitution' | 'symbol';
+  decodedAnswer?: string;
+  // Overlay puzzle (stack transparencies to reveal)
+  overlayLayers?: string[];   // IDs of box elements to stack
+  revealText?: string;
+  // Jigsaw word puzzle (arrange torn fragments)
+  fragments?: string[];
+  correctWord?: string;
+}
+
+/** A stage (sealed envelope) in the escape room */
+export interface EscapeStage {
+  id: string;
+  stageNumber: number;
+  name: string;           // e.g. "Envelope A: The First Clue"
+  sealColor: string;      // wax seal CSS color
+  sealIcon: string;       // emoji on the seal
+  introText: string;      // text on the card inside the envelope
+  hint: string;           // stage-level hint
+  puzzleId: string;       // which puzzle solves this stage
+  unlocksElements: string[];  // box element IDs revealed when stage is opened
+  completionText: string; // text shown when stage is solved
+}
+
+export interface EscapeRoomData {
+  title: string;
+  subtitle: string;
+  intro: string;          // story setup text (printed on the story sheet)
+  difficulty: string;
+  targetDuration: number;
+  boxArt: string;         // description for box cover art generation
+  tabletopStyle: string;  // description for tabletop background generation
+  boxElements: BoxElement[];
+  puzzles: EscapePuzzle[];
+  stages: EscapeStage[];
+  // Generated images
+  tabletopImage?: string;
+  boxCoverImage?: string;
+}
 
 export interface EscapeRoomResult {
   title: string;
   envelopes: { id: number; title: string; puzzles: string[] }[];
   htmlContent: string;
+  data: EscapeRoomData;
 }
 
 type ProgressCallback = (percent: number, message: string, stage?: string) => void;
+
+// â”€â”€ Helpers â”€â”€
+
+async function askGemini(prompt: string, temperature = 0.8, jsonMode = false): Promise<string | null> {
+  if (!model) return null;
+
+  const config: Record<string, unknown> = { temperature };
+  if (jsonMode) {
+    (config as Record<string, unknown>).responseMimeType = 'application/json';
+  }
+
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: config as Parameters<typeof model.generateContent>[0] extends { generationConfig?: infer G } ? G : never,
+      });
+      return result.response.text();
+    } catch (e: unknown) {
+      const errStr = String(e).toLowerCase();
+      if (errStr.includes('resource_exhausted') || errStr.includes('quota')) {
+        await sleep(30000);
+      } else {
+        await sleep((2 ** attempt) * 4000);
+      }
+    }
+  }
+  return null;
+}
+
+function parseJsonResponse(text: string | null): Record<string, unknown> | null {
+  if (!text) return null;
+  let cleaned = text.trim();
+  if (cleaned.startsWith('```')) {
+    cleaned = cleaned.replace(/^```\w*\n?/, '').replace(/\n?```$/, '');
+  }
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if (match) {
+      try { return JSON.parse(match[0]); } catch { /* ignore */ }
+    }
+  }
+  return null;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+function randomPick<T>(arr: T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function randomPicks<T>(arr: T[], n: number): T[] {
+  const shuffled = [...arr].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, Math.min(n, shuffled.length));
+}
+
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// 5-LAYER CREATIVITY ALGORITHM
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+// Layer 1: Story DNA â€” premise sparks per escapeThemeÃ—atmosphere combo
+const ESCAPE_STORY_DNA: Record<string, string[]> = {
+  'heist+horror': [
+    'The vault you\'re robbing is inside a condemned asylum â€” and the security system is the building itself, which remembers every visitor who never left',
+    'You\'re stealing a painting that screams when removed from its frame â€” the previous thieves are still in the gallery, frozen mid-step',
+    'The safe deposit box contains something that\'s been paying its own rental fees for 200 years',
+  ],
+  'heist+scifi': [
+    'You\'re stealing data from a quantum computer that exists in multiple timelines â€” the heist plan has to work in ALL of them simultaneously',
+    'Breaking into a vault on a space station where gravity is a security feature â€” each room has different g-forces',
+    'The AI guarding the vault has developed empathy and is leaving breadcrumb clues because it WANTS to be stolen from',
+  ],
+  'heist+mystery': [
+    'You\'re robbing a detective\'s office to destroy evidence â€” but the detective left the case file open on purpose, and the clues point at YOU',
+    'A museum heist where every artifact is a fake â€” the real treasures are hidden in the security system itself',
+  ],
+  'detective+horror': [
+    'The cold case files keep updating themselves â€” new evidence appearing for a murder that happened in 1923',
+    'You\'re investigating a room where something terrible happened â€” and the room is slowly recreating the event around you',
+    'The suspect confessed 40 years ago. The problem: the crime was committed yesterday. Same fingerprints.',
+  ],
+  'detective+mystery': [
+    'Every piece of evidence points to a different person â€” and they all have perfect alibis because they were all committing DIFFERENT crimes',
+    'The victim left a locked room with 13 clues, each pointing to a different killer â€” but only ONE is real, and the victim knew who\'d investigate',
+    'A forensic lab where the evidence for twelve cases has been deliberately shuffled â€” solve the meta-puzzle to untangle them',
+  ],
+  'detective+cozy': [
+    'The town\'s beloved baker has disappeared, leaving behind 7 cakes â€” each one contains a clue baked into the recipe',
+    'A cat cafÃ© where the cats are trained to hide and reveal objects â€” the owner left a treasure hunt before retiring',
+  ],
+  'haunted+horror': [
+    'The house isn\'t haunted â€” it\'s ALIVE, and the "ghosts" are its immune system trying to expel you like a virus',
+    'A sÃ©ance room where the spirit you\'re contacting isn\'t dead â€” they\'re trapped in the walls, fully conscious, for 100 years',
+    'The haunted mansion\'s previous escape room guests are still here, solving puzzles forever, not realizing they never left',
+  ],
+  'haunted+mystery': [
+    'A ghost is trying to tell you who murdered them â€” but they can only communicate by rearranging objects and flickering lights',
+    'The mansion has two timelines overlapping â€” present-day clues unlock 1890s secrets, and vice versa',
+  ],
+  'haunted+fantasy': [
+    'The enchanted castle rearranges itself every hour â€” rooms you\'ve solved might be somewhere new when you return',
+    'You\'re trapped in a witch\'s dollhouse â€” everything is a miniature, including you, and the witch is coming home at midnight',
+  ],
+  'laboratory+scifi': [
+    'The experiment escaped, but it\'s not a monster â€” it\'s a THEOREM, and reality is changing to accommodate its proof',
+    'Containment breach, but what escaped isn\'t dangerous â€” it\'s the CURE, and the corporation is locking down to prevent it from getting out',
+    'The lab\'s AI has split itself into puzzle-fragments hidden in each room â€” reassemble it before the auto-destruct, but each fragment has its own personality',
+  ],
+  'laboratory+horror': [
+    'You\'re in a pharmaceutical lab where the test subjects wrote the puzzles â€” each one designed to test whether YOU deserve to escape',
+    'The lab bred something that feeds on solved puzzles â€” every lock you crack makes it stronger and the next puzzle harder',
+  ],
+  'shipwreck+adventure': [
+    'The submarine isn\'t sinking â€” it\'s being PULLED down by something that communicates through pressure changes in the hull',
+    'You find a message in a bottle inside a submarine â€” written by YOU, dated tomorrow, with instructions for surviving tonight',
+  ],
+  'shipwreck+horror': [
+    'The lifeboats were deployed empty 3 hours ago â€” the ship\'s manifest shows 47 passengers, but you can only count 46 shadows',
+    'The wreck is underwater but the rooms aren\'t flooded â€” something is keeping an air pocket alive, and it wants company',
+  ],
+  'time_capsule+mystery': [
+    'A time capsule from 2075 â€” everything inside is mundane except a newspaper clipping about YOUR disappearance, dated today',
+    'Objects from different decades that shouldn\'t exist together â€” a medieval key that opens a 1960s padlock that powers a quantum device',
+  ],
+  'time_capsule+cozy': [
+    'A beloved grandparent left a series of puzzles spanning their entire life â€” each decade\'s puzzle reveals a family secret and a piece of their legacy',
+    'A hidden room in a vintage shop where items from different eras tell the love story of the shop\'s founders through clues they left for each other',
+  ],
+};
+
+// Layer 2: Narrative Hooks
+const ESCAPE_NARRATIVE_HOOKS = [
+  'The player doesn\'t know WHY they need to escape. The first puzzle reveals the stakes â€” and they\'re worse than expected.',
+  'Someone is "helping" via notes left throughout the rooms â€” but their handwriting gets more desperate as you progress.',
+  'The escape room used to be something else (a home, a clinic, an office). The puzzles use the ORIGINAL purpose of each room.',
+  'Time is already running out when the player starts â€” a pre-existing countdown that wasn\'t set for them.',
+  'The rooms tell the story of someone who DIDN\'T escape, in reverse â€” the first room is their last moment.',
+  'A voice on an old intercom system gives cryptic hints, but sometimes contradicts itself â€” is it helping or trapping you?',
+  'You find another escape room player\'s journal â€” they solved 3 of 4 stages before... the entries stop.',
+  'The rooms are a test designed by someone who knew you â€” the puzzles reference your (the character\'s) memories.',
+  'Each room gets more surreal as you progress â€” the first is mundane, the last defies physics. Is this real?',
+  'You broke IN on purpose â€” you\'re looking for something hidden here, and the locks work both ways.',
+];
+
+// Layer 3: Scene Dynamics
+const ESCAPE_SCENE_DYNAMICS = [
+  'a room where the environment itself is a clue â€” the wallpaper pattern, the arrangement of furniture, the angle of shadows all encode information',
+  'a puzzle where the "wrong" answer to an earlier puzzle becomes the KEY to a later one â€” failure is secretly progress',
+  'a moment where two items combine in an unexpected way â€” the puzzle answer requires using things together',
+  'a room that changes when you\'re not looking â€” return to find something different each time',
+  'a clue hidden in plain sight that the player has been staring at since the first room â€” recontextualized by new information',
+  'a locked door with no visible lock â€” the "key" is an action, not an object (standing in the right place, saying the right thing)',
+  'a puzzle where the clue is auditory â€” a ticking rhythm, a musical sequence, a spoken phrase you need to decode',
+  'an item that seems useless when you find it but becomes critical 2 rooms later â€” rewarding players who explore thoroughly',
+  'two puzzles that seem independent but share a hidden connection â€” solving one gives the aha moment for the other',
+  'a final puzzle that uses pieces from EVERY previous room â€” a metacognitive challenge that rewards the observant player',
+  'a red herring so well-crafted it teaches the player something useful before they realize it\'s not the solution',
+  'a secret area that isn\'t required but contains backstory that makes the whole escape room richer',
+];
+
+// Layer 4: Anti-Formula Directives
+const ESCAPE_ANTI_FORMULA = [
+  'Skip your first two puzzle ideas. The code-on-a-sticky-note and key-under-the-mat puzzles are boring. Think harder.',
+  'Every puzzle must feel INEVITABLE in its setting â€” "of COURSE there\'s a cipher in the old radio. Of COURSE the painting hides a safe."',
+  'NO arbitrary number puzzles (why would there be a 4-digit code on a medieval door?). The mechanism must match the world.',
+  'Puzzles should make players feel CLEVER when they solve them, not lucky. The "aha" should be visible in hindsight.',
+  'The atmosphere should be thick enough to cut â€” every examine text should make the player feel like they\'re INSIDE the room.',
+  'Don\'t frontload all the hard puzzles. The difficulty curve should build â€” early wins create momentum and teach the logic.',
+  'Items should have CHARACTER â€” not just "a key" but "a brass key with teeth filed into an unusual pattern." Description is gameplay.',
+  'At least one puzzle should be solvable by OBSERVATION alone â€” no items, no codes, just paying attention to what\'s already there.',
+  'The final puzzle should make the player use EVERYTHING they\'ve learned â€” it\'s a thesis statement for the whole escape room.',
+  'Red herrings are OK but they must be FUN to investigate. A wrong path should still be entertaining, not punishing.',
+  'Don\'t make the player hunt for hotspots â€” if something is interactive, it should be visually distinct and narratively interesting.',
+  'Every room should have at least one moment of discovery â€” something that makes the player go "oh!" when they find it.',
+];
+
+// Layer 5: Theme-specific Quality Guides
+const ESCAPE_QUALITY_GUIDES: Record<string, string> = {
+  heist: `HEIST ESCAPE RULES: The security should feel REAL and systematic â€” cameras, laser grids, timed patrols, vault mechanisms. Each puzzle is bypassing a security layer. The player should feel like a criminal genius. Complications should cascade (disabling one alarm triggers another). Include a "vault door" finale that uses multiple solved puzzle outputs as its combination.`,
+  detective: `DETECTIVE ESCAPE RULES: Evidence should build a coherent case. Every clue connects to a central mystery. Include red herrings that are interesting to investigate even when wrong. The "aha" moment should recontextualize everything the player has seen. Use classic detective tools: magnifying glass, blacklight, fingerprints, witness statements, timelines.`,
+  haunted: `HAUNTED ESCAPE RULES: The atmosphere is EVERYTHING. Jump scares are cheap â€” build sustained dread through environmental storytelling. Objects should feel wrong (photos with people scratched out, clocks running backwards). The house/space should feel like it has memory â€” echoes of what happened here. Puzzles should use supernatural mechanics (candles that respond to "breath", mirrors that show different reflections).`,
+  laboratory: `LABORATORY ESCAPE RULES: Science should feel REAL even when fictional. Chemical combinations, biological sequences, physics experiments â€” puzzles grounded in logic. The lab should tell the story of what was researched here through equipment, notes, and containment protocols. Include at least one "experiment" the player conducts to get a puzzle answer.`,
+  shipwreck: `SHIPWRECK ESCAPE RULES: Claustrophobia and urgency. Water/pressure is the enemy. Navigation instruments (compass, maps, sonar) should be puzzle tools. The ship/sub should feel like a character â€” creaking, groaning, systems failing. Puzzles involve emergency protocols, sealed compartments, and mechanical systems. The player should feel the water rising (metaphorically) with each stage.`,
+  time_capsule: `TIME CAPSULE ESCAPE RULES: Nostalgia meets mystery. Objects from different eras should feel authentic â€” 1950s radio, 1980s computer, Victorian lockbox. The puzzle logic should use era-appropriate technology. Hidden connections across decades reveal a larger story. Include personal touches (letters, photographs, recordings) that make the time periods HUMAN, not just aesthetic.`,
+};
+
+function getEscapeStoryDNA(themeId: string, atmosphereId: string): string {
+  const specific = ESCAPE_STORY_DNA[`${themeId}+${atmosphereId}`];
+  if (specific?.length) return randomPick(specific);
+  const themeKeys = Object.keys(ESCAPE_STORY_DNA).filter(k => k.startsWith(themeId + '+'));
+  if (themeKeys.length) {
+    const pool = themeKeys.flatMap(k => ESCAPE_STORY_DNA[k]);
+    return randomPick(pool);
+  }
+  return '';
+}
+
+// â”€â”€ Theme-specific context for Gemini â”€â”€
+
+const THEME_ATMO: Record<string, string> = {
+  heist: 'a high-security vault or museum at night â€” laser grids, security cameras, safes with combination locks, guard patrol schedules, ventilation ducts',
+  detective: 'a dusty cold case investigation â€” evidence boards, locked filing cabinets, old photographs, hidden compartments in desks, redacted documents',
+  haunted: 'a decaying haunted mansion â€” creaking floorboards, locked secret passages, mysterious portraits, ghostly writing on mirrors, music boxes that play backwards',
+  laboratory: 'a research facility in lockdown â€” biometric scanners, chemical formulas on whiteboards, specimen jars, encrypted terminals, containment chambers',
+  shipwreck: 'a flooding submarine or shipwreck â€” bulkhead doors, pressure gauges, flooded compartments, emergency controls, sonar readings',
+  time_capsule: 'a trail of puzzles spanning decades â€” vintage objects from different eras, time-locked capsules, nostalgic photographs, handwritten letters, retro technology',
+};
+
+const ROOM_GRADIENTS: string[] = [
+  'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+  'linear-gradient(135deg, #2d1b2e 0%, #1a1a2e 50%, #0d1117 100%)',
+  'linear-gradient(135deg, #1a2e1a 0%, #0d170d 50%, #1a2e2e 100%)',
+  'linear-gradient(135deg, #2e1a1a 0%, #1a0d0d 50%, #2e2e1a 100%)',
+  'linear-gradient(135deg, #0d1117 0%, #161b22 50%, #21262d 100%)',
+  'linear-gradient(135deg, #1a1a0d 0%, #2e2e1a 50%, #1a1a2e 100%)',
+  'linear-gradient(135deg, #0f3460 0%, #1a1a2e 50%, #16213e 100%)',
+  'linear-gradient(135deg, #2e1a2e 0%, #1a0d1a 50%, #0d1117 100%)',
+];
+
+const PUZZLE_ICONS: Record<string, string> = {
+  key: 'ðŸ”‘', lock: 'ðŸ”’', book: 'ðŸ“•', note: 'ðŸ“', map: 'ðŸ—ºï¸',
+  flashlight: 'ðŸ”¦', screwdriver: 'ðŸ”§', card: 'ðŸ’³', badge: 'ðŸªª',
+  gem: 'ðŸ’Ž', coin: 'ðŸª™', bottle: 'ðŸ§ª', pill: 'ðŸ’Š', usb: 'ðŸ’¾',
+  photo: 'ðŸ“·', phone: 'ðŸ“±', wire: 'ðŸ”Œ', battery: 'ðŸ”‹', tape: 'ðŸ“¼',
+  compass: 'ðŸ§­', magnifier: 'ðŸ”', candle: 'ðŸ•¯ï¸', bell: 'ðŸ””', skull: 'ðŸ’€',
+  eye: 'ðŸ‘ï¸', hand: 'âœ‹', gear: 'âš™ï¸', crystal: 'ðŸ”®', feather: 'ðŸª¶',
+  scissors: 'âœ‚ï¸', rope: 'ðŸª¢', mirror: 'ðŸªž', clock: 'â°', hammer: 'ðŸ”¨',
+};
+
+// â”€â”€ Pipeline â”€â”€
+
+const SEAL_COLORS = ['#8B0000', '#2d1b4e', '#1a3a1a', '#4a3d1c', '#1a2a4a', '#4a1a1a'];
 
 export async function runEscapePipeline(
   config: EscapeConfig,
   onProgress: ProgressCallback
 ): Promise<EscapeRoomResult | null> {
-  const title = config.story.title || 'Untitled Escape Room';
-  const envelopeCount = config.structure.envelopeCount || 4;
+  const themeId = config.escapeTheme.id;
+  const themeName = config.escapeTheme.name;
+  const stageCount = config.structure.envelopeCount || 4;
 
-  onProgress(5, 'Designing Escape Room Concept', 'concept');
-  await sleep(600);
+  // Phase 1: Gemini concept generation with heartbeat
+  onProgress(3, 'Mixing creative DNA...', 'story_dna');
+  await sleep(300);
+  onProgress(5, 'Choosing box contents...', 'escape_concept');
+  await sleep(300);
+  onProgress(7, 'Composing the master prompt...', 'escape_concept');
+  await sleep(200);
 
-  onProgress(15, 'Building Puzzle Graph', 'outline');
-  await sleep(400);
+  const conceptMessages = [
+    'Gemini is designing box contents...', 'Crafting cipher wheels...',
+    'Writing story cards...', 'Sealing envelopes...',
+    'Hiding clues in the elements...', 'Designing the final revelation...',
+    'Balancing difficulty curve...', 'Threading puzzle connections...', 'Almost there...',
+  ];
+  let hbIdx = 0, hbPct = 8;
+  const heartbeat = setInterval(() => {
+    if (hbPct < 17) { hbPct++; onProgress(hbPct, conceptMessages[hbIdx++ % conceptMessages.length], 'escape_concept'); }
+  }, 4000);
 
-  // Build placeholder envelopes
-  const envelopes: EscapeRoomResult['envelopes'] = [];
-  for (let i = 1; i <= envelopeCount; i++) {
-    onProgress(15 + Math.round((i / envelopeCount) * 40), `Crafting Stage ${i} Puzzles`, 'puzzles');
-    await sleep(300);
-    envelopes.push({
-      id: i,
-      title: `Stage ${i}`,
-      puzzles: [`Placeholder puzzle for stage ${i}`],
+  onProgress(8, 'Gemini is designing the escape room box...', 'escape_concept');
+  let conceptData: EscapeRoomData | null;
+  try { conceptData = await generateEscapeConcept(config); }
+  finally { clearInterval(heartbeat); }
+
+  if (!conceptData) {
+    console.error('Gemini concept generation failed â€” using built-in template');
+    onProgress(100, 'Escape Room Complete!', 'complete');
+    return generateFallbackEscapeRoom(config);
+  }
+
+  onProgress(18, `"${conceptData.title}" â€” ${conceptData.stages.length} stages, ${conceptData.boxElements.length} box elements`, 'escape_outline');
+
+  // Phase 2: Validate
+  onProgress(22, 'Validating puzzle flow...', 'validation');
+  validateBoxedEscape(conceptData);
+
+  // Phase 3: Art generation
+  const artStyle = config.artStyle?.name || 'dark atmospheric';
+
+  onProgress(28, 'Painting the tabletop...', 'art_rooms');
+  const tabletopPrompt = `${artStyle} overhead photograph of ${conceptData.tabletopStyle || 'a dark wooden table with moody atmospheric lighting'}. Bird's eye view looking straight down at the table surface. Rich wood grain texture, warm shadows, slightly worn and aged. Empty table ready for a board game. Photorealistic. No text.`;
+  const tabletopImg = await generateImage(tabletopPrompt, '16:9');
+  if (tabletopImg) conceptData.tabletopImage = `data:image/png;base64,${tabletopImg}`;
+  await sleep(300);
+
+  onProgress(34, 'Designing the box art...', 'art_rooms');
+  const boxArtPrompt = `${artStyle} board game box cover art for an escape room game called "${conceptData.title}". ${conceptData.boxArt || 'Mysterious and atmospheric design'}. Dramatic composition, premium board game quality, moody lighting. Portrait orientation. No text.`;
+  const boxImg = await generateImage(boxArtPrompt, '3:4');
+  if (boxImg) conceptData.boxCoverImage = `data:image/png;base64,${boxImg}`;
+  await sleep(300);
+
+  const elementsWithArt = conceptData.boxElements.filter(e => e.imagePrompt);
+  for (let i = 0; i < elementsWithArt.length; i++) {
+    const elem = elementsWithArt[i];
+    const pct = 38 + Math.floor(((i + 1) / elementsWithArt.length) * 30);
+    onProgress(pct, `Illustrating: ${elem.name}...`, 'art_rooms');
+    const elemPrompt = `${artStyle} illustration for a tabletop escape room game prop: ${elem.imagePrompt}. Flat lay photograph style, on a dark surface. Premium quality. No text unless part of the prop.`;
+    const elemImg = await generateImage(elemPrompt, '1:1');
+    if (elemImg) elem.image = `data:image/png;base64,${elemImg}`;
+    await sleep(400);
+  }
+
+  // Phase 4: Polish & Build
+  onProgress(72, 'Polishing hint chains...', 'puzzles_final');
+  await sleep(200);
+  onProgress(78, 'Assembling escape structure...', 'assembly');
+  await sleep(200);
+
+  onProgress(90, 'Building interactive viewer...', 'viewer');
+  const htmlContent = generateEscapePreviewHtml(conceptData);
+  await sleep(200);
+
+  const envelopes = conceptData.stages.map((s, i) => ({
+    id: i + 1, title: s.name,
+    puzzles: conceptData.puzzles.filter(p => p.id === s.puzzleId).map(p => p.name),
+  }));
+
+  onProgress(100, 'Escape Room Complete!', 'complete');
+  return { title: conceptData.title, envelopes, htmlContent, data: conceptData };
+}
+
+// â”€â”€ Gemini concept generation (Boxed Escape Room) â”€â”€
+
+async function generateEscapeConcept(config: EscapeConfig): Promise<EscapeRoomData | null> {
+  const themeId = config.escapeTheme.id;
+  const themeName = config.escapeTheme.name;
+  const stageCount = config.structure.envelopeCount || 4;
+  const difficulty = config.structure.difficulty || 'standard';
+  const duration = config.structure.duration || 45;
+  const storyTitle = config.story.title || 'Untitled';
+  const storyDesc = config.story.description || '';
+  const setting = config.story.setting || '';
+  const character = config.story.characterName || '';
+  const atmosphere = config.theme?.name || 'mysterious';
+  const themeAtmo = THEME_ATMO[themeId] || 'a mysterious experience with hidden clues and puzzles';
+  const codeLength = difficulty === 'casual' ? 3 : difficulty === 'expert' ? 5 : 4;
+
+  const narrativeHook = randomPick(ESCAPE_NARRATIVE_HOOKS);
+  const sceneDynamic1 = randomPick(ESCAPE_SCENE_DYNAMICS);
+  const sceneDynamic2 = randomPick(ESCAPE_SCENE_DYNAMICS.filter(s => s !== sceneDynamic1));
+  const antiFormulas = randomPicks(ESCAPE_ANTI_FORMULA, 3);
+  const qualityGuide = ESCAPE_QUALITY_GUIDES[themeId] || '';
+  const storyDNA = getEscapeStoryDNA(themeId, atmosphere);
+
+  const prompt = `You are a master designer of BOXED escape room games â€” think Exit: The Game, Unlock!, Deckscape. You create premium tabletop escape experiences with physical components: story cards, cipher wheels, decoder keys, maps, transparencies, torn notes, sealed envelopes. Creativity seed: ${Date.now()}.
+
+You're NOT designing a video game. You're designing a PHYSICAL boxed escape room played digitally. The player opens a box on a tabletop, pulls out components, and works through sealed envelopes using tactile props.
+
+THEME: "${themeName}" â€” ${themeAtmo}
+TITLE: "${storyTitle}"
+DESCRIPTION: ${storyDesc || 'Be creative'}
+SETTING: ${setting || 'Match the theme'}
+CHARACTER: ${character || 'The player'}
+ATMOSPHERE: ${atmosphere}
+STAGES: ${stageCount} sealed envelopes
+DIFFICULTY: ${difficulty}
+TARGET DURATION: ${duration} minutes
+
+â•â•â• CREATIVE SPARKS â•â•â•
+"${narrativeHook}"
+"${sceneDynamic1}" and "${sceneDynamic2}"
+${storyDNA ? `Story DNA: "${storyDNA}"\n` : ''}
+â•â•â• QUALITY BAR â•â•â•
+${antiFormulas.join('\n')}
+${qualityGuide}
+
+BOX ELEMENT TYPES: story_card, cipher_wheel, decoder_key, map_fragment, uv_card, torn_note, photo, sealed_envelope, combination_dial, transparency, custom
+
+PUZZLE TYPES: code (${codeLength} digits), riddle (4 options), sequence, combination (dials — solution is pipe-delimited correct values e.g. "A|X|3"), cipher (encodedText+decodedAnswer+cipherType:caesar|substitution|symbol), overlay (stack transparencies), jigsaw_word (arrange fragments)
+
+RULES:
+- Stage 0 elements are in the box from the start
+- Each stage has a sealed_envelope that unlocks new elements
+- Puzzles MUST reference requiredElements by ID
+- Use at least 3 different puzzle types
+- Design ${6 + stageCount} to ${8 + stageCount * 2} box elements total
+- Every puzzle's clue is found in the available box elements
+- Content field uses simple HTML (<p>, <em>, <strong>, <br>)
+
+JSON STRUCTURE (return EXACTLY):
+{
+  "title": "string",
+  "subtitle": "short tagline",
+  "intro": "2-4 sentence story setup for the story sheet",
+  "difficulty": "${difficulty}",
+  "targetDuration": ${duration},
+  "boxArt": "1-2 sentence box cover art description",
+  "tabletopStyle": "1 sentence tabletop surface description",
+  "boxElements": [
+    {
+      "id": "elem_id", "name": "Name", "type": "story_card",
+      "icon": "ðŸ“œ", "description": "Physical description",
+      "content": "<p>HTML text on the card</p>",
+      "imagePrompt": "optional art prompt",
+      "stage": 0,
+      "usedWith": "optional element ID",
+      "revealsText": "optional reveal text"
+    }
+  ],
+  "puzzles": [
+    {
+      "id": "stage_1", "name": "Puzzle Name",
+      "type": "code|riddle|sequence|combination|cipher|overlay|jigsaw_word",
+      "description": "Instructions", "hint": "Hint text",
+      "clueText": "Where clue is found",
+      "requiredElements": ["elem_id"],
+      "solution": "1234", "codeLength": ${codeLength},
+      "riddle": "text", "options": ["A","B","C","D"], "correctOption": 0, "wrongFeedback": "text",
+      "sequence": ["a","b","c"],
+      "dials": [{"label":"X","options":["A","B","C"]}], "solution": "A",
+      "encodedText": "KHOOR", "cipherType": "caesar", "decodedAnswer": "HELLO",
+      "overlayLayers": ["elem1","elem2"], "revealText": "hidden text",
+      "fragments": ["fr1","fr2"], "correctWord": "ANSWER"
+    }
+  ],
+  "stages": [
+    {
+      "id": "stage_1", "stageNumber": 1,
+      "name": "Envelope A: Name",
+      "sealColor": "#8B0000", "sealIcon": "ðŸ”®",
+      "introText": "Card text inside envelope",
+      "hint": "Stage hint",
+      "puzzleId": "stage_1",
+      "unlocksElements": ["elem_id"],
+      "completionText": "Solved text"
+    }
+  ]
+}
+
+Only include fields relevant to each puzzle type. Return ONLY JSON.`;
+
+  const response = await askGemini(prompt, 0.85, true);
+  const parsed = parseJsonResponse(response);
+  if (!parsed) return null;
+  return validateAndFixBoxedEscape(parsed as unknown as EscapeRoomData, config);
+}
+
+// ── Validation ──
+
+function validateAndFixBoxedEscape(data: EscapeRoomData, config: EscapeConfig): EscapeRoomData | null {
+  if (!data.boxElements || !Array.isArray(data.boxElements) || data.boxElements.length === 0) return null;
+  if (!data.puzzles || !Array.isArray(data.puzzles) || data.puzzles.length === 0) return null;
+  if (!data.stages || !Array.isArray(data.stages) || data.stages.length === 0) return null;
+
+  data.title = data.title || config.story.title || 'Untitled Escape Room';
+  data.subtitle = data.subtitle || '';
+  data.intro = data.intro || 'Your mission begins now.';
+  data.difficulty = config.structure.difficulty || 'standard';
+  data.targetDuration = config.structure.duration || 45;
+  data.boxArt = data.boxArt || 'Mysterious dark imagery';
+  data.tabletopStyle = data.tabletopStyle || 'dark wooden table with warm lamplight';
+
+  data.boxElements.forEach(elem => {
+    elem.icon = elem.icon || '📄';
+    elem.stage = elem.stage ?? 0;
+    elem.description = elem.description || elem.name;
+    elem.content = elem.content || `<p>${elem.description}</p>`;
+  });
+
+  data.stages.forEach((stage, i) => {
+    stage.stageNumber = stage.stageNumber || (i + 1);
+    stage.name = stage.name || `Stage ${i + 1}`;
+    stage.sealColor = stage.sealColor || SEAL_COLORS[i % SEAL_COLORS.length];
+    stage.sealIcon = stage.sealIcon || '🔮';
+    stage.introText = stage.introText || 'A new challenge awaits...';
+    stage.hint = stage.hint || 'Examine the available elements for clues.';
+    stage.completionText = stage.completionText || 'Solved! The next envelope beckons...';
+    stage.unlocksElements = stage.unlocksElements || [];
+  });
+
+  const codeLen = config.structure.difficulty === 'casual' ? 3 : config.structure.difficulty === 'expert' ? 5 : 4;
+  data.puzzles.forEach(puzzle => {
+    puzzle.hint = puzzle.hint || 'Examine the available elements for clues.';
+    puzzle.requiredElements = puzzle.requiredElements || [];
+    if (puzzle.type === 'code') {
+      puzzle.codeLength = puzzle.codeLength || codeLen;
+      if (!puzzle.solution || puzzle.solution.length !== puzzle.codeLength) {
+        puzzle.solution = String(Math.floor(Math.random() * (10 ** codeLen - 10 ** (codeLen - 1)) + 10 ** (codeLen - 1)));
+      }
+    }
+    if (puzzle.type === 'riddle') {
+      if (!puzzle.options || puzzle.options.length < 2) { puzzle.options = ['Yes', 'No', 'Maybe', 'Never']; puzzle.correctOption = 0; }
+      if (typeof puzzle.correctOption !== 'number') puzzle.correctOption = 0;
+    }
+    if (puzzle.type === 'sequence' && (!puzzle.sequence || puzzle.sequence.length < 2)) puzzle.sequence = ['First', 'Second', 'Third'];
+    if (puzzle.type === 'combination' && (!puzzle.dials || puzzle.dials.length === 0)) {
+      puzzle.dials = [{ label: 'Position 1', options: ['A', 'B', 'C'] }, { label: 'Position 2', options: ['X', 'Y', 'Z'] }];
+    }
+    if (puzzle.type === 'combination' && puzzle.dials && !puzzle.solution) {
+      // Auto-generate pipe-delimited solution from first option of each dial
+      puzzle.solution = puzzle.dials.map(d => d.options[0]).join('|');
+    }
+    if (puzzle.type === 'cipher') {
+      puzzle.encodedText = puzzle.encodedText || 'KHOOR';
+      puzzle.cipherType = puzzle.cipherType || 'caesar';
+      puzzle.decodedAnswer = puzzle.decodedAnswer || 'HELLO';
+    }
+    if (puzzle.type === 'overlay') { puzzle.overlayLayers = puzzle.overlayLayers || []; puzzle.revealText = puzzle.revealText || 'A hidden message appears...'; }
+    if (puzzle.type === 'jigsaw_word') { puzzle.fragments = puzzle.fragments || ['MISS', 'ING']; puzzle.correctWord = puzzle.correctWord || puzzle.fragments.join(''); }
+  });
+
+  return data;
+}
+
+function validateBoxedEscape(data: EscapeRoomData): void {
+  const puzzleIds = new Set(data.puzzles.map(p => p.id));
+  const elemIds = new Set(data.boxElements.map(e => e.id));
+  for (const stage of data.stages) {
+    if (!puzzleIds.has(stage.puzzleId)) console.warn(`Stage "${stage.name}" references unknown puzzle "${stage.puzzleId}"`);
+    for (const eid of stage.unlocksElements) {
+      if (!elemIds.has(eid)) console.warn(`Stage "${stage.name}" unlocks unknown element "${eid}"`);
+    }
+  }
+  for (const puzzle of data.puzzles) {
+    for (const eid of (puzzle.requiredElements || [])) {
+      if (!elemIds.has(eid)) console.warn(`Puzzle "${puzzle.name}" requires unknown element "${eid}"`);
+    }
+  }
+}
+
+// ── Fallback ──
+
+function generateFallbackEscapeRoom(config: EscapeConfig): EscapeRoomResult {
+  const title = config.story.title || 'The Locked Box';
+  const stageCount = config.structure.envelopeCount || 4;
+  const difficulty = config.structure.difficulty || 'standard';
+  const codeLen = difficulty === 'casual' ? 3 : difficulty === 'expert' ? 5 : 4;
+
+  const boxElements: BoxElement[] = [{
+    id: 'story_sheet', name: 'Story Sheet', type: 'story_card', icon: '📜',
+    description: 'A weathered parchment.',
+    content: '<p>A mysterious box has arrived. Open the first sealed envelope to begin.</p>',
+    stage: 0,
+  }];
+  const stages: EscapeStage[] = [];
+  const puzzles: EscapePuzzle[] = [];
+
+  for (let i = 1; i <= stageCount; i++) {
+    const stageId = `stage_${i}`;
+    const code = String(Math.floor(Math.random() * (10 ** codeLen - 10 ** (codeLen - 1)) + 10 ** (codeLen - 1)));
+    boxElements.push({
+      id: `envelope_${i}`, name: `Envelope ${i}`, type: 'sealed_envelope', icon: '✉️',
+      description: `Sealed envelope #${i}.`,
+      content: `<p>Stage ${i}: Enter the code to proceed.</p>`,
+      stage: i === 1 ? 0 : i - 1,
+    });
+    boxElements.push({
+      id: `clue_${i}`, name: `Clue Card ${i}`, type: 'story_card', icon: '📄',
+      description: 'A card with markings.',
+      content: `<p>The code: <strong>${code.split('').join(' - ')}</strong></p>`,
+      stage: i,
+    });
+    stages.push({
+      id: stageId, stageNumber: i, name: `Stage ${i}`,
+      sealColor: SEAL_COLORS[(i - 1) % SEAL_COLORS.length], sealIcon: '🔮',
+      introText: `Open envelope ${i}.`, hint: `Check Clue Card ${i}.`,
+      puzzleId: stageId, unlocksElements: [`clue_${i}`],
+      completionText: i < stageCount ? 'Open the next envelope.' : 'You escaped!',
+    });
+    puzzles.push({
+      id: stageId, name: `Lock ${i}`, type: 'code',
+      description: `Enter the ${codeLen}-digit code.`,
+      hint: `The code is on Clue Card ${i}.`,
+      solution: code, codeLength: codeLen,
+      requiredElements: [`clue_${i}`],
     });
   }
 
-  onProgress(60, 'Assembling Escape Structure', 'assembly');
-  await sleep(400);
+  const data: EscapeRoomData = {
+    title, subtitle: 'Can you escape?',
+    intro: 'A mysterious box has arrived. Open the sealed envelopes and solve the puzzles within.',
+    difficulty, targetDuration: config.structure.duration || 45,
+    boxArt: 'Dark mysterious box', tabletopStyle: 'dark wooden desk',
+    boxElements, puzzles, stages,
+  };
 
-  onProgress(75, 'QA — Verifying Solvability', 'qa_graph');
-  await sleep(300);
-
-  onProgress(90, 'Building Interactive Viewer', 'viewer');
-  await sleep(300);
-
-  onProgress(100, 'Escape Room Complete!', 'complete');
-
-  return { title, envelopes, htmlContent: '' };
+  const htmlContent = generateEscapePreviewHtml(data);
+  const envelopes = stages.map((s, i) => ({ id: i + 1, title: s.name, puzzles: [puzzles[i]?.name || 'Puzzle'] }));
+  return { title, envelopes, htmlContent, data };
 }
 
-export function generateEscapePreviewHtml(result: EscapeRoomResult): string {
-  const title = result.title;
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>${escapeHtml(title)}</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#e0e0e0;display:flex;align-items:center;justify-content:center;min-height:100vh}
-    .container{max-width:600px;text-align:center;padding:2rem}
-    h1{font-size:2rem;margin-bottom:1rem;color:#f0c040}
-    p{margin-bottom:0.5rem;opacity:0.8}
-    .stages{margin-top:1.5rem;text-align:left}
-    .stage{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:1rem;margin-bottom:0.75rem}
-    .stage h3{color:#f0c040;margin-bottom:0.25rem}
-    .badge{display:inline-block;background:#f0c040;color:#1a1a2e;padding:2px 8px;border-radius:4px;font-size:0.75rem;margin-bottom:1rem}
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="badge">ESCAPE ROOM — PREVIEW</div>
-    <h1>${escapeHtml(title)}</h1>
-    <p>${result.envelopes.length} stages · Full puzzle engine coming soon</p>
-    <div class="stages">
-      ${result.envelopes.map((e) => `<div class="stage"><h3>🔑 ${escapeHtml(e.title)}</h3><p>${escapeHtml(e.puzzles[0])}</p></div>`).join('\n      ')}
-    </div>
-  </div>
-</body>
-</html>`;
-}
-
-function escapeHtml(s: string): string {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+export { generateEscapePreviewHtml } from './escape-engine.js';

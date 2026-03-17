@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSurpriseLabel } from '../../hooks/useSurpriseLabel';
 import type { StoryConfig, EntertainmentType } from '../../types';
 
 interface StoryStepProps {
@@ -13,6 +14,7 @@ interface StoryStepProps {
 
 export function StoryStep({ value, genreHint, themeHint, entertainmentType, onChange, hideButton, onGeneratingChange }: StoryStepProps) {
   const [generating, setGenerating] = useState(false);
+  const surpriseLabel = useSurpriseLabel(generating);
 
   async function handleSurprise() {
     setGenerating(true);
@@ -95,8 +97,8 @@ export function StoryStep({ value, genreHint, themeHint, entertainmentType, onCh
 
       {!hideButton && (
         <div style={{ textAlign: 'center' }}>
-          <button className="surprise-btn" onClick={handleSurprise} disabled={generating}>
-            {generating ? '🤖 Weaving your tale...' : '✨ Surprise Me — AI-Generated Story'}
+          <button className={`surprise-btn${generating ? ' generating' : ''}`} onClick={handleSurprise} disabled={generating}>
+            {surpriseLabel}
           </button>
         </div>
       )}

@@ -147,6 +147,11 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
               <h3 className="entertainment-card-title">Comic</h3>
               <p className="entertainment-card-desc">A full comic book — every panel AI-drawn, dialogue auto-placed.</p>
             </div>
+            <div className="entertainment-card" onClick={() => setSelection('escape')}>
+              <span className="entertainment-card-icon">🔐</span>
+              <h3 className="entertainment-card-title">Escape Room</h3>
+              <p className="entertainment-card-desc">Locked in with puzzles, codes, and clues — solve your way out before time runs out.</p>
+            </div>
             <div className="entertainment-card" onClick={() => setSelection('puzzles')}>
               <span className="entertainment-card-icon">🧩</span>
               <h3 className="entertainment-card-title">Puzzles</h3>

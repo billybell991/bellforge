@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { useSurpriseLabel } from '../hooks/useSurpriseLabel';
 import type { GenreOption, ThemeOption, ArtStyleOption, StructureConfig, StoryConfig, WizardStep } from '../types';
 import { WIZARD_STEPS } from '../types';
 import { GenreStep } from './steps/GenreStep';
@@ -28,6 +29,7 @@ export function WizardContainer(props: WizardContainerProps) {
   const allFilled = !!(props.genre && props.theme && props.artStyle && props.story.title);
   const [currentStep, setCurrentStep] = useState<WizardStep>(allFilled ? 'review' : 'genre');
   const [surpriseGenerating, setSurpriseGenerating] = useState(false);
+  const surpriseLabel = useSurpriseLabel(surpriseGenerating);
 
   const stepIndex = WIZARD_STEPS.findIndex((s) => s.id === currentStep);
 
@@ -168,7 +170,7 @@ export function WizardContainer(props: WizardContainerProps) {
             ← Back
           </button>
           {currentStep === 'story' && (
-            <button className="surprise-btn" onClick={() => {
+            <button className={`surprise-btn${surpriseGenerating ? ' generating' : ''}`} onClick={() => {
               setSurpriseGenerating(true);
               fetch('/api/gemini/story', {
                 method: 'POST',
@@ -178,7 +180,7 @@ export function WizardContainer(props: WizardContainerProps) {
                 if (data.story) props.onStoryChange(data.story);
               }).finally(() => setSurpriseGenerating(false));
             }} disabled={surpriseGenerating}>
-              {surpriseGenerating ? '🤖 Weaving...' : '✨ Surprise Me'}
+              {surpriseLabel}
             </button>
           )}
           <button className="nav-btn next" onClick={goNext} disabled={!canProceed}>

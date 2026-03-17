@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { useSurpriseLabel } from '../hooks/useSurpriseLabel';
 import type { EscapeThemeOption, ThemeOption, ArtStyleOption, EscapeStructureConfig, StoryConfig, WizardStep } from '../types';
 import { ESCAPE_WIZARD_STEPS } from '../types';
 import { EscapeThemeStep } from './steps/EscapeThemeStep';
@@ -27,6 +28,7 @@ export function EscapeWizardContainer(props: EscapeWizardContainerProps) {
   const allFilled = !!(props.escapeTheme && props.theme && props.artStyle && props.story.title);
   const [currentStep, setCurrentStep] = useState<WizardStep>(allFilled ? 'review' : 'genre');
   const [surpriseGenerating, setSurpriseGenerating] = useState(false);
+  const surpriseLabel = useSurpriseLabel(surpriseGenerating);
 
   const stepIndex = ESCAPE_WIZARD_STEPS.findIndex((s) => s.id === currentStep);
 
@@ -157,7 +159,7 @@ export function EscapeWizardContainer(props: EscapeWizardContainerProps) {
             ← Back
           </button>
           {currentStep === 'story' && (
-            <button className="surprise-btn" onClick={() => {
+            <button className={`surprise-btn${surpriseGenerating ? ' generating' : ''}`} onClick={() => {
               setSurpriseGenerating(true);
               fetch('/api/gemini/story', {
                 method: 'POST',
@@ -167,7 +169,7 @@ export function EscapeWizardContainer(props: EscapeWizardContainerProps) {
                 if (data.story) props.onStoryChange(data.story);
               }).finally(() => setSurpriseGenerating(false));
             }} disabled={surpriseGenerating}>
-              {surpriseGenerating ? '🤖 Weaving...' : '✨ Surprise Me'}
+              {surpriseLabel}
             </button>
           )}
           <button className="nav-btn next" onClick={goNext} disabled={!canProceed}>
