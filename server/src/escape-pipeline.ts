@@ -587,9 +587,11 @@ PUZZLE TYPES (use a diverse mix — at least 4 different types across all stages
 - layer_align: drag glyphs to centre (fields: glyphLayers[{symbol,color,startX,startY,correctX,correctY}], alignTolerance, revealWord)
 - morse_decode: decode morse audio (fields: morsePattern e.g. "... --- ...", morseAnswer)
 
-RULES:
-- Stage 0 elements are in the box from the start
-- Each stage has a sealed_envelope that unlocks new elements when opened
+RULES — ITEM STAGING (CRITICAL — game flow depends on this):
+- stage: 0 on an element = ONLY story_card items that sit on top of the box lid (intro/story cards). These are the ONLY items available before any envelope is opened.
+- All maps, photos, notes, tools, decoder keys, cipher wheels = physical contents INSIDE the first envelope. Give these stage: 0 AND list them in stage 1's unlocksElements[]. They unlock when the player breaks Envelope A's seal.
+- Items that unlock after stage N is COMPLETED get stage: N (e.g., stage: 1 unlocks after solving Envelope A's puzzles).
+- Each stage's sealed_envelope element must include unlocksElements[] listing all items the player finds inside that envelope.
 - Puzzles MUST reference requiredElements by ID
 - Design ${6 + stageCount} to ${8 + stageCount * 2} box elements total
 - Every puzzle's clue comes from available box elements
@@ -608,11 +610,22 @@ JSON STRUCTURE (return EXACTLY this shape):
   "tabletopStyle": "1 sentence tabletop surface description",
   "boxElements": [
     {
-      "id": "elem_id", "name": "Name", "type": "story_card",
-      "icon": "emoji", "description": "Physical description",
+      "id": "elem_story_card", "name": "Story Card", "type": "story_card",
+      "icon": "📜", "description": "Physical description",
       "content": "<p>HTML text on the card</p>",
       "imagePrompt": "optional Imagen art prompt",
-      "stage": 0, "usedWith": "optional element ID", "revealsText": "optional"
+      "stage": 0
+    },
+    {
+      "id": "elem_envelope_a", "name": "Sealed Envelope A", "type": "sealed_envelope",
+      "icon": "✉️", "description": "Physical description",
+      "stage": 0
+    },
+    {
+      "id": "elem_map", "name": "Map Fragment", "type": "map_fragment",
+      "icon": "🗺️", "description": "Physical description — physically inside Envelope A",
+      "content": "<p>HTML text</p>",
+      "stage": 0
     }
   ],
   "puzzles": [
@@ -634,7 +647,7 @@ JSON STRUCTURE (return EXACTLY this shape):
       "hint": "Stage hint",
       "puzzleIds": ["puz_1a", "puz_1b"],
       "midwayTexts": ["1-2 sentence narrative reveal between puzzle 1 and 2"],
-      "unlocksElements": ["elem_id"],
+      "unlocksElements": ["elem_map", "elem_photo", "elem_tool"],
       "completionText": "Dramatic completion text"
     }
   ]

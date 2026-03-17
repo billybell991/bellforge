@@ -919,10 +919,11 @@ function openBox() {
     document.getElementById('tabletop').style.display = 'none';
     document.getElementById('game-area').classList.add('active');
 
-    // Reveal stage 0 elements (non-envelope items with stage 0 or undefined)
+    // Only story_card items are visible the moment the box opens (they sit on top/in the lid).
+    // All other stage-0 items (maps, notes, photos, tools) are INSIDE the first envelope
+    // and unlock only when that envelope's seal is broken.
     GAME.boxElements.forEach(function(elem) {
-      if (elem.type === 'sealed_envelope') return; // envelopes gated by handleEnvelope
-      if (elem.stage === 0 || elem.stage === undefined) {
+      if (elem.type === 'story_card' && (elem.stage === 0 || elem.stage === undefined)) {
         state.availableElements.add(elem.id);
       }
     });
@@ -955,7 +956,16 @@ function renderToolbar() {
   var tb = document.getElementById('toolbar');
   tb.innerHTML = '';
 
-  GAME.boxElements.forEach(function(elem) {
+  // Sort: envelopes first within each stage (envelope = the call-to-action), then other items by stage
+  var sorted = GAME.boxElements.slice().sort(function(a, b) {
+    var stageA = a.stage || 0, stageB = b.stage || 0;
+    if (stageA !== stageB) return stageA - stageB;
+    var envA = a.type === 'sealed_envelope' ? 0 : 1;
+    var envB = b.type === 'sealed_envelope' ? 0 : 1;
+    return envA - envB;
+  });
+
+  sorted.forEach(function(elem) {
     var div = document.createElement('div');
     div.className = 'tool-item';
     div.setAttribute('data-elem-id', elem.id);
@@ -1344,6 +1354,24 @@ function breakSeal(stageId, elemId) {
   if (!stage || !elem) return;
   state.openedStages.add(stage.id);
   state.stageElemId = elemId;
+
+  // Unlock the physical contents of this envelope:
+  // (a) Items explicitly listed in stage.unlocksElements
+  if (stage.unlocksElements) {
+    stage.unlocksElements.forEach(function(eid) {
+      state.availableElements.add(eid);
+    });
+  }
+  // (b) Fallback: stage-0 non-envelope non-story_card items belong to the first envelope
+  if (stage.stageNumber === 1) {
+    GAME.boxElements.forEach(function(e) {
+      if ((e.stage === 0 || e.stage === undefined) && e.type !== 'sealed_envelope' && e.type !== 'story_card') {
+        state.availableElements.add(e.id);
+      }
+    });
+  }
+
+  renderToolbar();
   showStageCard(stage);
 }
 
