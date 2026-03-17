@@ -947,6 +947,12 @@ function openBox() {
     state.currentStage = 1;
     renderStagePips();
 
+    // Auto-open the story card as a float card so player reads it immediately
+    setTimeout(function() {
+      var storyCard = GAME.boxElements.find(function(e) { return e.type === 'story_card' && (e.stage === 0 || e.stage === undefined); });
+      if (storyCard) openFloatCard(storyCard);
+    }, 400);
+
     toast('The box is open. Examine the contents...');
   }, 700);
 }
@@ -956,13 +962,12 @@ function renderToolbar() {
   var tb = document.getElementById('toolbar');
   tb.innerHTML = '';
 
-  // Sort: envelopes first within each stage (envelope = the call-to-action), then other items by stage
+  // Sort within each stage: story_card first, then sealed_envelope, then everything else
   var sorted = GAME.boxElements.slice().sort(function(a, b) {
     var stageA = a.stage || 0, stageB = b.stage || 0;
     if (stageA !== stageB) return stageA - stageB;
-    var envA = a.type === 'sealed_envelope' ? 0 : 1;
-    var envB = b.type === 'sealed_envelope' ? 0 : 1;
-    return envA - envB;
+    function order(t) { return t === 'story_card' ? 0 : t === 'sealed_envelope' ? 1 : 2; }
+    return order(a.type) - order(b.type);
   });
 
   sorted.forEach(function(elem) {
@@ -1356,13 +1361,9 @@ function breakSeal(stageId, elemId) {
   state.stageElemId = elemId;
 
   // Unlock the physical contents of this envelope:
-  // (a) Items explicitly listed in stage.unlocksElements
-  if (stage.unlocksElements) {
-    stage.unlocksElements.forEach(function(eid) {
-      state.availableElements.add(eid);
-    });
-  }
-  // (b) Fallback: stage-0 non-envelope non-story_card items belong to the first envelope
+  // Only the stage-0 fallback applies when breaking Envelope A — all stage-0 reference items
+  // (maps, photos, notes, tools) are physically inside it.
+  // Post-completion rewards (stage.unlocksElements / elem.stage===N items) unlock only after solving.
   if (stage.stageNumber === 1) {
     GAME.boxElements.forEach(function(e) {
       if ((e.stage === 0 || e.stage === undefined) && e.type !== 'sealed_envelope' && e.type !== 'story_card') {
@@ -1395,13 +1396,6 @@ function updateStageContainer(html, animate) {
 }
 
 function showStageCard(stage, fromMidway) {
-  // Unlock the elements for this stage
-  if (stage.unlocksElements) {
-    stage.unlocksElements.forEach(function(eid) {
-      state.availableElements.add(eid);
-    });
-    renderToolbar();
-  }
 
   state.currentStage = stage.stageNumber;
   renderStagePips();
@@ -2059,12 +2053,15 @@ function solvePuzzle(puzzleId) {
     // Reset stageElemId so next envelope gets its own float card
     state.stageElemId = null;
 
-    // Unlock elements for next stage (stage-numbered items) + next envelope
+    // Unlock elements for next stage (stage-numbered items) + explicit unlocksElements
     GAME.boxElements.forEach(function(elem) {
       if (elem.stage === stage.stageNumber && !state.availableElements.has(elem.id)) {
         state.availableElements.add(elem.id);
       }
     });
+    if (stage.unlocksElements) {
+      stage.unlocksElements.forEach(function(eid) { state.availableElements.add(eid); });
+    }
     // Also make the next stage's envelope available
     if (nextStage) {
       var nextEnvelope = GAME.boxElements.find(function(e) {
