@@ -108,52 +108,39 @@ export function generateEscapePreviewHtml(data: EscapeRoomData): string {
     transition: transform 0.6s cubic-bezier(0.34,1.56,0.64,1), opacity 0.4s;
     filter: drop-shadow(0 20px 40px rgba(0,0,0,0.7));
   }
-  #escape-box:hover { transform: scale(1.03) translateY(-4px); }
+  #escape-box:hover { transform: scale(1.03) translateY(-6px); }
   #escape-box.opened {
     transform: scale(0.3) translateY(-200px);
     opacity: 0; pointer-events: none;
   }
   .box-cover {
     width: 100%; height: 100%;
-    background: transparent;
-    border: none;
-    border-radius: 0;
     overflow: hidden;
-    display: flex; flex-direction: column;
-    align-items: center; justify-content: center;
     position: relative;
+    border: 1px solid rgba(201,168,76,0.4);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.6), inset 0 0 60px rgba(0,0,0,0.3);
   }
   .box-cover img {
     position: absolute; inset: -2px;
     width: calc(100% + 4px); height: calc(100% + 4px);
-    object-fit: cover; opacity: 1;
+    object-fit: cover;
   }
-  .box-title-overlay {
-    position: relative; z-index: 1;
-    text-align: center; padding: 1.5rem;
-    background: rgba(0,0,0,0.65);
-    border-top: 2px solid var(--gold-dim);
-    border-bottom: 2px solid var(--gold-dim);
-    width: 100%;
-  }
-  .box-title-overlay h1 {
-    font-family: 'Cinzel Decorative', serif;
-    font-size: 1.3rem; color: var(--gold);
-    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
-    letter-spacing: 2px; text-transform: uppercase;
-  }
-  .box-title-overlay .subtitle {
-    font-size: 0.85rem; color: var(--text-dim);
-    margin-top: 0.3rem; font-style: italic;
+  .box-cover-fallback {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 0.6rem; padding: 1.5rem; text-align: center;
+    background: linear-gradient(145deg, #2a1f14 0%, #1a1008 100%);
   }
   .box-prompt {
-    position: absolute; bottom: 16px; z-index: 2;
+    position: absolute; bottom: 16px; left: 0; right: 0;
+    text-align: center; z-index: 2;
     font-family: 'Special Elite', monospace;
     font-size: 0.75rem; color: var(--gold);
     animation: pulse 2s ease-in-out infinite;
     letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(201,168,76,0.5);
   }
-  @keyframes pulse { 0%,100%{opacity:0.5} 50%{opacity:1} }
+  @keyframes pulse { 0%,100%{opacity:0.4} 50%{opacity:1} }
 
   /* ── Main Game Area (visible after box opens) ── */
   #game-area {
@@ -844,8 +831,8 @@ export function generateEscapePreviewHtml(data: EscapeRoomData): string {
 <div id="tabletop">
   <div id="escape-box" onclick="openBox()">
     <div class="box-cover">
-      ${data.boxCoverImage ? `<img src="${data.boxCoverImage}" alt="Box Art">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0.5rem;padding:1.5rem;text-align:center"><span style="font-family:'Cinzel Decorative',serif;color:var(--gold);font-size:1.2rem">${escapeHtml(data.title)}</span><span style="color:var(--text-dim);font-size:0.8rem;font-style:italic">${escapeHtml(data.subtitle)}</span></div>`}
-      <div class="box-prompt">▶ CLICK TO OPEN</div>
+      ${data.boxCoverImage ? `<img src="${data.boxCoverImage}" alt="Box Art">` : `<div class="box-cover-fallback"><span style="font-family:'Cinzel Decorative',serif;color:var(--gold);font-size:1.2rem">${escapeHtml(data.title)}</span><span style="color:var(--text-dim);font-size:0.8rem;font-style:italic">${escapeHtml(data.subtitle)}</span></div>`}
+      <div class="box-prompt">&#9654; CLICK TO OPEN</div>
     </div>
   </div>
 </div>
