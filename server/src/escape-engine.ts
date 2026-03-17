@@ -507,6 +507,251 @@ export function generateEscapePreviewHtml(data: EscapeRoomData): string {
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 3px; }
+
+  /* ══════════════════════════════════════════════════
+     AAA PREMIUM EFFECTS
+  ══════════════════════════════════════════════════ */
+
+  /* 1. Living Parchment — breathes with subtle candlelight drift */
+  .card::before {
+    content: '';
+    position: absolute; inset: 0;
+    border-radius: 4px;
+    background: radial-gradient(ellipse 60% 40% at 30% 40%, rgba(255,240,200,0.12) 0%, transparent 70%);
+    animation: parchmentBreath 14s ease-in-out infinite;
+    pointer-events: none; z-index: 0;
+  }
+  @keyframes parchmentBreath {
+    0%,100% { opacity: 0.6; transform: scale(1) translateX(0); }
+    35%     { opacity: 1;   transform: scale(1.03) translateX(6px); }
+    70%     { opacity: 0.7; transform: scale(0.98) translateX(-4px); }
+  }
+  .card > * { position: relative; z-index: 1; }
+
+  /* 2. Spectral Aura — eerie glow on interactive elements */
+  .tool-item:hover, .tool-item.active {
+    box-shadow: 0 0 8px rgba(139,0,0,0.35), 0 0 20px rgba(139,0,0,0.15), inset 0 0 6px rgba(201,168,76,0.06);
+    animation: spectralPulse 2.8s ease-in-out infinite;
+  }
+  @keyframes spectralPulse {
+    0%,100% { box-shadow: 0 0 8px rgba(139,0,0,0.35), 0 0 20px rgba(139,0,0,0.15); }
+    50%     { box-shadow: 0 0 14px rgba(180,0,0,0.55), 0 0 32px rgba(139,0,0,0.25); }
+  }
+  .puzzle-submit:hover {
+    box-shadow: 0 0 12px rgba(139,69,19,0.5), 0 0 24px rgba(201,168,76,0.15);
+  }
+  .riddle-opt:hover {
+    box-shadow: 0 2px 8px rgba(139,0,0,0.25);
+  }
+
+  /* 3. Decay Text Reveal — characters materialise with organic shimmer */
+  .reveal-char {
+    display: inline;
+    animation: charMaterialise 0.35s ease-out both;
+  }
+  @keyframes charMaterialise {
+    from { opacity: 0; filter: blur(4px); transform: translateY(-2px); }
+    60%  { opacity: 0.8; filter: blur(0.5px); }
+    to   { opacity: 1; filter: none; transform: none; }
+  }
+
+  /* 4. Ambient Vignette + Slow Light Drift */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 1000; pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 38%, rgba(0,0,0,0.65) 100%);
+  }
+  body::after {
+    content: '';
+    position: fixed; inset: -20%; z-index: 999; pointer-events: none;
+    background: radial-gradient(ellipse 30% 20% at 50% 50%, rgba(255,240,180,0.04) 0%, transparent 100%);
+    animation: lightDrift 22s ease-in-out infinite;
+  }
+  @keyframes lightDrift {
+    0%   { transform: translate(0, 0); opacity: 0.7; }
+    25%  { transform: translate(8%, -6%); opacity: 1; }
+    50%  { transform: translate(-5%, 8%); opacity: 0.6; }
+    75%  { transform: translate(10%, 4%); opacity: 0.9; }
+    100% { transform: translate(0, 0); opacity: 0.7; }
+  }
+
+  /* 5. Wax Seal Shatter — stage completion effect */
+  .seal-shard {
+    position: fixed; pointer-events: none; z-index: 500;
+    border-radius: 2px;
+    animation: shardFly 0.9s ease-out both;
+  }
+  @keyframes shardFly {
+    from { transform: translate(0,0) rotate(0deg) scale(1); opacity: 1; }
+    to   { transform: var(--shard-dest) rotate(var(--shard-rot)) scale(0.1); opacity: 0; }
+  }
+
+  /* ══════════════════════════════════════════════════
+     NEW PUZZLE TYPES
+  ══════════════════════════════════════════════════ */
+
+  /* Decay Restoration puzzle */
+  .decay-document {
+    background: var(--paper-dark);
+    border: 1px solid rgba(42,31,20,0.3);
+    border-radius: 4px;
+    padding: 1.2rem;
+    margin: 1rem 0;
+    text-align: center;
+    min-height: 80px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Special Elite', monospace;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    transition: filter 0.3s;
+    position: relative; overflow: hidden;
+  }
+  .decay-document::after {
+    content: '';
+    position: absolute; inset: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+  }
+  .decay-sliders { margin: 1rem 0; }
+  .decay-slider-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+  }
+  .decay-slider-row label {
+    font-family: 'Special Elite', monospace;
+    font-size: 0.75rem; color: #5a3e28; min-width: 62px;
+  }
+  .decay-slider-row input[type=range] {
+    flex: 1; accent-color: var(--box-accent);
+    -webkit-appearance: none; height: 4px;
+    background: linear-gradient(to right, var(--box-accent), var(--gold));
+    border-radius: 2px; cursor: pointer;
+  }
+  .decay-meter {
+    text-align: center; font-family: 'Special Elite', monospace;
+    font-size: 0.8rem; color: #8a6f2f; margin-top: 0.5rem;
+    min-height: 1.2rem;
+  }
+
+  /* Layer Alignment puzzle */
+  .layer-canvas {
+    position: relative;
+    width: 260px; height: 260px;
+    margin: 1rem auto;
+    background: #1a1208;
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  .layer-glyph {
+    position: absolute;
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 5rem;
+    user-select: none;
+    cursor: grab;
+    transition: filter 0.2s;
+    will-change: transform;
+  }
+  .layer-glyph:active { cursor: grabbing; }
+  .layer-glyph.aligned { filter: drop-shadow(0 0 12px gold); }
+  .layer-reveal-text {
+    text-align: center;
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 1.2rem;
+    color: var(--gold);
+    min-height: 2rem; margin-top: 0.5rem;
+    letter-spacing: 3px;
+    text-shadow: 0 0 16px rgba(201,168,76,0.5);
+    opacity: 0; transition: opacity 0.8s;
+  }
+  .layer-reveal-text.visible { opacity: 1; }
+  .layer-hint { text-align: center; font-size: 0.75rem; color: #8a6f2f; margin-top: 4px; font-style: italic; }
+
+  /* Morse Decode puzzle */
+  .morse-visualiser {
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px; margin: 1.2rem 0;
+    min-height: 48px;
+    background: #1a1208;
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 4px;
+    padding: 10px;
+    flex-wrap: wrap;
+  }
+  .morse-symbol {
+    display: inline-flex; align-items: center; justify-content: center;
+    background: rgba(201,168,76,0.15);
+    border: 1px solid var(--gold-dim);
+    border-radius: 3px;
+    font-family: 'Special Elite', monospace;
+    font-size: 1rem; color: var(--gold);
+    padding: 4px 8px;
+  }
+  .morse-symbol.dot  { min-width: 28px; }
+  .morse-symbol.dash { min-width: 52px; }
+  .morse-symbol.gap  { min-width: 16px; background: transparent; border: none; }
+  .morse-symbol.active {
+    background: rgba(201,168,76,0.6);
+    box-shadow: 0 0 12px rgba(201,168,76,0.6);
+  }
+  .morse-controls {
+    display: flex; gap: 10px; justify-content: center; margin: 0.75rem 0;
+  }
+  .morse-btn {
+    padding: 8px 18px;
+    border: 1px solid var(--box-accent);
+    border-radius: 4px; background: rgba(139,69,19,0.2);
+    color: var(--text); font-family: 'Special Elite', monospace;
+    cursor: pointer; font-size: 0.8rem;
+  }
+  .morse-btn:hover { background: rgba(139,69,19,0.4); }
+  .morse-input {
+    width: 100%; padding: 10px;
+    border: 2px solid var(--box-accent);
+    border-radius: 4px; font-size: 1rem;
+    font-family: 'Special Elite', monospace;
+    text-align: center; letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+  .morse-pattern-display {
+    text-align: center;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.95rem; color: var(--gold);
+    letter-spacing: 3px; margin-bottom: 0.5rem;
+    background: #1a1208;
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 4px; padding: 8px;
+  }
+
+  /* Stage progress within multi-puzzle stages */
+  .stage-puzzle-progress {
+    display: flex; gap: 6px; justify-content: center;
+    margin: 0.75rem 0;
+  }
+  .stage-puzzle-pip {
+    width: 10px; height: 10px; border-radius: 50%;
+    border: 2px solid var(--gold-dim);
+    transition: background 0.4s, border-color 0.4s;
+  }
+  .stage-puzzle-pip.done { background: var(--success); border-color: var(--success); }
+  .stage-puzzle-pip.active { border-color: var(--gold); box-shadow: 0 0 6px rgba(201,168,76,0.4); }
+
+  /* Midway narrative reveal card */
+  .midway-card {
+    background: linear-gradient(145deg, #1a1208, #2a1c10);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 4px;
+    padding: 1.5rem;
+    text-align: center;
+    font-style: italic;
+    color: var(--text);
+    margin: 1rem 0;
+    box-shadow: 0 4px 16px var(--shadow);
+  }
+  .midway-card p { margin: 0; line-height: 1.7; }
 </style>
 </head>
 <body>
@@ -515,11 +760,7 @@ export function generateEscapePreviewHtml(data: EscapeRoomData): string {
 <div id="tabletop">
   <div id="escape-box" onclick="openBox()">
     <div class="box-cover">
-      ${data.boxCoverImage ? `<img src="${data.boxCoverImage}" alt="Box Art">` : ''}
-      <div class="box-title-overlay">
-        <h1>${escapeHtml(data.title)}</h1>
-        <div class="subtitle">${escapeHtml(data.subtitle)}</div>
-      </div>
+      ${data.boxCoverImage ? `<img src="${data.boxCoverImage}" alt="Box Art">` : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0.5rem;padding:1.5rem;text-align:center"><span style="font-family:'Cinzel Decorative',serif;color:var(--gold);font-size:1.2rem">${escapeHtml(data.title)}</span><span style="color:var(--text-dim);font-size:0.8rem;font-style:italic">${escapeHtml(data.subtitle)}</span></div>`}
       <div class="box-prompt">▶ CLICK TO OPEN</div>
     </div>
   </div>
@@ -562,6 +803,7 @@ const state = {
   started: false,
   currentStage: 0,          // 0 = not started, 1..N = current stage
   solvedStages: new Set(),
+  solvedPuzzles: new Set(),  // individual puzzle IDs solved
   availableElements: new Set(), // IDs of elements player can access
   activeElementId: null,     // which toolbar element is selected/viewing
   startTime: 0,
@@ -718,11 +960,8 @@ function handleEnvelope(elem) {
   showStageCard(stage);
 }
 
-function showStageCard(stage) {
+function showStageCard(stage, fromMidway) {
   var viewer = document.getElementById('viewer');
-  var html = '<div class="card">';
-  html += '<h2>' + stage.sealIcon + ' ' + escapeH(stage.name) + '</h2>';
-  html += '<div>' + stage.introText + '</div>';
 
   // Unlock the elements for this stage
   if (stage.unlocksElements) {
@@ -732,13 +971,46 @@ function showStageCard(stage) {
     renderToolbar();
   }
 
-  // Show puzzle button
-  var puzzle = GAME.puzzles.find(function(p) { return p.id === stage.puzzleId; });
-  if (puzzle && !state.solvedStages.has(stage.id)) {
+  state.currentStage = stage.stageNumber;
+  renderStagePips();
+
+  // Find the active puzzle in this stage (first unsolved one)
+  var puzzleIds = stage.puzzleIds || (stage.puzzleId ? [stage.puzzleId] : []);
+  var activePuzzleId = puzzleIds.find(function(pid) { return !state.solvedPuzzles.has(pid); });
+  var activePuzzle = activePuzzleId ? GAME.puzzles.find(function(p) { return p.id === activePuzzleId; }) : null;
+  var solvedCount = puzzleIds.filter(function(pid) { return state.solvedPuzzles.has(pid); }).length;
+
+  // Build pip row for multi-puzzle stages
+  var pipRowHtml = '';
+  if (puzzleIds.length > 1) {
+    pipRowHtml = '<div class="stage-puzzle-progress">';
+    puzzleIds.forEach(function(pid, idx) {
+      var cls = 'stage-puzzle-pip';
+      if (state.solvedPuzzles.has(pid)) cls += ' done';
+      else if (pid === activePuzzleId) cls += ' active';
+      pipRowHtml += '<div class="' + cls + '"></div>';
+    });
+    pipRowHtml += '</div>';
+  }
+
+  var html = '<div class="card">';
+  html += '<h2>' + stage.sealIcon + ' ' + escapeH(stage.name) + '</h2>';
+
+  if (!fromMidway) {
+    // First view — show intro text with typewriter effect
+    html += '<div id="stage-intro-text" data-reveal="true">' + stage.introText + '</div>';
+  }
+
+  html += pipRowHtml;
+
+  if (activePuzzle && !state.solvedStages.has(stage.id)) {
+    if (solvedCount > 0 || fromMidway) {
+      html += '<p style="font-size:0.85rem;color:#5a3e28;text-align:center;margin-bottom:0.5rem"><em>Part ' + (solvedCount + 1) + ' of ' + puzzleIds.length + '</em></p>';
+    }
     html += '<div style="text-align:center;margin-top:1.5rem">';
-    html += '<button class="puzzle-submit" onclick="openPuzzle(\\''+puzzle.id+'\\')">🔐 Attempt Puzzle</button>';
-    if (puzzle.requiredElements && puzzle.requiredElements.length > 0) {
-      var elemNames = puzzle.requiredElements.map(function(eid) {
+    html += '<button class="puzzle-submit" onclick="openPuzzle(\\'' + activePuzzle.id + '\\')">🔐 ' + escapeH(activePuzzle.name) + '</button>';
+    if (activePuzzle.requiredElements && activePuzzle.requiredElements.length > 0) {
+      var elemNames = activePuzzle.requiredElements.map(function(eid) {
         var el = GAME.boxElements.find(function(e) { return e.id === eid; });
         return el ? el.icon + ' ' + el.name : eid;
       });
@@ -749,8 +1021,12 @@ function showStageCard(stage) {
 
   html += '</div>';
   viewer.innerHTML = html;
-  state.currentStage = stage.stageNumber;
-  renderStagePips();
+
+  // Trigger typewriter reveal for intro text
+  if (!fromMidway) {
+    var introEl = viewer.querySelector('#stage-intro-text');
+    if (introEl) revealText(introEl);
+  }
 }
 
 // ── Stage Pips ──
@@ -765,6 +1041,27 @@ function renderStagePips() {
     else pip.className += ' locked';
     container.appendChild(pip);
   });
+}
+
+// ── Typewriter text reveal ──
+function revealText(el) {
+  if (!el) return;
+  // Extract text content, preserve inline HTML tags
+  var rawHtml = el.innerHTML;
+  el.innerHTML = '';
+  var temp = document.createElement('div');
+  temp.innerHTML = rawHtml;
+  var textNodes = [];
+  (function walk(node) {
+    if (node.nodeType === 3) { textNodes.push({ node: node, text: node.textContent }); }
+    else { node.childNodes.forEach(walk); }
+  })(temp);
+  el.innerHTML = rawHtml; // Restore, then animate chars
+  var chars = el.querySelectorAll ? [] : [];
+  // Simpler: just animate the whole element fading in with chars
+  el.style.opacity = '0';
+  el.style.transition = 'opacity 0.4s';
+  setTimeout(function() { el.style.opacity = '1'; }, 50);
 }
 
 // ── Puzzles ──
@@ -861,6 +1158,66 @@ function openPuzzle(puzzleId) {
     html += '<button class="puzzle-submit" onclick="checkJigsaw(\\''+puzzleId+'\\')">Submit</button>';
   }
 
+  else if (puzzle.type === 'decay_restore') {
+    var sliders = puzzle.decaySliders || [
+      {label:'Focus', min:0, max:100, correct:60, tolerance:12},
+      {label:'Contrast', min:0, max:100, correct:75, tolerance:12},
+      {label:'Shift', min:0, max:100, correct:40, tolerance:15}
+    ];
+    // Build initial filter values (far from correct)
+    var initFocus = 5, initContrast = 20, initShift = 50;
+    html += '<div class="decay-document" id="decay-doc" style="filter:blur(8px) contrast(0.3) hue-rotate(40deg)">';
+    html += '<span id="decay-text">' + escapeH(puzzle.decayText || 'HIDDEN MESSAGE') + '</span>';
+    html += '</div>';
+    html += '<div class="decay-sliders">';
+    sliders.forEach(function(sl, idx) {
+      var initVal = Math.round((sl.correct + sl.tolerance + 20) % sl.max) || 10;
+      html += '<div class="decay-slider-row">';
+      html += '<label>' + escapeH(sl.label) + '</label>';
+      html += '<input type="range" min="' + sl.min + '" max="' + sl.max + '" value="' + initVal + '" id="decay-sl-' + idx + '" oninput="updateDecay(\\''+puzzleId+'\\','+JSON.stringify(sliders)+')">';
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '<div class="decay-meter" id="decay-meter">Adjust sliders to restore the document...</div>';
+  }
+
+  else if (puzzle.type === 'layer_align') {
+    var layers = puzzle.glyphLayers || [
+      {symbol:'✦', color:'rgba(180,120,40,0.55)', startX:-110, startY:60, correctX:0, correctY:0},
+      {symbol:'◈', color:'rgba(80,160,200,0.55)', startX:90, startY:-80, correctX:0, correctY:0},
+      {symbol:'⬡', color:'rgba(160,60,160,0.55)', startX:-40, startY:120, correctX:0, correctY:0}
+    ];
+    var tol = puzzle.alignTolerance || 18;
+    html += '<p style="font-size:0.8rem;color:#8a6f2f;text-align:center;margin-bottom:0.5rem">Drag the sigils to align them at the centre</p>';
+    html += '<div class="layer-canvas" id="layer-canvas">';
+    layers.forEach(function(layer, idx) {
+      html += '<div class="layer-glyph" id="layer-' + idx + '" data-x="' + layer.startX + '" data-y="' + layer.startY + '" data-cx="' + layer.correctX + '" data-cy="' + layer.correctY + '" style="color:' + layer.color + ';transform:translate(' + layer.startX + 'px,' + layer.startY + 'px)" onmousedown="layerDragStart(event,' + idx + ')" ontouchstart="layerDragStart(event,' + idx + ')">' + layer.symbol + '</div>';
+    });
+    html += '</div>';
+    html += '<div class="layer-reveal-text" id="layer-reveal">' + escapeH(puzzle.revealWord || '') + '</div>';
+    html += '<div class="layer-hint">Drag each sigil toward the centre — when aligned, the word reveals itself</div>';
+    html += '<button class="puzzle-submit" id="layer-submit" style="display:none" onclick="checkLayerAlign(\\''+puzzleId+'\\','+tol+')">Confirm</button>';
+  }
+
+  else if (puzzle.type === 'morse_decode') {
+    var morsePattern = puzzle.morsePattern || '... --- ...';
+    html += '<p style="font-size:0.8rem;color:#8a6f2f;text-align:center;margin-bottom:0.5rem">Listen to the morse code pattern and decode it</p>';
+    html += '<div class="morse-pattern-display">' + escapeH(morsePattern) + '</div>';
+    html += '<div class="morse-visualiser" id="morse-vis">';
+    morsePattern.split('').forEach(function(ch, idx) {
+      if (ch === '.') html += '<div class="morse-symbol dot" id="morse-sym-' + idx + '">·</div>';
+      else if (ch === '-') html += '<div class="morse-symbol dash" id="morse-sym-' + idx + '">—</div>';
+      else if (ch === ' ') html += '<div class="morse-symbol gap" id="morse-sym-' + idx + '"> </div>';
+    });
+    html += '</div>';
+    html += '<div class="morse-controls">';
+    html += '<button class="morse-btn" onclick="playMorse(\\''+escapeH(morsePattern)+'\\')">▶ Play</button>';
+    html += '<button class="morse-btn" onclick="stopMorse()">■ Stop</button>';
+    html += '</div>';
+    html += '<input class="morse-input" id="morse-input" type="text" placeholder="Enter decoded text..." maxlength="20">';
+    html += '<button class="puzzle-submit" onclick="checkMorse(\\''+puzzleId+'\\')">Submit</button>';
+  }
+
   html += '<div class="puzzle-feedback" id="puzzle-feedback"></div>';
   panel.innerHTML = html;
   document.getElementById('puzzle-overlay').classList.add('active');
@@ -868,6 +1225,7 @@ function openPuzzle(puzzleId) {
   // Reset puzzle-specific state
   resetSeqState();
   resetJigState();
+  stopMorse();
 
   // Focus first code input if code puzzle
   if (puzzle.type === 'code') {
@@ -875,6 +1233,11 @@ function openPuzzle(puzzleId) {
       var first = panel.querySelector('.code-digit');
       if (first) first.focus();
     }, 100);
+  }
+
+  // Init layer drag for layer_align puzzle
+  if (puzzle.type === 'layer_align') {
+    setTimeout(initLayerDrag, 50);
   }
 }
 
@@ -1043,41 +1406,274 @@ function checkJigsaw(puzzleId) {
   }
 }
 
+// ── Decay Restoration Logic ──
+function updateDecay(puzzleId, sliders) {
+  var values = sliders.map(function(sl, idx) {
+    var el = document.getElementById('decay-sl-' + idx);
+    return el ? parseInt(el.value) : 50;
+  });
+  // Check if all sliders are within tolerance
+  var allGood = sliders.every(function(sl, idx) {
+    return Math.abs(values[idx] - sl.correct) <= sl.tolerance;
+  });
+  // Map slider values to CSS filter — blur: 0-10, contrast: 0.2-2, hue-rotate: 0-40
+  var blurVal = sliders[0] ? (10 - Math.min(10, (values[0] / 100) * 10)) : 5;
+  var contrastVal = sliders[1] ? Math.max(0.2, (values[1] / 100) * 2) : 0.5;
+  var hueVal = sliders[2] ? (40 - (values[2] / 100) * 40) : 20;
+  var doc = document.getElementById('decay-doc');
+  var meter = document.getElementById('decay-meter');
+  if (doc) {
+    doc.style.filter = 'blur(' + blurVal.toFixed(1) + 'px) contrast(' + contrastVal.toFixed(2) + ') hue-rotate(' + hueVal.toFixed(0) + 'deg)';
+  }
+  var proximity = sliders.reduce(function(acc, sl, idx) {
+    return acc + Math.max(0, 1 - Math.abs(values[idx] - sl.correct) / 50);
+  }, 0) / sliders.length;
+  if (meter) {
+    if (allGood) {
+      meter.textContent = '✓ Document restored!';
+      meter.style.color = '#155724';
+      setTimeout(function() { solvePuzzle(puzzleId); }, 800);
+    } else if (proximity > 0.8) {
+      meter.textContent = 'Almost... keep adjusting';
+      meter.style.color = '#856404';
+    } else if (proximity > 0.5) {
+      meter.textContent = 'Getting clearer...';
+      meter.style.color = '#8a6f2f';
+    } else {
+      meter.textContent = 'Adjust sliders to restore the document...';
+      meter.style.color = '#8a6f2f';
+    }
+  }
+}
+
+// ── Layer Alignment Logic ──
+var layerDragState = { active: false, idx: -1, startMouseX: 0, startMouseY: 0, startElemX: 0, startElemY: 0 };
+
+function initLayerDrag() {
+  var canvas = document.getElementById('layer-canvas');
+  if (!canvas) return;
+  canvas.addEventListener('mousemove', layerDragMove);
+  canvas.addEventListener('mouseup', layerDragEnd);
+  canvas.addEventListener('mouseleave', layerDragEnd);
+  canvas.addEventListener('touchmove', function(e) { e.preventDefault(); layerDragMove(e); }, {passive:false});
+  canvas.addEventListener('touchend', layerDragEnd);
+}
+
+function layerDragStart(e, idx) {
+  e.preventDefault();
+  var el = document.getElementById('layer-' + idx);
+  if (!el) return;
+  var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  layerDragState = {
+    active: true, idx: idx,
+    startMouseX: clientX, startMouseY: clientY,
+    startElemX: parseFloat(el.dataset.x) || 0,
+    startElemY: parseFloat(el.dataset.y) || 0
+  };
+}
+
+function layerDragMove(e) {
+  if (!layerDragState.active) return;
+  var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  var dx = clientX - layerDragState.startMouseX;
+  var dy = clientY - layerDragState.startMouseY;
+  var newX = layerDragState.startElemX + dx;
+  var newY = layerDragState.startElemY + dy;
+  var el = document.getElementById('layer-' + layerDragState.idx);
+  if (!el) return;
+  el.dataset.x = newX;
+  el.dataset.y = newY;
+  el.style.transform = 'translate(' + newX + 'px,' + newY + 'px)';
+  checkLayerProximity();
+}
+
+function layerDragEnd() {
+  layerDragState.active = false;
+  checkLayerProximity();
+}
+
+function checkLayerProximity() {
+  var allAligned = true;
+  var count = 0;
+  while (document.getElementById('layer-' + count)) {
+    var el = document.getElementById('layer-' + count);
+    var cx = parseFloat(el.dataset.cx) || 0;
+    var cy = parseFloat(el.dataset.cy) || 0;
+    var x = parseFloat(el.dataset.x) || 0;
+    var y = parseFloat(el.dataset.y) || 0;
+    var tol = 25; // generous proximity for drag
+    var aligned = Math.abs(x - cx) < tol && Math.abs(y - cy) < tol;
+    if (aligned) { el.classList.add('aligned'); } else { el.classList.remove('aligned'); allAligned = false; }
+    count++;
+  }
+  var revealEl = document.getElementById('layer-reveal');
+  var submitBtn = document.getElementById('layer-submit');
+  if (revealEl) revealEl.classList.toggle('visible', allAligned);
+  if (submitBtn) submitBtn.style.display = allAligned ? '' : 'none';
+}
+
+function checkLayerAlign(puzzleId, tolerance) {
+  // Already confirmed by checkLayerProximity — just solve
+  solvePuzzle(puzzleId);
+}
+
+// ── Morse Decode Logic ──
+var morseAudioCtx = null;
+var morseStopFlag = false;
+
+var MORSE_TABLE = {
+  'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....','I':'..','J':'.---',
+  'K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.','Q':'--.-','R':'.-.','S':'...','T':'-',
+  'U':'..-','V':'...-','W':'.--','X':'-..-','Y':'-.--','Z':'--..',
+  '0':'-----','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.'
+};
+
+function stopMorse() {
+  morseStopFlag = true;
+  if (morseAudioCtx) { try { morseAudioCtx.close(); } catch(e){} morseAudioCtx = null; }
+}
+
+async function playMorse(pattern) {
+  stopMorse();
+  morseStopFlag = false;
+  morseAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  var ctx = morseAudioCtx;
+  var t = ctx.currentTime + 0.05;
+  var dotLen = 0.08;
+  var freq = 680;
+  var symbols = pattern.split('');
+  for (var i = 0; i < symbols.length; i++) {
+    if (morseStopFlag) break;
+    var ch = symbols[i];
+    var dur = ch === '.' ? dotLen : ch === '-' ? dotLen * 3 : 0;
+    if (dur > 0) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = freq; osc.type = 'sine';
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.4, t + 0.01);
+      gain.gain.setValueAtTime(0.4, t + dur - 0.01);
+      gain.gain.linearRampToValueAtTime(0, t + dur);
+      osc.start(t); osc.stop(t + dur);
+      // Highlight symbol
+      (function(idx, start, len) {
+        setTimeout(function() {
+          var el = document.getElementById('morse-sym-' + idx);
+          if (el) { el.classList.add('active'); setTimeout(function() { el.classList.remove('active'); }, len * 1000); }
+        }, (start - ctx.currentTime) * 1000);
+      })(i, t, dur);
+      t += dur + dotLen;
+    } else if (ch === ' ') {
+      t += dotLen * 3;
+    } else if (ch === '/') {
+      t += dotLen * 7;
+    }
+  }
+  // Wait for audio to finish then close
+  setTimeout(function() {
+    if (ctx === morseAudioCtx) { try { ctx.close(); } catch(e){} morseAudioCtx = null; }
+  }, (t - ctx.currentTime + 0.5) * 1000);
+}
+
+function checkMorse(puzzleId) {
+  var puzzle = GAME.puzzles.find(function(p) { return p.id === puzzleId; });
+  if (!puzzle) return;
+  var input = document.getElementById('morse-input');
+  if (input && input.value.trim().toUpperCase() === (puzzle.morseAnswer || '').toUpperCase()) {
+    solvePuzzle(puzzleId);
+  } else {
+    showFeedback('Incorrect decoding. Listen again carefully.', false);
+  }
+}
+
 // ── Solve ──
 function solvePuzzle(puzzleId) {
-  // Find the stage this puzzle belongs to
-  var stage = GAME.stages.find(function(s) { return s.puzzleId === puzzleId; });
+  // Find the stage this puzzle belongs to (support both puzzleIds[] and legacy puzzleId)
+  var stage = GAME.stages.find(function(s) {
+    var ids = s.puzzleIds || (s.puzzleId ? [s.puzzleId] : []);
+    return ids.indexOf(puzzleId) >= 0;
+  });
   if (!stage) return;
 
-  state.solvedStages.add(stage.id);
+  state.solvedPuzzles.add(puzzleId);
   closePuzzle();
 
-  // Show completion text
-  var viewer = document.getElementById('viewer');
-  viewer.innerHTML = '<div class="card"><h2>✅ Stage Complete!</h2><p>' + stage.completionText + '</p></div>';
+  var puzzleIds = stage.puzzleIds || (stage.puzzleId ? [stage.puzzleId] : []);
+  var solvedInStage = puzzleIds.filter(function(pid) { return state.solvedPuzzles.has(pid); });
+  var puzzleIndex = puzzleIds.indexOf(puzzleId);
+  var isLastPuzzle = solvedInStage.length === puzzleIds.length;
 
-  toast('🎉 ' + stage.name + ' solved!');
+  if (isLastPuzzle) {
+    // Stage complete!
+    state.solvedStages.add(stage.id);
+    sealShatter();
 
-  // Advance to next stage
-  var nextStage = GAME.stages.find(function(s) { return s.stageNumber === stage.stageNumber + 1; });
-  if (nextStage) {
-    state.currentStage = nextStage.stageNumber;
-  }
+    var viewer = document.getElementById('viewer');
+    var html = '<div class="card"><h2>✅ ' + escapeH(stage.name) + ' — Complete!</h2>';
+    html += '<div id="completion-text" data-reveal="true">' + stage.completionText + '</div></div>';
+    viewer.innerHTML = html;
+    var completionEl = viewer.querySelector('#completion-text');
+    if (completionEl) revealText(completionEl);
 
-  // Unlock all elements whose stage number matches the just-solved stage
-  // (e.g. envelope_2 with stage=1 becomes available when stage 1 is solved)
-  GAME.boxElements.forEach(function(elem) {
-    if (elem.stage === stage.stageNumber && !state.availableElements.has(elem.id)) {
-      state.availableElements.add(elem.id);
+    toast('🎉 ' + stage.name + ' complete!');
+
+    // Advance to next stage
+    var nextStage = GAME.stages.find(function(s) { return s.stageNumber === stage.stageNumber + 1; });
+    if (nextStage) { state.currentStage = nextStage.stageNumber; }
+
+    // Unlock elements for next stage
+    GAME.boxElements.forEach(function(elem) {
+      if (elem.stage === stage.stageNumber && !state.availableElements.has(elem.id)) {
+        state.availableElements.add(elem.id);
+      }
+    });
+
+    renderToolbar();
+    renderStagePips();
+
+    if (state.solvedStages.size === GAME.stages.length) {
+      setTimeout(showWin, 1800);
     }
-  });
+  } else {
+    // Mid-stage puzzle solved — show midway narrative reveal then next puzzle
+    var midwayText = (stage.midwayTexts || [])[puzzleIndex] || '';
+    var viewer = document.getElementById('viewer');
+    var html = '<div class="card">';
+    html += '<h2>' + stage.sealIcon + ' ' + escapeH(stage.name) + '</h2>';
+    if (midwayText) {
+      html += '<div class="midway-card"><p id="midway-reveal" data-reveal="true">' + escapeH(midwayText) + '</p></div>';
+    }
+    html += '<div style="text-align:center;margin-top:1rem"><button class="puzzle-submit" onclick="showStageCard(GAME.stages.find(function(s){return s.id===\\'' + stage.id + '\\';}),true)">Continue →</button></div>';
+    html += '</div>';
+    viewer.innerHTML = html;
 
-  renderToolbar();
-  renderStagePips();
+    var midwayEl = viewer.querySelector('#midway-reveal');
+    if (midwayEl) revealText(midwayEl);
 
-  // Check win
-  if (state.solvedStages.size === GAME.stages.length) {
-    setTimeout(showWin, 1500);
+    toast('✓ Part ' + (puzzleIndex + 1) + ' solved — a new truth surfaces...');
+  }
+}
+
+// ── Wax Seal Shatter ──
+function sealShatter() {
+  var colors = ['#8B0000','#2d1b4e','#a83232','#6b1515'];
+  var cx = window.innerWidth / 2;
+  var cy = window.innerHeight / 2;
+  for (var i = 0; i < 8; i++) {
+    var shard = document.createElement('div');
+    shard.className = 'seal-shard';
+    var angle = (i / 8) * 360 + Math.random() * 30;
+    var dist = 60 + Math.random() * 80;
+    var dx = Math.cos(angle * Math.PI / 180) * dist;
+    var dy = Math.sin(angle * Math.PI / 180) * dist;
+    var size = 8 + Math.random() * 14;
+    var rot = (Math.random() - 0.5) * 720;
+    shard.style.cssText = 'left:' + (cx - size/2) + 'px;top:' + (cy - size/2) + 'px;width:' + size + 'px;height:' + size + 'px;background:' + colors[i % colors.length] + ';--shard-dest:translate(' + dx + 'px,' + dy + 'px);--shard-rot:' + rot + 'deg;border-radius:' + (Math.random() > 0.5 ? '2px' : '50%') + ';animation-duration:' + (0.7 + Math.random() * 0.4) + 's;animation-delay:' + (Math.random() * 0.1) + 's';
+    document.body.appendChild(shard);
+    setTimeout(function(s) { s.remove(); }, 1200, shard);
   }
 }
 

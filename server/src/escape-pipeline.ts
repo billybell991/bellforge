@@ -35,10 +35,11 @@ export interface BoxElement {
 export interface EscapePuzzle {
   id: string;
   name: string;
-  type: 'code' | 'riddle' | 'sequence' | 'combination' | 'cipher' | 'overlay' | 'jigsaw_word';
+  type: 'code' | 'riddle' | 'sequence' | 'combination' | 'cipher' | 'overlay' | 'jigsaw_word' | 'decay_restore' | 'layer_align' | 'morse_decode';
   description: string;    // what the player reads as instructions
   hint: string;           // hint text for when player is stuck
   clueText?: string;      // where the clue can be found
+  narrativeSignificance?: string; // WHY this answer matters to the story
   // Which box elements are needed to solve this
   requiredElements?: string[];
   // Code puzzle (enter digits)
@@ -63,6 +64,16 @@ export interface EscapePuzzle {
   // Jigsaw word puzzle (arrange torn fragments)
   fragments?: string[];
   correctWord?: string;
+  // Decay Restoration: adjust CSS-filter sliders to reveal the corrupted document
+  decayText?: string;         // the message hidden beneath the corruption
+  decaySliders?: { label: string; min: number; max: number; correct: number; tolerance: number }[];
+  // Layer Alignment: drag three translucent sigil layers to align them
+  glyphLayers?: { symbol: string; color: string; startX: number; startY: number; correctX: number; correctY: number }[];
+  alignTolerance?: number;
+  revealWord?: string;        // word revealed when layers align
+  // Morse Decode: listen to a Web Audio tone pattern, identify the character
+  morsePattern?: string;      // e.g. "... --- ..." (spaces separate letters, / separates words)
+  morseAnswer?: string;       // decoded string to type in
 }
 
 /** A stage (sealed envelope) in the escape room */
@@ -74,7 +85,10 @@ export interface EscapeStage {
   sealIcon: string;       // emoji on the seal
   introText: string;      // text on the card inside the envelope
   hint: string;           // stage-level hint
-  puzzleId: string;       // which puzzle solves this stage
+  /** @deprecated use puzzleIds instead */
+  puzzleId?: string;
+  puzzleIds: string[];    // 2-3 puzzle IDs — solved sequentially to complete this stage
+  midwayTexts?: string[]; // optional narrative reveals between puzzles (length = puzzleIds.length - 1)
   unlocksElements: string[];  // box element IDs revealed when stage is opened
   completionText: string; // text shown when stage is solved
 }
@@ -106,7 +120,7 @@ type ProgressCallback = (percent: number, message: string, stage?: string) => vo
 
 // â”€â”€ Helpers â”€â”€
 
-async function askGemini(prompt: string, temperature = 0.8, jsonMode = false): Promise<string | null> {
+async function askGemini(prompt: string, temperature = 0.8, jsonMode = false, timeoutMs = 90000): Promise<string | null> {
   if (!model) return null;
 
   const config: Record<string, unknown> = { temperature };
@@ -114,16 +128,23 @@ async function askGemini(prompt: string, temperature = 0.8, jsonMode = false): P
     (config as Record<string, unknown>).responseMimeType = 'application/json';
   }
 
-  for (let attempt = 0; attempt < 4; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      const result = await model.generateContent({
+      const generatePromise = model.generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
         generationConfig: config as Parameters<typeof model.generateContent>[0] extends { generationConfig?: infer G } ? G : never,
       });
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('gemini_timeout')), timeoutMs)
+      );
+      const result = await Promise.race([generatePromise, timeoutPromise]);
       return result.response.text();
     } catch (e: unknown) {
       const errStr = String(e).toLowerCase();
-      if (errStr.includes('resource_exhausted') || errStr.includes('quota')) {
+      if (errStr.includes('gemini_timeout')) {
+        console.warn(`askGemini timeout on attempt ${attempt + 1}`);
+        if (attempt < 2) await sleep(3000);
+      } else if (errStr.includes('resource_exhausted') || errStr.includes('quota')) {
         await sleep(30000);
       } else {
         await sleep((2 ** attempt) * 4000);
@@ -315,6 +336,22 @@ const THEME_ATMO: Record<string, string> = {
   time_capsule: 'a trail of puzzles spanning decades â€” vintage objects from different eras, time-locked capsules, nostalgic photographs, handwritten letters, retro technology',
 };
 
+// ── Theme × Atmosphere coherence matrix ──
+const THEME_COHERENCE: Record<string, string[]> = {
+  heist:       ['mystery', 'scifi', 'cyberpunk', 'noir', 'steampunk'],
+  detective:   ['mystery', 'horror', 'cozy', 'noir', 'fantasy'],
+  haunted:     ['horror', 'mystery', 'fantasy', 'postapoc'],
+  laboratory:  ['scifi', 'horror', 'cyberpunk', 'postapoc', 'mystery'],
+  shipwreck:   ['horror', 'mystery', 'scifi', 'postapoc', 'fantasy'],
+  time_capsule:['mystery', 'cozy', 'steampunk', 'fantasy', 'scifi'],
+};
+
+function getCoherenceNote(themeId: string, atmosphereId: string): string {
+  const compatible = THEME_COHERENCE[themeId] ?? [];
+  if (compatible.includes(atmosphereId)) return '';
+  return `ATMOSPHERE COHERENCE DIRECTIVE: The "${atmosphereId}" atmosphere is unconventional for a ${themeId} escape room. You MUST treat this as intentional artistic dissonance — find a unifying visual and narrative language that makes it feel deliberate rather than accidental. The escape theme is dominant; treat the atmosphere as a surprising twist on it. Never produce a jarring, incoherent mix. All visual descriptions, room aesthetics, and narrative tone MUST feel unified.`;
+}
+
 const ROOM_GRADIENTS: string[] = [
   'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
   'linear-gradient(135deg, #2d1b2e 0%, #1a1a2e 50%, #0d1117 100%)',
@@ -359,13 +396,18 @@ export async function runEscapePipeline(
   const conceptMessages = [
     'Gemini is designing box contents...', 'Crafting cipher wheels...',
     'Writing story cards...', 'Sealing envelopes...',
-    'Hiding clues in the elements...', 'Designing the final revelation...',
-    'Balancing difficulty curve...', 'Threading puzzle connections...', 'Almost there...',
+    'Hiding clues in the elements...', 'Designing puzzle narrative arcs...',
+    'Balancing difficulty curve...', 'Threading puzzle connections...',
+    'Weaving the story together...', 'Calibrating puzzle answers...',
+    'Composing midway reveals...', 'Polishing seal descriptions...',
+    'Finalising box contents...', 'Almost there...',
   ];
   let hbIdx = 0, hbPct = 8;
   const heartbeat = setInterval(() => {
-    if (hbPct < 17) { hbPct++; onProgress(hbPct, conceptMessages[hbIdx++ % conceptMessages.length], 'escape_concept'); }
-  }, 4000);
+    // Keep cycling messages; nudge percent slowly up to 25 max
+    if (hbPct < 25) hbPct = Math.min(25, hbPct + 1);
+    onProgress(hbPct, conceptMessages[hbIdx++ % conceptMessages.length], 'escape_concept');
+  }, 5000);
 
   onProgress(8, 'Gemini is designing the escape room box...', 'escape_concept');
   let conceptData: EscapeRoomData | null;
@@ -422,7 +464,7 @@ export async function runEscapePipeline(
 
   const envelopes = conceptData.stages.map((s, i) => ({
     id: i + 1, title: s.name,
-    puzzles: conceptData.puzzles.filter(p => p.id === s.puzzleId).map(p => p.name),
+    puzzles: (s.puzzleIds || []).map(pid => conceptData.puzzles.find(p => p.id === pid)?.name ?? pid),
   }));
 
   onProgress(100, 'Escape Room Complete!', 'complete');
@@ -430,7 +472,6 @@ export async function runEscapePipeline(
 }
 
 // â”€â”€ Gemini concept generation (Boxed Escape Room) â”€â”€
-
 async function generateEscapeConcept(config: EscapeConfig): Promise<EscapeRoomData | null> {
   const themeId = config.escapeTheme.id;
   const themeName = config.escapeTheme.name;
@@ -441,56 +482,84 @@ async function generateEscapeConcept(config: EscapeConfig): Promise<EscapeRoomDa
   const storyDesc = config.story.description || '';
   const setting = config.story.setting || '';
   const character = config.story.characterName || '';
+  const atmosphereId = config.theme?.id || 'mystery';
   const atmosphere = config.theme?.name || 'mysterious';
   const themeAtmo = THEME_ATMO[themeId] || 'a mysterious experience with hidden clues and puzzles';
   const codeLength = difficulty === 'casual' ? 3 : difficulty === 'expert' ? 5 : 4;
+  const puzzlesPerStage = difficulty === 'casual' ? 1 : difficulty === 'expert' ? 3 : 2;
+  const coherenceNote = getCoherenceNote(themeId, atmosphereId);
+  const totalPuzzles = stageCount * puzzlesPerStage;
 
   const narrativeHook = randomPick(ESCAPE_NARRATIVE_HOOKS);
   const sceneDynamic1 = randomPick(ESCAPE_SCENE_DYNAMICS);
   const sceneDynamic2 = randomPick(ESCAPE_SCENE_DYNAMICS.filter(s => s !== sceneDynamic1));
-  const antiFormulas = randomPicks(ESCAPE_ANTI_FORMULA, 3);
+  const antiFormulas = randomPicks(ESCAPE_ANTI_FORMULA, 2);
   const qualityGuide = ESCAPE_QUALITY_GUIDES[themeId] || '';
-  const storyDNA = getEscapeStoryDNA(themeId, atmosphere);
+  const storyDNA = getEscapeStoryDNA(themeId, atmosphereId);
 
-  const prompt = `You are a master designer of BOXED escape room games â€” think Exit: The Game, Unlock!, Deckscape. You create premium tabletop escape experiences with physical components: story cards, cipher wheels, decoder keys, maps, transparencies, torn notes, sealed envelopes. Creativity seed: ${Date.now()}.
+  const prompt = `You are a master designer of BOXED escape room games - think Exit: The Game, Unlock!, Deckscape. Premium tabletop escape experiences with physical components: story cards, cipher wheels, decoder keys, maps, transparencies, torn notes, sealed envelopes. Creativity seed: ${Date.now()}.
 
-You're NOT designing a video game. You're designing a PHYSICAL boxed escape room played digitally. The player opens a box on a tabletop, pulls out components, and works through sealed envelopes using tactile props.
+PHYSICAL BOX DESIGN - the player opens a box on a tabletop, pulls out components, and works through sealed envelopes using tactile props.
 
-THEME: "${themeName}" â€” ${themeAtmo}
+THEME: "${themeName}" - ${themeAtmo}
 TITLE: "${storyTitle}"
 DESCRIPTION: ${storyDesc || 'Be creative'}
 SETTING: ${setting || 'Match the theme'}
 CHARACTER: ${character || 'The player'}
 ATMOSPHERE: ${atmosphere}
-STAGES: ${stageCount} sealed envelopes
+STAGES: ${stageCount} sealed envelopes (${puzzlesPerStage} puzzles each = ${totalPuzzles} total puzzles)
 DIFFICULTY: ${difficulty}
 TARGET DURATION: ${duration} minutes
+${coherenceNote ? `\nATMOSPHERE COHERENCE DIRECTIVE:\n${coherenceNote}\n` : ''}
 
-â•â•â• CREATIVE SPARKS â•â•â•
+=== CREATIVE SPARKS ===
 "${narrativeHook}"
 "${sceneDynamic1}" and "${sceneDynamic2}"
 ${storyDNA ? `Story DNA: "${storyDNA}"\n` : ''}
-â•â•â• QUALITY BAR â•â•â•
+=== QUALITY BAR ===
 ${antiFormulas.join('\n')}
 ${qualityGuide}
 
+=== NARRATIVE-DRIVEN ANSWERS (CRITICAL) ===
+Every puzzle answer must be a narrative keystone — a character name, location, date, phrase, or revelation that the player has been discovering clues about. Never use placeholder answers like "1234" or "HELLO".
+- Choose the story reveal FIRST, make that the answer, then design the puzzle around it.
+- Set each puzzle's "narrativeSignificance" to 1 sentence explaining why this answer matters.
+
+=== MULTI-PUZZLE STAGE FLOW ===
+Each stage has ${puzzlesPerStage} puzzles in puzzleIds[]. Solved SEQUENTIALLY:
+- Player opens envelope, reads introText, solves puzzle[0]
+- Solving puzzle[0] reveals midwayTexts[0] (1-2 sentence narrative snippet) then unlocks puzzle[1]
+- Solving final puzzle triggers completionText and completes the stage
+This creates cascading discovery moments within each stage.
+
 BOX ELEMENT TYPES: story_card, cipher_wheel, decoder_key, map_fragment, uv_card, torn_note, photo, sealed_envelope, combination_dial, transparency, custom
 
-PUZZLE TYPES: code (${codeLength} digits), riddle (4 options), sequence, combination (dials — solution is pipe-delimited correct values e.g. "A|X|3"), cipher (encodedText+decodedAnswer+cipherType:caesar|substitution|symbol), overlay (stack transparencies), jigsaw_word (arrange fragments)
+PUZZLE TYPES (use a diverse mix — at least 4 different types across all stages):
+- code: ${codeLength}-digit numeric code (fields: solution, codeLength)
+- riddle: 4-option multiple choice (fields: riddle, options[], correctOption, wrongFeedback)
+- sequence: order items correctly (fields: sequence[])
+- combination: set dials to values (fields: dials[], solution as pipe-delimited e.g. "A|X")
+- cipher: decode encoded text (fields: encodedText, decodedAnswer, cipherType: caesar/substitution)
+- overlay: stack transparencies (fields: overlayLayers[] element IDs, revealText)
+- jigsaw_word: arrange fragments (fields: fragments[], correctWord)
+- decay_restore: sliders restore corrupted doc (fields: decayText, decaySliders[{label,min,max,correct,tolerance}])
+- layer_align: drag glyphs to centre (fields: glyphLayers[{symbol,color,startX,startY,correctX,correctY}], alignTolerance, revealWord)
+- morse_decode: decode morse audio (fields: morsePattern e.g. "... --- ...", morseAnswer)
 
 RULES:
 - Stage 0 elements are in the box from the start
-- Each stage has a sealed_envelope that unlocks new elements
+- Each stage has a sealed_envelope that unlocks new elements when opened
 - Puzzles MUST reference requiredElements by ID
-- Use at least 3 different puzzle types
 - Design ${6 + stageCount} to ${8 + stageCount * 2} box elements total
-- Every puzzle's clue is found in the available box elements
+- Every puzzle's clue comes from available box elements
 - Content field uses simple HTML (<p>, <em>, <strong>, <br>)
+- puzzleIds must contain exactly ${puzzlesPerStage} valid puzzle IDs per stage
+- midwayTexts must have exactly ${puzzlesPerStage - 1} entries per stage (narrative reveals between puzzles)
 
-JSON STRUCTURE (return EXACTLY):
+JSON STRUCTURE (return EXACTLY this shape):
 {
   "title": "string",
-  "subtitle": "short tagline",
+  "subtitle": "short evocative tagline",
   "intro": "2-4 sentence story setup for the story sheet",
   "difficulty": "${difficulty}",
   "targetDuration": ${duration},
@@ -499,45 +568,38 @@ JSON STRUCTURE (return EXACTLY):
   "boxElements": [
     {
       "id": "elem_id", "name": "Name", "type": "story_card",
-      "icon": "ðŸ“œ", "description": "Physical description",
+      "icon": "emoji", "description": "Physical description",
       "content": "<p>HTML text on the card</p>",
-      "imagePrompt": "optional art prompt",
-      "stage": 0,
-      "usedWith": "optional element ID",
-      "revealsText": "optional reveal text"
+      "imagePrompt": "optional Imagen art prompt",
+      "stage": 0, "usedWith": "optional element ID", "revealsText": "optional"
     }
   ],
   "puzzles": [
     {
-      "id": "stage_1", "name": "Puzzle Name",
-      "type": "code|riddle|sequence|combination|cipher|overlay|jigsaw_word",
-      "description": "Instructions", "hint": "Hint text",
+      "id": "puz_1a", "name": "Puzzle Name", "type": "code",
+      "description": "Player instructions", "hint": "Hint text",
       "clueText": "Where clue is found",
+      "narrativeSignificance": "Why this answer matters to the story (required)",
       "requiredElements": ["elem_id"],
-      "solution": "1234", "codeLength": ${codeLength},
-      "riddle": "text", "options": ["A","B","C","D"], "correctOption": 0, "wrongFeedback": "text",
-      "sequence": ["a","b","c"],
-      "dials": [{"label":"X","options":["A","B","C"]}], "solution": "A",
-      "encodedText": "KHOOR", "cipherType": "caesar", "decodedAnswer": "HELLO",
-      "overlayLayers": ["elem1","elem2"], "revealText": "hidden text",
-      "fragments": ["fr1","fr2"], "correctWord": "ANSWER"
+      "solution": "1492", "codeLength": ${codeLength}
     }
   ],
   "stages": [
     {
       "id": "stage_1", "stageNumber": 1,
-      "name": "Envelope A: Name",
-      "sealColor": "#8B0000", "sealIcon": "ðŸ”®",
-      "introText": "Card text inside envelope",
+      "name": "Envelope A: Evocative Name",
+      "sealColor": "#8B0000", "sealIcon": "emoji",
+      "introText": "Narrative card text inside the envelope",
       "hint": "Stage hint",
-      "puzzleId": "stage_1",
+      "puzzleIds": ["puz_1a", "puz_1b"],
+      "midwayTexts": ["1-2 sentence narrative reveal between puzzle 1 and 2"],
       "unlocksElements": ["elem_id"],
-      "completionText": "Solved text"
+      "completionText": "Dramatic completion text"
     }
   ]
 }
 
-Only include fields relevant to each puzzle type. Return ONLY JSON.`;
+Only include fields relevant to each puzzle type. narrativeSignificance is required for every puzzle. Return ONLY valid JSON.`;
 
   const response = await askGemini(prompt, 0.85, true);
   const parsed = parseJsonResponse(response);
@@ -576,6 +638,11 @@ function validateAndFixBoxedEscape(data: EscapeRoomData, config: EscapeConfig): 
     stage.hint = stage.hint || 'Examine the available elements for clues.';
     stage.completionText = stage.completionText || 'Solved! The next envelope beckons...';
     stage.unlocksElements = stage.unlocksElements || [];
+    stage.midwayTexts = stage.midwayTexts || [];
+    // Normalise: if only puzzleId (legacy), promote to puzzleIds
+    if (!stage.puzzleIds || stage.puzzleIds.length === 0) {
+      stage.puzzleIds = stage.puzzleId ? [stage.puzzleId] : [];
+    }
   });
 
   const codeLen = config.structure.difficulty === 'casual' ? 3 : config.structure.difficulty === 'expert' ? 5 : 4;
@@ -607,16 +674,41 @@ function validateAndFixBoxedEscape(data: EscapeRoomData, config: EscapeConfig): 
     }
     if (puzzle.type === 'overlay') { puzzle.overlayLayers = puzzle.overlayLayers || []; puzzle.revealText = puzzle.revealText || 'A hidden message appears...'; }
     if (puzzle.type === 'jigsaw_word') { puzzle.fragments = puzzle.fragments || ['MISS', 'ING']; puzzle.correctWord = puzzle.correctWord || puzzle.fragments.join(''); }
+    if (puzzle.type === 'decay_restore') {
+      puzzle.decayText = puzzle.decayText || 'THE ANSWER IS HERE';
+      puzzle.decaySliders = puzzle.decaySliders || [
+        { label: 'Focus', min: 0, max: 100, correct: 60, tolerance: 12 },
+        { label: 'Contrast', min: 0, max: 100, correct: 75, tolerance: 12 },
+        { label: 'Shift', min: 0, max: 100, correct: 40, tolerance: 15 },
+      ];
+    }
+    if (puzzle.type === 'layer_align') {
+      puzzle.alignTolerance = puzzle.alignTolerance ?? 18;
+      puzzle.revealWord = puzzle.revealWord || 'REVEALED';
+      if (!puzzle.glyphLayers || puzzle.glyphLayers.length < 3) {
+        puzzle.glyphLayers = [
+          { symbol: '✦', color: 'rgba(180,120,40,0.55)', startX: -110, startY: 60, correctX: 0, correctY: 0 },
+          { symbol: '◈', color: 'rgba(80,160,200,0.55)', startX: 90, startY: -80, correctX: 0, correctY: 0 },
+          { symbol: '⬡', color: 'rgba(160,60,160,0.55)', startX: -40, startY: 120, correctX: 0, correctY: 0 },
+        ];
+      }
+    }
+    if (puzzle.type === 'morse_decode') {
+      puzzle.morsePattern = puzzle.morsePattern || '... --- ...';
+      puzzle.morseAnswer = puzzle.morseAnswer || 'SOS';
+    }
   });
 
   return data;
 }
 
 function validateBoxedEscape(data: EscapeRoomData): void {
-  const puzzleIds = new Set(data.puzzles.map(p => p.id));
+  const allPuzzleIds = new Set(data.puzzles.map(p => p.id));
   const elemIds = new Set(data.boxElements.map(e => e.id));
   for (const stage of data.stages) {
-    if (!puzzleIds.has(stage.puzzleId)) console.warn(`Stage "${stage.name}" references unknown puzzle "${stage.puzzleId}"`);
+    for (const pid of (stage.puzzleIds || [])) {
+      if (!allPuzzleIds.has(pid)) console.warn(`Stage "${stage.name}" references unknown puzzle "${pid}"`);
+    }
     for (const eid of stage.unlocksElements) {
       if (!elemIds.has(eid)) console.warn(`Stage "${stage.name}" unlocks unknown element "${eid}"`);
     }
@@ -664,7 +756,8 @@ function generateFallbackEscapeRoom(config: EscapeConfig): EscapeRoomResult {
       id: stageId, stageNumber: i, name: `Stage ${i}`,
       sealColor: SEAL_COLORS[(i - 1) % SEAL_COLORS.length], sealIcon: '🔮',
       introText: `Open envelope ${i}.`, hint: `Check Clue Card ${i}.`,
-      puzzleId: stageId, unlocksElements: [`clue_${i}`],
+      puzzleIds: [stageId], midwayTexts: [],
+      unlocksElements: [`clue_${i}`],
       completionText: i < stageCount ? 'Open the next envelope.' : 'You escaped!',
     });
     puzzles.push({
@@ -685,7 +778,7 @@ function generateFallbackEscapeRoom(config: EscapeConfig): EscapeRoomResult {
   };
 
   const htmlContent = generateEscapePreviewHtml(data);
-  const envelopes = stages.map((s, i) => ({ id: i + 1, title: s.name, puzzles: [puzzles[i]?.name || 'Puzzle'] }));
+  const envelopes = stages.map((s, i) => ({ id: i + 1, title: s.name, puzzles: (s.puzzleIds || []).map(pid => data.puzzles.find(p => p.id === pid)?.name || pid) }));
   return { title, envelopes, htmlContent, data };
 }
 

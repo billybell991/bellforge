@@ -157,5 +157,267 @@
     "apkSize": "10 KB",
     "createdAt": "2026-03-16T00:05:43.025Z",
     "clientId": "1423478b-2e6a-44dc-96c6-7134fcb74c18"
+  },
+  {
+    "id": "ebb97bef-6d39-456c-b106-112bdaeaac43",
+    "name": "The Vestige's Carriage",
+    "rating": 0,
+    "entertainmentType": "escape",
+    "config": {
+      "escapeTheme": {
+        "id": "detective",
+        "name": "Cold Case",
+        "icon": "🔎",
+        "description": "A case was closed too soon — buried evidence, conflicting alibis, one night to find the truth",
+        "tag": "POPULAR"
+      },
+      "theme": {
+        "id": "mystery",
+        "name": "Mystery / Detective",
+        "icon": "🔎",
+        "description": "Crime scenes, clues, and whodunits",
+        "color": "#ffa726"
+      },
+      "artStyle": {
+        "id": "cel_shaded",
+        "name": "Cel-Shaded / Toonish",
+        "icon": "🎨",
+        "description": "Bold outlines, flat colors, cartoon charm",
+        "recommended": true
+      },
+      "structure": {
+        "envelopeCount": 4,
+        "difficulty": "standard",
+        "duration": 45
+      },
+      "story": {
+        "title": "The Vestige's Carriage",
+        "characterName": "Quillon Shift",
+        "setting": "The 'Chronos Coach,' a meticulously preserved, decommissioned Pullman car, sits perpetually shunted onto a forgotten urban spur, its ornate interior subtly reorganizing itself each time a significant clue to the Cold Case is discovered.",
+        "description": "Investigator Quillon Shift, whose unconventional methods often lead him to discover truth by examining its stark opposite, is tasked with cracking the decades-old 'Disappearance of the Emerald Heir' from within the 'Chronos Coach'. This unique, static Pullman car mysteriously reconfigures its opulent, period-specific interior based on the prevailing theory of the crime, requiring Shift to not only deduce what happened but also to navigate a constantly shifting historical narrative, where one misstep could irrevocably lock the Coach into a false past."
+      }
+    },
+    "buildId": "dc91274a-a8e8-4f9d-8e5f-359ffe2c8173",
+    "apkSize": "49 KB",
+    "createdAt": "2026-03-16T01:05:27.289Z",
+    "clientId": "1423478b-2e6a-44dc-96c6-7134fcb74c18"
+  },
+  {
+    "id": "2c11bdcb-a0a5-4c27-97fe-59a022f507c9",
+    "name": "The Ghost Grinder",
+    "rating": 0,
+    "entertainmentType": "escape",
+    "config": {
+      "escapeTheme": {
+        "id": "heist",
+        "name": "The Heist",
+        "icon": "💎",
+        "description": "Break into the vault before security resets — crack safes, bypass lasers, decode intel",
+        "tag": "FLAGSHIP"
+      },
+      "theme": {
+        "id": "horror",
+        "name": "Horror / Supernatural",
+        "icon": "👻",
+        "description": "Dark atmospheres and spine-tingling mysteries",
+        "color": "#ff3d00"
+      },
+      "artStyle": {
+        "id": "cel_shaded",
+        "name": "Cel-Shaded / Toonish",
+        "icon": "🎨",
+        "description": "Bold outlines, flat colors, cartoon charm",
+        "recommended": true
+      },
+      "structure": {
+        "envelopeCount": 4,
+        "difficulty": "standard",
+        "duration": 45
+      },
+      "story": {
+        "title": "The Ghost Grinder",
+        "characterName": "Lysander",
+        "setting": "Aboard the Ghost Grinder, a phantom locomotive forged from the screams of the damned and the clatter of rusted chains, which perpetually navigates the misty, shadow-choked corridors between forgotten realities and the spectral plane.",
+        "description": "Lysander, a mortician-turned-spiritual-cleanser, must infiltrate the spectral carriages to retrieve fragmented souls and prevent the shroud-wraiths – malevolent entities animating the abandoned husks of the damned – from consuming them entirely. The true horror lies not in what he manages to seize, but in which cursed relics and lingering memories he must deliberately leave untouched, as each untouched item deepens the train's malevolence and threatens to claim his own spirit as its next passenger."
+      }
+    },
+    "buildId": "a10f041c-74ab-4b5b-8de3-95cdd45b530a",
+    "apkSize": "24368 KB",
+    "createdAt": "2026-03-16T21:59:01.943Z",
+    "clientId": "606b8d68-b995-4b7f-8573-a63d581a18fa"
+  },
+  {
+    "id": "c73d10bf-a8a1-4754-b7b2-fe58911ed1a0",
+    "name": "The Unwoven Case",
+    "rating": 0,
+    "entertainmentType": "escape",
+    "config": {
+      "escapeTheme": {
+        "id": "detective",
+        "name": "Cold Case",
+        "icon": "🔎",
+        "description": "A case was closed too soon — buried evidence, conflicting alibis, one night to find the truth",
+        "tag": "POPULAR"
+      },
+      "theme": {
+        "id": "mystery",
+        "name": "Mystery / Detective",
+        "icon": "🔎",
+        "description": "Crime scenes, clues, and whodunits",
+        "color": "#ffa726"
+      },
+      "artStyle": {
+        "id": "noir",
+        "name": "Noir / Black & White",
+        "icon": "🎬",
+        "description": "High contrast, dramatic shadows"
+      },
+      "structure": {
+        "envelopeCount": 4,
+        "difficulty": "standard",
+        "duration": 45
+      },
+      "story": {
+        "title": "The Unwoven Case",
+        "characterName": "Gravemark",
+        "setting": "Within the perpetually mist-shrouded Veridian Chasms, decaying districts cling to vast, dark cliffs, connected by perilous, ancient \"root-bridges\" made of petrified industrial mechanisms and forgotten infrastructure.",
+        "description": "A notorious cold case resurfaces, concerning a victim who vanished without a trace, leaving behind no body, no struggle, and no conventional evidence. Gravemark, a reclusive Aether-Scribe who reads the residual emotional inks of trauma, must decipher a crime scene that paradoxically evidences profound *absence*, realizing the solution lies beyond what ever \"existed.\""
+      }
+    },
+    "buildId": "f99bdf03-4297-4a5b-872e-bae445cb6bde",
+    "apkSize": "25451 KB",
+    "createdAt": "2026-03-17T00:49:56.926Z",
+    "clientId": "1423478b-2e6a-44dc-96c6-7134fcb74c18"
+  },
+  {
+    "id": "95e7caff-b4b1-433a-9078-75d7d84e8bcf",
+    "name": "The Maw's Inverse Grin",
+    "rating": 0,
+    "entertainmentType": "escape",
+    "config": {
+      "escapeTheme": {
+        "id": "heist",
+        "name": "The Heist",
+        "icon": "💎",
+        "description": "Break into the vault before security resets — crack safes, bypass lasers, decode intel",
+        "tag": "FLAGSHIP"
+      },
+      "theme": {
+        "id": "horror",
+        "name": "Horror / Supernatural",
+        "icon": "👻",
+        "description": "Dark atmospheres and spine-tingling mysteries",
+        "color": "#ff3d00"
+      },
+      "artStyle": {
+        "id": "cel_shaded",
+        "name": "Cel-Shaded / Toonish",
+        "icon": "🎨",
+        "description": "Bold outlines, flat colors, cartoon charm",
+        "recommended": true
+      },
+      "structure": {
+        "envelopeCount": 4,
+        "difficulty": "standard",
+        "duration": 45
+      },
+      "story": {
+        "title": "The Maw's Inverse Grin",
+        "characterName": "Calamus",
+        "setting": "The Shroud-Spine, a decaying lattice of calcified bone and sun-bleached sinew, stretches across the Anathema’s Maw, an endless, conscious void that hums with forgotten terrors.",
+        "description": "Calamus, a disgraced occultist whose every invocation manifests as its horrifying inverse, must navigate the labyrinthine Shroud-Spine to steal a primordial truth from the heart of the Anathema’s Maw – the source of the world's slow, agonizing unraveling. Each step taken, each failed spell, pulls back a veil, revealing that the true object of the 'heist' isn't an external secret, but Calamus's own monstrous, unremembered genesis, the very seed of the abyss's malevolent sentience."
+      }
+    },
+    "buildId": "0a5ca02a-9c7b-4699-8849-329b66b9e88c",
+    "apkSize": "26869 KB",
+    "createdAt": "2026-03-17T00:54:22.398Z",
+    "clientId": "1423478b-2e6a-44dc-96c6-7134fcb74c18"
+  },
+  {
+    "id": "a3187a5b-a70f-4af3-957f-ad4a18690523",
+    "name": "The Corpse-Engine’s Heartbeat",
+    "rating": 0,
+    "entertainmentType": "escape",
+    "config": {
+      "escapeTheme": {
+        "id": "heist",
+        "name": "The Heist",
+        "icon": "💎",
+        "description": "Break into the vault before security resets — crack safes, bypass lasers, decode intel",
+        "tag": "FLAGSHIP"
+      },
+      "theme": {
+        "id": "horror",
+        "name": "Horror / Supernatural",
+        "icon": "👻",
+        "description": "Dark atmospheres and spine-tingling mysteries",
+        "color": "#ff3d00"
+      },
+      "artStyle": {
+        "id": "cel_shaded",
+        "name": "Cel-Shaded / Toonish",
+        "icon": "🎨",
+        "description": "Bold outlines, flat colors, cartoon charm",
+        "recommended": true
+      },
+      "structure": {
+        "envelopeCount": 4,
+        "difficulty": "standard",
+        "duration": 45
+      },
+      "story": {
+        "title": "The Corpse-Engine’s Heartbeat",
+        "characterName": "Obadiah Threnody",
+        "setting": "The Bone-Gristle Woods, where the skeletal trees pulse with an unholy rhythm, their hollow branches grinding a perpetual, chilling dirge.",
+        "description": "Weary spiritualist Obadiah Threnody must delve into the Bone-Gristle Woods to sever the Temporal Marrow—the pulsating, living heart that dictates the Grove's agonizing, irregular time. He believes this macabre heist will appease ancient, restless entities, but the artifact is a cosmic lynchpin whose removal won't merely shift allegiances among the dead, but unravel the very fabric of corporeal reality, awakening a monstrous, timeless consciousness from beneath the clicking, bone-ridden soil."
+      }
+    },
+    "buildId": "e06069a9-370b-4567-a409-b6d01253e34a",
+    "apkSize": "38658 KB",
+    "createdAt": "2026-03-17T01:06:15.106Z",
+    "clientId": "1423478b-2e6a-44dc-96c6-7134fcb74c18"
+  },
+  {
+    "id": "a82abc3b-9a77-4ced-9789-0cf63168325a",
+    "name": "The Nocturnal Inquiry",
+    "rating": 0,
+    "entertainmentType": "escape",
+    "config": {
+      "escapeTheme": {
+        "id": "detective",
+        "name": "Cold Case",
+        "icon": "🔎",
+        "description": "A case was closed too soon — buried evidence, conflicting alibis, one night to find the truth",
+        "tag": "POPULAR"
+      },
+      "theme": {
+        "id": "mystery",
+        "name": "Mystery / Detective",
+        "icon": "🔎",
+        "description": "Crime scenes, clues, and whodunits",
+        "color": "#ffa726"
+      },
+      "artStyle": {
+        "id": "noir",
+        "name": "Noir / Black & White",
+        "icon": "🎬",
+        "description": "High contrast, dramatic shadows"
+      },
+      "structure": {
+        "envelopeCount": 4,
+        "difficulty": "standard",
+        "duration": 45
+      },
+      "story": {
+        "title": "The Nocturnal Inquiry",
+        "characterName": "Snooze de Noir",
+        "setting": "The crumbling, forgotten evidence room of the city's oldest precinct, now a mausoleum of forgotten cases, perpetually shrouded in an artificial twilight.",
+        "description": "Snooze de Noir, a consulting detective known for his uncanny ability to piece together complex cold cases, only makes breakthroughs while deeply unconscious. He's hired to unravel the decades-old disappearance of a prominent city alderman, but his dream-sleuthing might implicate a revered historical society, forcing a choice between justice and preserving a fragile civic peace."
+      }
+    },
+    "buildId": "5af217a1-0362-4c4f-8c04-64b699de3874",
+    "apkSize": "19197 KB",
+    "createdAt": "2026-03-17T07:56:04.791Z",
+    "clientId": "606b8d68-b995-4b7f-8573-a63d581a18fa"
   }
 ]

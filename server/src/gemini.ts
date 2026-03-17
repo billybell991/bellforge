@@ -256,7 +256,16 @@ MANDATORY RULES:
 Return EXACTLY this JSON (no markdown, no code fences, just raw JSON):
 {"title":"2-5 word evocative title","characterName":"single memorable protagonist name","setting":"one vivid sentence describing the location","description":"2-3 sentences about the premise and the stakes"}`;
 
-      const result = await model.generateContent(prompt);
+      // thinkingBudget: 0 disables 2.5-flash thinking mode — this is a fast creative task, not a reasoning task
+      const generatePromise = model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { thinkingConfig: { thinkingBudget: 0 } } as never,
+      });
+      // Hard 12s timeout — if Gemini is thinking too hard, fall through to STORY_BANK
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('story_timeout')), 12000)
+      );
+      const result = await Promise.race([generatePromise, timeoutPromise]);
       const text = result.response.text().trim();
       const clean = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
       const parsed = JSON.parse(clean);

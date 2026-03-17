@@ -9,6 +9,16 @@ import { EscapeStructureStep } from './steps/EscapeStructureStep';
 import { StoryStep } from './steps/StoryStep';
 import { EscapeReviewStep } from './steps/EscapeReviewStep';
 
+// Theme × atmosphere coherence — mirrors server-side THEME_COHERENCE
+const THEME_COHERENCE: Record<string, string[]> = {
+  heist:       ['mystery', 'scifi', 'cyberpunk', 'noir', 'steampunk'],
+  detective:   ['mystery', 'horror', 'cozy', 'noir', 'fantasy'],
+  haunted:     ['horror', 'mystery', 'fantasy', 'postapoc'],
+  laboratory:  ['scifi', 'horror', 'cyberpunk', 'postapoc', 'mystery'],
+  shipwreck:   ['horror', 'mystery', 'scifi', 'postapoc', 'fantasy'],
+  time_capsule:['mystery', 'cozy', 'steampunk', 'fantasy', 'scifi'],
+};
+
 interface EscapeWizardContainerProps {
   escapeTheme: EscapeThemeOption | null;
   theme: ThemeOption | null;
@@ -29,6 +39,13 @@ export function EscapeWizardContainer(props: EscapeWizardContainerProps) {
   const [currentStep, setCurrentStep] = useState<WizardStep>(allFilled ? 'review' : 'genre');
   const [surpriseGenerating, setSurpriseGenerating] = useState(false);
   const surpriseLabel = useSurpriseLabel(surpriseGenerating);
+
+  const coherenceWarning = useMemo(() => {
+    if (!props.escapeTheme || !props.theme) return null;
+    const compatible = THEME_COHERENCE[props.escapeTheme.id] ?? [];
+    if (compatible.includes(props.theme.id)) return null;
+    return `"${props.theme.name}" is an unconventional mood for ${props.escapeTheme.name}. Gemini will creatively reconcile the clash — expect a bold, dissonant result.`;
+  }, [props.escapeTheme, props.theme]);
 
   const stepIndex = ESCAPE_WIZARD_STEPS.findIndex((s) => s.id === currentStep);
 
@@ -115,7 +132,23 @@ export function EscapeWizardContainer(props: EscapeWizardContainerProps) {
           <EscapeThemeStep selected={props.escapeTheme} onSelect={(t) => selectAndAdvance(() => props.onEscapeThemeChange(t))} />
         )}
         {currentStep === 'theme' && (
-          <ThemeStep selected={props.theme} onSelect={(t) => selectAndAdvance(() => props.onThemeChange(t))} />
+          <>
+            {coherenceWarning && (
+              <div style={{
+                margin: '0 0 1rem 0',
+                padding: '0.75rem 1rem',
+                background: 'rgba(139, 69, 19, 0.15)',
+                border: '1px solid rgba(139, 69, 19, 0.4)',
+                borderRadius: '6px',
+                fontSize: '0.82rem',
+                color: '#c8956a',
+                lineHeight: 1.5,
+              }}>
+                ⚠️ {coherenceWarning}
+              </div>
+            )}
+            <ThemeStep selected={props.theme} onSelect={(t) => selectAndAdvance(() => props.onThemeChange(t))} />
+          </>
         )}
         {currentStep === 'artStyle' && (
           <ArtStyleStep selected={props.artStyle} onSelect={(a) => selectAndAdvance(() => props.onArtStyleChange(a))} />
