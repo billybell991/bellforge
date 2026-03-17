@@ -462,50 +462,5 @@
     "apkSize": "22389 KB",
     "createdAt": "2026-03-17T14:24:10.943Z",
     "clientId": "a0f626b6-9371-4234-9230-3d7528b37bde"
-  },
-  {
-    "id": "253d99db-b3ed-431c-8623-1c34813e7b6e",
-    "name": "An egyptian camel who wants to work for Google",
-    "rating": 0,
-    "entertainmentType": "comic",
-    "config": {
-      "comicGenre": {
-        "id": "origin_story",
-        "name": "Origin Story",
-        "icon": "🌟",
-        "description": "A hero is born — powers discovered, destiny revealed",
-        "tag": "FLAGSHIP"
-      },
-      "theme": {
-        "id": "horror",
-        "name": "Horror / Supernatural",
-        "icon": "👻",
-        "description": "Dark atmospheres and spine-tingling mysteries",
-        "color": "#ff3d00"
-      },
-      "artStyle": {
-        "id": "cel_shaded",
-        "name": "Cel-Shaded / Toonish",
-        "icon": "🎨",
-        "description": "Bold outlines, flat colors, cartoon charm",
-        "recommended": true
-      },
-      "structure": {
-        "pageCount": 5,
-        "panelStyle": "classic",
-        "tone": "action"
-      },
-      "story": {
-        "title": "An egyptian camel who wants to work for Google",
-        "description": "",
-        "characterName": "",
-        "setting": ""
-      }
-    },
-    "buildId": "d4b68333-73ac-47f7-8201-dd7f5c33805e",
-    "apkSize": "37206 KB",
-    "createdAt": "2026-03-17T14:32:50.969Z",
-    "thumbnail": "d4b68333-73ac-47f7-8201-dd7f5c33805e.png",
-    "clientId": "a0f626b6-9371-4234-9230-3d7528b37bde"
   }
 ]

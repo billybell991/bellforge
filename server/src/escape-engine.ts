@@ -49,8 +49,10 @@ export function generateEscapePreviewHtml(data: EscapeRoomData): string {
     theme_color: '#1a1008',
     icons: [{ src: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>', sizes: 'any', type: 'image/svg+xml' }]
   }))}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Special+Elite&display=optional">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Special+Elite&display=swap');
 
   :root {
     --bg: #0e0a06;
@@ -113,10 +115,10 @@ export function generateEscapePreviewHtml(data: EscapeRoomData): string {
   }
   .box-cover {
     width: 100%; height: 100%;
-    background: var(--box-base);
-    border: 3px solid var(--box-accent);
-    border-radius: 4px;
-    overflow: hidden;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    overflow: visible;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     position: relative;
@@ -124,7 +126,7 @@ export function generateEscapePreviewHtml(data: EscapeRoomData): string {
   .box-cover img {
     position: absolute; inset: 0;
     width: 100%; height: 100%;
-    object-fit: cover; opacity: 0.85;
+    object-fit: contain; opacity: 1;
   }
   .box-title-overlay {
     position: relative; z-index: 1;
@@ -200,24 +202,23 @@ export function generateEscapePreviewHtml(data: EscapeRoomData): string {
 
   /* ── Content Area ── */
   #content-area {
-    flex: 1; position: relative; overflow: hidden;
+    flex: 1; position: relative; overflow-y: auto;
+    display: flex; align-items: flex-start; justify-content: center;
     background: var(--tabletop);
     background-size: cover; background-position: center;
+    padding: 1.25rem 0 2rem;
   }
   #content-area::after {
-    content: ''; position: absolute; inset: 0;
+    content: ''; position: fixed; inset: 0;
     background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.5) 100%);
-    pointer-events: none;
+    pointer-events: none; z-index: 0;
   }
 
   /* ── Viewer (center document) ── */
   #viewer {
-    position: absolute; top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
     width: 90%; max-width: 640px;
-    max-height: calc(100% - 20px);
-    overflow-y: auto;
-    z-index: 5;
+    position: relative; z-index: 5;
+    flex-shrink: 0;
   }
   .card {
     background: var(--paper);
@@ -396,6 +397,57 @@ export function generateEscapePreviewHtml(data: EscapeRoomData): string {
   .cw-label { font-size: 0.75rem; color: var(--text-dim); text-align: center; margin-bottom: 4px; font-style: italic; }
   .cw-hint { font-size: 0.7rem; color: #8a6f2f; text-align: center; margin-top: 6px; }
 
+  /* ── Floating Draggable Cards ── */
+  #float-layer {
+    position: fixed;
+    top: 52px; left: 0; right: 0; bottom: 110px;
+    pointer-events: none;
+    z-index: 25;
+    overflow: hidden;
+  }
+  .float-card {
+    position: absolute;
+    width: 320px; max-height: calc(100% - 20px);
+    background: var(--paper); color: var(--ink);
+    border-radius: 4px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.75), 0 1px 0 var(--paper-dark);
+    display: flex; flex-direction: column;
+    pointer-events: all;
+    overflow: hidden;
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  }
+  .float-card-titlebar {
+    display: flex; align-items: center; gap: 7px;
+    background: #2a1f14; border-bottom: 1px solid var(--gold-dim);
+    padding: 7px 10px; cursor: grab; user-select: none; flex-shrink: 0;
+  }
+  .float-card-titlebar:active { cursor: grabbing; }
+  .float-card-icon { font-size: 1rem; flex-shrink: 0; }
+  .float-card-name {
+    flex: 1; font-family: 'Cinzel Decorative', serif; font-size: 0.6rem;
+    color: var(--gold); letter-spacing: 0.5px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .float-card-minimize {
+    width: 22px; height: 22px; border-radius: 3px;
+    background: none; border: 1px solid var(--gold-dim);
+    color: var(--gold); cursor: pointer; font-size: 14px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: background 0.15s;
+  }
+  .float-card-minimize:hover { background: rgba(201,168,76,0.2); }
+  .float-card-body {
+    overflow-y: auto; padding: 1rem 1.25rem; flex: 1;
+    font-size: 0.9rem; line-height: 1.65;
+  }
+  .float-card-body img {
+    max-width: 100%; max-height: 220px; border-radius: 4px;
+    display: block; margin: 0 auto 0.75rem;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+  }
+  .float-card-body .card { padding: 0; background: none; box-shadow: none; }
+  .float-card-body .card h2 { display: none; }
+
   /* ── Fragment Arrange ── */
   .frag-tray { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin: 1rem 0; }
   .frag {
@@ -469,6 +521,16 @@ export function generateEscapePreviewHtml(data: EscapeRoomData): string {
     border-color: var(--gold);
     background: rgba(201,168,76,0.1);
     box-shadow: 0 0 16px rgba(201,168,76,0.25);
+  }
+  .tool-item.card-open {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.1);
+    box-shadow: 0 0 12px rgba(201,168,76,0.2);
+  }
+  .tool-item.card-minimized {
+    border-color: rgba(201,168,76,0.5);
+    border-bottom: 3px solid var(--gold-dim);
+    background: rgba(201,168,76,0.05);
   }
   .tool-item .tool-icon { font-size: 1.6rem; }
   .tool-item .tool-name {
@@ -790,6 +852,7 @@ export function generateEscapePreviewHtml(data: EscapeRoomData): string {
   <div id="content-area">
     <div id="viewer"></div>
   </div>
+  <div id="float-layer"></div>
   <div id="toolbar"></div>
 </div>
 
@@ -854,7 +917,6 @@ function openBox() {
 
     renderToolbar();
     renderStagePips();
-    showStorySheet();
 
     // Slide toolbar in
     setTimeout(function() {
@@ -880,9 +942,12 @@ function renderToolbar() {
   GAME.boxElements.forEach(function(elem) {
     var div = document.createElement('div');
     div.className = 'tool-item';
+    div.setAttribute('data-elem-id', elem.id);
     if (!state.availableElements.has(elem.id)) div.className += ' locked';
-    if (state.activeElementId === elem.id) div.className += ' active';
     if (elem.type === 'sealed_envelope') div.className += ' envelope-item';
+    var cardInfo = floatState.openCards.get(elem.id);
+    if (cardInfo && !cardInfo.minimized) div.className += ' card-open';
+    else if (cardInfo && cardInfo.minimized) div.className += ' card-minimized';
 
     div.innerHTML = '<span class="tool-icon">' + elem.icon + '</span><span class="tool-name">' + escapeH(elem.name) + '</span>';
     div.onclick = function() { clickToolbarItem(elem.id); };
@@ -900,9 +965,7 @@ function clickToolbarItem(elemId) {
     return;
   }
 
-  state.activeElementId = elemId;
-  renderToolbar();
-  showElement(elem);
+  openFloatCard(elem);
 }
 
 // ── Content Display ──
@@ -963,49 +1026,235 @@ function buildCipherWheelSvg() {
   return svg;
 }
 
-function showElement(elem) {
-  var viewer = document.getElementById('viewer');
-  var html = '<div class="card">';
-  html += '<h2>' + elem.icon + ' ' + escapeH(elem.name) + '</h2>';
+// Build the inner body HTML for an element (shared by viewer cards and float cards)
+function buildElementBody(elem) {
+  var html = '';
 
   if (elem.image && elem.type !== 'cipher_wheel') {
-    html += '<div style="text-align:center;margin-bottom:1rem"><img src="' + elem.image + '" style="max-width:100%;max-height:260px;border-radius:4px;box-shadow:0 4px 16px rgba(0,0,0,0.3)"></div>';
+    html += '<div style="text-align:center;margin-bottom:0.75rem"><img src="' + elem.image + '" style="max-width:100%;max-height:220px;object-fit:contain;border-radius:4px;box-shadow:0 4px 16px rgba(0,0,0,0.3)" loading="eager"></div>';
   }
 
   html += '<div>' + (elem.content || '') + '</div>';
 
-  // Interactive cipher wheel for cipher_wheel items
+  // Interactive cipher wheel
   if (elem.type === 'cipher_wheel') {
     cwState.currentRotation = 0;
-    html += '<div class="cw-container"><svg id="cw-svg" width="300" height="300" viewBox="0 0 300 300">';
+    html += '<div class="cw-container"><svg id="cw-svg" width="280" height="280" viewBox="0 0 300 300">';
     html += buildCipherWheelSvg();
     html += '</svg></div>';
     html += '<div class="cw-alignment" id="cw-alignment">outer A &#x2192; inner A &nbsp;(shift: 0)</div>';
-    html += '<p style="font-size:0.75rem;color:#8a6f2f;text-align:center;margin-bottom:0.75rem">Drag the inner ring to align the letters</p>';
+    html += '<p style="font-size:0.75rem;color:#8a6f2f;text-align:center;margin-bottom:0.5rem">Drag the inner ring to align the letters</p>';
     var cipherPuzzle = GAME.puzzles.find(function(p) { return p.type === \'cipher\' && p.encodedText; });
     if (cipherPuzzle) {
       var enc = cipherPuzzle.encodedText || \'\';
-      html += '<div id="cw-decode-panel" data-encoded="' + escapeH(enc) + '" style="background:#2a1f14;border-radius:4px;padding:0.75rem">';
+      html += '<div id="cw-decode-panel" data-encoded="' + escapeH(enc) + '" style="background:#2a1f14;border-radius:4px;padding:0.6rem">';
       html += '<p class="cw-label">Rotate the wheel to decode:</p>';
-      html += '<div class="cipher-display" style="font-size:0.9rem;margin:0 0 4px">' + escapeH(enc) + '</div>';
-      html += '<div id="cw-decoded" class="cipher-display" style="font-size:0.9rem;margin:0;background:#3a2f24;color:#e8d4a0">' + escapeH(enc) + '</div>';
+      html += '<div class="cipher-display" style="font-size:0.85rem;margin:0 0 4px">' + escapeH(enc) + '</div>';
+      html += '<div id="cw-decoded" class="cipher-display" style="font-size:0.85rem;margin:0;background:#3a2f24;color:#e8d4a0">' + escapeH(enc) + '</div>';
       html += '</div>';
       html += '<p class="cw-hint">Once decoded, open the sealed envelope to submit your answer</p>';
     }
   }
 
-  // Check if this element is usedWith another available element
+  // usedWith combination
   if (elem.usedWith && state.availableElements.has(elem.usedWith)) {
     var partner = GAME.boxElements.find(function(e) { return e.id === elem.usedWith; });
     if (partner && elem.revealsText) {
-      html += '<div style="margin-top:1rem;padding:1rem;background:rgba(201,168,76,0.1);border:1px solid var(--gold-dim);border-radius:4px">';
-      html += '<p style="font-size:0.8rem;color:#8a6f2f;margin-bottom:0.5rem"><em>Combined with ' + partner.icon + ' ' + escapeH(partner.name) + ':</em></p>';
+      html += '<div style="margin-top:0.75rem;padding:0.75rem;background:rgba(201,168,76,0.1);border:1px solid var(--gold-dim);border-radius:4px">';
+      html += '<p style="font-size:0.75rem;color:#8a6f2f;margin-bottom:0.4rem"><em>Combined with ' + partner.icon + ' ' + escapeH(partner.name) + ':</em></p>';
       html += '<p>' + elem.revealsText + '</p></div>';
     }
   }
 
+  return html;
+}
+
+// Used only for the story sheet (stays in center viewer)
+function showElement(elem) {
+  var viewer = document.getElementById('viewer');
+  var html = '<div class="card">';
+  html += '<h2>' + elem.icon + ' ' + escapeH(elem.name) + '</h2>';
+  html += buildElementBody(elem);
   html += '</div>';
   viewer.innerHTML = html;
+}
+
+// ── Float Card System ──
+var floatState = {
+  topZ: 51,
+  openCards: new Map(), // elemId -> { dom, body, minimized }
+  drag: { active: false, elemId: null, startMX: 0, startMY: 0, startCX: 0, startCY: 0 }
+};
+
+function openFloatCard(elem) {
+  var existing = floatState.openCards.get(elem.id);
+  if (existing) {
+    existing.minimized ? restoreCard(elem.id) : bringCardToFront(elem.id);
+    return;
+  }
+
+  var layer = document.getElementById('float-layer');
+  if (!layer) return;
+
+  // Stagger position
+  var count = floatState.openCards.size;
+  var layerW = layer.offsetWidth || window.innerWidth;
+  var cardW = 320;
+  var startX = Math.max(10, Math.min(layerW - cardW - 10, (layerW - cardW) / 2 + (count * 28) - 28));
+  var startY = Math.max(10, 30 + count * 22);
+
+  var card = document.createElement('div');
+  card.className = 'float-card';
+  card.id = 'fcard-' + elem.id;
+  card.style.left = startX + 'px';
+  card.style.top = startY + 'px';
+  floatState.topZ++;
+  card.style.zIndex = String(floatState.topZ);
+
+  // Title bar
+  var titlebar = document.createElement('div');
+  titlebar.className = 'float-card-titlebar';
+  titlebar.innerHTML =
+    '<span class="float-card-icon">' + elem.icon + '</span>' +
+    '<span class="float-card-name">' + escapeH(elem.name) + '</span>' +
+    '<button class="float-card-minimize" onclick="minimizeCard(\\'' + elem.id + '\\')" title="Minimize to toolbar">\u2014</button>';
+  titlebar.addEventListener('mousedown', function(e) { floatDragStart(e, elem.id); });
+  titlebar.addEventListener('touchstart', function(e) { floatDragStart(e, elem.id); }, { passive: false });
+  card.appendChild(titlebar);
+
+  // Body
+  var body = document.createElement('div');
+  body.className = 'float-card-body';
+  body.innerHTML = buildElementBody(elem);
+  card.appendChild(body);
+
+  layer.appendChild(card);
+
+  // Bring to front on click
+  card.addEventListener('mousedown', function() { bringCardToFront(elem.id); });
+
+  // Animate in from below
+  card.style.opacity = '0';
+  card.style.transform = 'translateY(50px) scale(0.92)';
+  card.style.transition = 'opacity 0.3s, transform 0.38s cubic-bezier(0.34,1.56,0.64,1)';
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      card.style.opacity = '1';
+      card.style.transform = 'none';
+    });
+  });
+
+  floatState.openCards.set(elem.id, { dom: card, body: body, minimized: false });
+  renderToolbar();
+}
+
+function bringCardToFront(elemId) {
+  var info = floatState.openCards.get(elemId);
+  if (!info) return;
+  floatState.topZ++;
+  info.dom.style.zIndex = String(floatState.topZ);
+}
+
+function minimizeCard(elemId) {
+  var info = floatState.openCards.get(elemId);
+  if (!info || info.minimized) return;
+  info.minimized = true;
+
+  var card = info.dom;
+  var layer = document.getElementById('float-layer');
+  var toolItem = document.querySelector('[data-elem-id="' + elemId + '"]');
+
+  if (toolItem && layer) {
+    var toolRect = toolItem.getBoundingClientRect();
+    var layerRect = layer.getBoundingClientRect();
+    var curL = parseFloat(card.style.left) || 0;
+    var curT = parseFloat(card.style.top) || 0;
+    var targetX = (toolRect.left + toolRect.width / 2) - layerRect.left - 160;
+    var targetY = toolRect.top - layerRect.top;
+    var dx = targetX - curL;
+    var dy = targetY - curT;
+    card.style.transformOrigin = 'bottom center';
+    card.style.transition = 'transform 0.32s cubic-bezier(0.4,0,1,1), opacity 0.28s';
+    card.style.transform = 'translate(' + dx.toFixed(0) + 'px,' + dy.toFixed(0) + 'px) scale(0.12)';
+    card.style.opacity = '0';
+  } else {
+    card.style.transition = 'transform 0.3s, opacity 0.28s';
+    card.style.transform = 'translateY(80px) scale(0.15)';
+    card.style.opacity = '0';
+  }
+
+  setTimeout(function() { card.style.display = 'none'; renderToolbar(); }, 340);
+}
+
+function restoreCard(elemId) {
+  var info = floatState.openCards.get(elemId);
+  if (!info) return;
+  info.minimized = false;
+  var card = info.dom;
+  card.style.display = 'flex';
+  card.style.transition = 'none';
+  // Reset transform before animating back
+  card.style.transform = 'translateY(50px) scale(0.7)';
+  card.style.opacity = '0';
+  bringCardToFront(elemId);
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      card.style.transition = 'transform 0.38s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s';
+      card.style.transform = 'none';
+      card.style.opacity = '1';
+    });
+  });
+  renderToolbar();
+}
+
+function floatDragStart(event, elemId) {
+  if (event.target.classList.contains('float-card-minimize')) return;
+  event.preventDefault();
+  bringCardToFront(elemId);
+  var info = floatState.openCards.get(elemId);
+  if (!info) return;
+  var card = info.dom;
+  var clientX = event.touches ? event.touches[0].clientX : event.clientX;
+  var clientY = event.touches ? event.touches[0].clientY : event.clientY;
+  floatState.drag = {
+    active: true, elemId: elemId,
+    startMX: clientX, startMY: clientY,
+    startCX: parseFloat(card.style.left) || 0,
+    startCY: parseFloat(card.style.top) || 0
+  };
+  card.style.transition = 'none';
+  card.style.cursor = 'grabbing';
+  document.addEventListener('mousemove', floatDragMove);
+  document.addEventListener('touchmove', floatDragMove, { passive: false });
+  document.addEventListener('mouseup', floatDragEnd);
+  document.addEventListener('touchend', floatDragEnd);
+}
+
+function floatDragMove(event) {
+  var d = floatState.drag;
+  if (!d.active) return;
+  event.preventDefault();
+  var clientX = event.touches ? event.touches[0].clientX : event.clientX;
+  var clientY = event.touches ? event.touches[0].clientY : event.clientY;
+  var info = floatState.openCards.get(d.elemId);
+  if (!info) return;
+  var card = info.dom;
+  var layer = document.getElementById('float-layer');
+  var maxX = (layer ? layer.offsetWidth : window.innerWidth) - card.offsetWidth;
+  var maxY = (layer ? layer.offsetHeight : window.innerHeight) - 40;
+  card.style.left = Math.max(0, Math.min(maxX, d.startCX + clientX - d.startMX)) + 'px';
+  card.style.top = Math.max(0, Math.min(maxY, d.startCY + clientY - d.startMY)) + 'px';
+}
+
+function floatDragEnd() {
+  if (!floatState.drag.active) return;
+  var info = floatState.openCards.get(floatState.drag.elemId);
+  if (info) info.dom.style.cursor = '';
+  floatState.drag.active = false;
+  document.removeEventListener('mousemove', floatDragMove);
+  document.removeEventListener('touchmove', floatDragMove);
+  document.removeEventListener('mouseup', floatDragEnd);
+  document.removeEventListener('touchend', floatDragEnd);
 }
 
 // ── Envelopes ──
@@ -1863,7 +2112,7 @@ function cwDragEnd() {
   cwState.currentRotation = snapped;
   var inner = document.getElementById('cw-inner');
   if (!inner) return;
-  var m = (inner.getAttribute('transform') || '').match(/-?\d+\.?\d*/);
+  var m = (inner.getAttribute('transform') || '').match(/-?\\d+\\.?\\d*/);
   var from = m ? parseFloat(m[0]) : snapped;
   var t0 = performance.now();
   function animSnap(now) {

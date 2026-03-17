@@ -406,16 +406,19 @@ app.post('/api/deploy', async (req, res) => {
   }
 });
 
-// Serve the in-browser game preview
+// Serve the in-browser game preview — always prefer disk so regen takes effect without restart
 app.get('/api/preview/:buildId', (req, res) => {
-  const build = builds.get(req.params.buildId);
-  let html = build?.previewHtml || null;
-  if (!html) html = loadPreviewHtml(req.params.buildId);
+  let html = loadPreviewHtml(req.params.buildId);
+  if (!html) {
+    const build = builds.get(req.params.buildId);
+    html = build?.previewHtml || null;
+  }
   if (!html) {
     res.status(404).json({ error: 'Preview not found' });
     return;
   }
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
   res.send(html);
 });
 
