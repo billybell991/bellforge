@@ -421,8 +421,8 @@
     "clientId": "606b8d68-b995-4b7f-8573-a63d581a18fa"
   },
   {
-    "id": "ac93d83f-319f-4996-a35b-637fdd1d8656",
-    "name": "The Chronos Conundrum",
+    "id": "ba60d958-3a86-4123-a257-2bc5ccdd7a6d",
+    "name": "The Somnambulist's Labyrinth",
     "rating": 0,
     "entertainmentType": "escape",
     "config": {
@@ -449,18 +449,18 @@
       "structure": {
         "envelopeCount": 3,
         "difficulty": "standard",
-        "duration": 30
+        "duration": 15
       },
       "story": {
-        "title": "The Chronos Conundrum",
-        "characterName": "Silas Pendulum",
-        "setting": "The city of Cogsworth was a labyrinth of perpetual twilight, where every alleyway felt like a gear in a grand, unseen mechanism, its brickwork and wrought iron humming with secrets.",
-        "description": "Silas Pendulum, a disgraced former police inspector, is drawn into a cold case involving missing persons whose last known contact was with Elara Veridian, a reclusive portrait artist renowned for her unnervingly lifelike canvases. The peculiarity? Each completed investigation into a 'trapped' subject doesn't simply solve a mystery, but subtly alters the very fabric of Cogsworth's historical records, creating new, contradictory clues for the next unsolved disappearance, as if the past itself is a shifting mechanism meant to confound. If Silas fails, the city's entire history might unravel into an unsolvable paradox, and more innocents could become permanent fixtures in Elara's ominous gallery."
+        "title": "The Somnambulist's Labyrinth",
+        "characterName": "Peregrine \"Peri\" Wisp",
+        "setting": "Within the crumbling, labyrinthine corridors of the abandoned Atherton Asylum, where each dust-choked room seems to hold its own forgotten, warped chronology.",
+        "description": "Peri Wisp, a private investigator whose uncanny knack for solving cold cases only manifests when he is deep in a sleepwalking trance, is pulled into the forgotten disappearance of the asylum's final patient. The challenge isn't just deciphering the silent testament of the past, but navigating a structure where the very flow of time within each room shifts, making consistent timelines and witness statements a bewildering, dangerous puzzle to reassemble."
       }
     },
-    "buildId": "90b01f51-dcc1-4084-8fe9-5853e9511b7e",
-    "apkSize": "22389 KB",
-    "createdAt": "2026-03-17T14:24:10.943Z",
+    "buildId": "d63a2a67-906a-4a43-825d-9d4fe175b6be",
+    "apkSize": "8008 KB",
+    "createdAt": "2026-03-17T20:57:15.394Z",
     "clientId": "a0f626b6-9371-4234-9230-3d7528b37bde"
   }
 ]

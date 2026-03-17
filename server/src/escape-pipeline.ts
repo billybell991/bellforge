@@ -426,6 +426,45 @@ export async function runEscapePipeline(
   onProgress(22, 'Validating puzzle flow...', 'validation');
   validateBoxedEscape(conceptData);
 
+  // Phase 2.5: Structural QA (instant, auto-fix) + Gemini review (background, non-blocking)
+  onProgress(24, 'Running structural QA...', 'flow_qa');
+  const structIssues = [
+    ...checkAndFixElementGating(conceptData),
+    ...fixCaesarCiphers(conceptData),
+    ...checkDeadElements(conceptData),
+  ];
+  const structFixed    = structIssues.filter(i => i.fix).length;
+  const structCritical = structIssues.filter(i => i.severity === 'critical').length;
+  if (structIssues.length > 0) {
+    console.log('\n[Flow QA - Structural]');
+    for (const issue of structIssues) {
+      const lbl = issue.severity === 'critical' ? 'ERR' : issue.severity === 'warning' ? 'WRN' : 'INF';
+      console.log(`  [${lbl}] [${issue.category}] ${issue.description}`);
+      if (issue.fix) console.log("       -> Fixed: " + issue.fix);
+    }
+  } else {
+    console.log('[Flow QA] Structural: no issues found');
+  }
+  onProgress(26, structCritical > 0
+    ? `Structural QA: auto-fixed ${structFixed} issue(s) - continuing...`
+    : `Structural QA passed${structFixed > 0 ? ` (${structFixed} auto-fix)` : ''} - Gemini review running in background`,
+    'flow_qa');
+
+  // Gemini narrative review fires in background - does NOT block art generation
+  void runFlowQA(conceptData).then(flowQA => {
+    const qaCriticals = flowQA.issues.filter(i => i.severity === 'critical');
+    const qaWarnings  = flowQA.issues.filter(i => i.severity === 'warning');
+    console.log('\n[Flow QA - Gemini Narrative Review]');
+    if (flowQA.geminiScore !== undefined) console.log(`  Score: ${flowQA.geminiScore}/10`);
+    if (flowQA.geminiSummary)             console.log(`  Assessment: ${flowQA.geminiSummary}`);
+    console.log(`  Criticals: ${qaCriticals.length}  Warnings: ${qaWarnings.length}`);
+    for (const issue of flowQA.issues) {
+      const lbl = issue.severity === 'critical' ? 'ERR' : issue.severity === 'warning' ? 'WRN' : 'INF';
+      console.log(`  [${lbl}] [${issue.category}] ${issue.description}`);
+      if (issue.fix) console.log("       -> Fixed: " + issue.fix);
+    }
+    if (flowQA.issues.length === 0) console.log('  No issues found - game flow looks great!');
+  }).catch(() => { /* non-fatal */ });
   // Phase 3: Art generation
   const artStyle = config.artStyle?.name || 'dark atmospheric';
 
@@ -718,6 +757,226 @@ function validateBoxedEscape(data: EscapeRoomData): void {
       if (!elemIds.has(eid)) console.warn(`Puzzle "${puzzle.name}" requires unknown element "${eid}"`);
     }
   }
+}
+
+// ── Game Flow QA ──
+
+interface FlowIssue {
+  severity: 'critical' | 'warning' | 'info';
+  category: 'gating' | 'cipher' | 'narrative' | 'structure' | 'dead_element' | 'progression';
+  description: string;
+  fix?: string;
+}
+
+interface FlowQAResult {
+  issues: FlowIssue[];
+  autoFixed: number;
+  geminiScore?: number;
+  geminiSummary?: string;
+}
+
+/** Build a compact game summary for Gemini — strips base64 images and long HTML */
+function buildQASummary(data: EscapeRoomData): string {
+  return JSON.stringify({
+    title: data.title,
+    subtitle: data.subtitle,
+    intro: data.intro,
+    stages: data.stages.map(s => ({
+      stageNumber: s.stageNumber,
+      name: s.name,
+      introText: s.introText,
+      puzzleIds: s.puzzleIds,
+      midwayTexts: s.midwayTexts,
+      unlocksElements: s.unlocksElements,
+      completionText: s.completionText,
+    })),
+    puzzles: data.puzzles.map(p => ({
+      id: p.id,
+      name: p.name,
+      type: p.type,
+      description: p.description,
+      clueText: p.clueText,
+      narrativeSignificance: p.narrativeSignificance,
+      requiredElements: p.requiredElements,
+      solution: p.solution,
+      encodedText: p.encodedText,
+      decodedAnswer: p.decodedAnswer,
+      cipherType: p.cipherType,
+      riddle: p.riddle,
+      options: p.options,
+      correctOption: p.correctOption,
+      morsePattern: p.morsePattern,
+      morseAnswer: p.morseAnswer,
+      hint: p.hint,
+    })),
+    boxElements: data.boxElements.map(e => ({
+      id: e.id,
+      name: e.name,
+      type: e.type,
+      stage: e.stage,
+      description: e.description,
+      content: (e.content ?? '').substring(0, 300),
+    })),
+  }, null, 2);
+}
+
+/**
+ * Check that every puzzle's requiredElements are all unlocked at a stage ≤ the puzzle's stage.
+ * Auto-fixes by pulling the element forward to the required stage - 1.
+ */
+function checkAndFixElementGating(data: EscapeRoomData): FlowIssue[] {
+  const issues: FlowIssue[] = [];
+  const elemStage = new Map(data.boxElements.map(e => [e.id, e.stage ?? 0]));
+  const puzzleStageNum = new Map<string, number>();
+  data.stages.forEach(s => s.puzzleIds.forEach(pid => puzzleStageNum.set(pid, s.stageNumber)));
+
+  for (const puzzle of data.puzzles) {
+    const pStage = puzzleStageNum.get(puzzle.id) ?? 1;
+    for (const elemId of (puzzle.requiredElements ?? [])) {
+      const eStage = elemStage.get(elemId);
+      if (eStage === undefined) {
+        issues.push({
+          severity: 'critical',
+          category: 'structure',
+          description: `Puzzle "${puzzle.name}" requires element "${elemId}" which doesn't exist`,
+        });
+      } else if (eStage > pStage) {
+        const elem = data.boxElements.find(e => e.id === elemId);
+        const targetStage = Math.max(0, pStage - 1);
+        issues.push({
+          severity: 'critical',
+          category: 'gating',
+          description: `Puzzle "${puzzle.name}" (stage ${pStage}) requires "${elem?.name ?? elemId}" which only unlocks at stage ${eStage}`,
+          fix: `Moved "${elem?.name ?? elemId}" to stage ${targetStage}`,
+        });
+        if (elem) { elem.stage = targetStage; elemStage.set(elemId, targetStage); }
+      }
+    }
+  }
+  return issues;
+}
+
+/**
+ * Warn about box elements never referenced by any puzzle.
+ * Sealed envelopes are exempt (they're structural).
+ */
+function checkDeadElements(data: EscapeRoomData): FlowIssue[] {
+  const usedIds = new Set<string>();
+  for (const puzzle of data.puzzles) {
+    (puzzle.requiredElements ?? []).forEach(id => usedIds.add(id));
+    (puzzle.overlayLayers ?? []).forEach(id => usedIds.add(id));
+  }
+  return data.boxElements
+    .filter(e => e.type !== 'sealed_envelope' && !usedIds.has(e.id))
+    .map(e => ({
+      severity: 'warning' as const,
+      category: 'dead_element' as const,
+      description: `"${e.name}" (${e.id}, stage ${e.stage ?? 0}) is never used by any puzzle`,
+    }));
+}
+
+/**
+ * Verify Caesar cipher encodedText actually decodes to decodedAnswer for some shift 1-25.
+ * If it doesn't, re-encode decodedAnswer with shift 3 and flag the fix.
+ */
+function fixCaesarCiphers(data: EscapeRoomData): FlowIssue[] {
+  const fixes: FlowIssue[] = [];
+  for (const puzzle of data.puzzles) {
+    if (puzzle.type !== 'cipher' || puzzle.cipherType !== 'caesar') continue;
+    if (!puzzle.encodedText || !puzzle.decodedAnswer) continue;
+
+    const encAlpha = puzzle.encodedText.toUpperCase().replace(/[^A-Z]/g, '');
+    const decAlpha = puzzle.decodedAnswer.toUpperCase().replace(/[^A-Z]/g, '');
+    if (encAlpha.length === 0 || decAlpha.length === 0) continue;
+
+    let valid = false;
+    for (let s = 1; s <= 25; s++) {
+      const candidate = encAlpha.split('').map(c =>
+        String.fromCharCode((c.charCodeAt(0) - 65 - s + 26) % 26 + 65)
+      ).join('');
+      if (candidate === decAlpha) { valid = true; break; }
+    }
+    if (valid) continue;
+
+    // Re-encode decodedAnswer with shift 3 (classic Caesar)
+    const shift = 3;
+    const newEncoded = puzzle.decodedAnswer.toUpperCase().split('').map(c =>
+      /[A-Z]/.test(c) ? String.fromCharCode((c.charCodeAt(0) - 65 + shift) % 26 + 65) : c
+    ).join('');
+
+    fixes.push({
+      severity: 'warning',
+      category: 'cipher',
+      description: `Caesar mismatch in "${puzzle.name}": "${puzzle.encodedText}" doesn't decode to "${puzzle.decodedAnswer}"`,
+      fix: `Re-encoded with shift ${shift}: "${newEncoded}"`,
+    });
+    puzzle.encodedText = newEncoded;
+  }
+  return fixes;
+}
+
+/**
+ * Full game flow QA: structural checks (instant + auto-fix) + Gemini narrative review.
+ */
+async function runFlowQA(data: EscapeRoomData): Promise<FlowQAResult> {
+  const issues: FlowIssue[] = [];
+
+  // Structural checks (programmatic, no AI)
+  issues.push(...checkAndFixElementGating(data));
+  issues.push(...fixCaesarCiphers(data));
+  issues.push(...checkDeadElements(data));
+
+  const autoFixed = issues.filter(i => i.fix).length;
+
+  // Gemini narrative review
+  const summary = buildQASummary(data);
+  const qaPrompt = `You are a QA analyst for boxed escape room games (think Exit: The Game, Unlock!). Review this game structure and identify real problems that would confuse or frustrate a player.
+
+GAME STRUCTURE:
+${summary}
+
+Analyze ALL of the following:
+1. GATING — Can the player access every puzzle's requiredElements before they reach that puzzle? Element stage must be <= puzzle stage.
+2. CLUE LOGIC — Does each puzzle's clueText and description actually guide the player toward using the listed requiredElements to find the solution?
+3. NARRATIVE COHERENCE — Do introTexts, midwayTexts, completionTexts, and narrativeSignificance fields tell a satisfying connected story arc? Are answers (solution/decodedAnswer) narratively motivated?
+4. CIPHER VALIDITY — For cipher puzzles: does the encodedText logically encode the decodedAnswer? For riddle puzzles: is the correctOption defensible based on the riddle text?
+5. PROGRESSION — Does difficulty and narrative tension escalate across the stages?
+
+Return ONLY valid JSON in exactly this shape (no markdown, no extra text):
+{
+  "score": 7,
+  "summary": "2-3 sentence overall assessment of play quality",
+  "issues": [
+    { "severity": "critical", "category": "gating", "description": "specific problem", "affected": "puzzle_or_element_id" }
+  ]
+}
+
+Only flag real, substantive problems. Skip trivial style observations. severity must be "critical", "warning", or "info".`;
+
+  const geminiRaw = await askGemini(qaPrompt, 0.2, true, 50000);
+  type GeminiQA = { score?: number; summary?: string; issues?: { severity?: string; category?: string; description?: string; affected?: string }[] };
+  const geminiParsed = parseJsonResponse(geminiRaw) as GeminiQA | null;
+
+  let geminiScore: number | undefined;
+  let geminiSummary: string | undefined;
+
+  if (geminiParsed) {
+    geminiScore = typeof geminiParsed.score === 'number' ? geminiParsed.score : undefined;
+    geminiSummary = typeof geminiParsed.summary === 'string' ? geminiParsed.summary : undefined;
+    if (Array.isArray(geminiParsed.issues)) {
+      for (const gi of geminiParsed.issues) {
+        const sev = gi.severity === 'critical' ? 'critical' : gi.severity === 'warning' ? 'warning' : 'info';
+        const cat = (['gating', 'cipher', 'narrative', 'structure', 'dead_element', 'progression'].includes(gi.category ?? '') ? gi.category : 'narrative') as FlowIssue['category'];
+        issues.push({
+          severity: sev as FlowIssue['severity'],
+          category: cat,
+          description: gi.affected ? `[${gi.affected}] ${gi.description}` : (gi.description ?? ''),
+        });
+      }
+    }
+  }
+
+  return { issues, autoFixed, geminiScore, geminiSummary };
 }
 
 // ── Fallback ──

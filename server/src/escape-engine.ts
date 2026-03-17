@@ -118,15 +118,15 @@ export function generateEscapePreviewHtml(data: EscapeRoomData): string {
     background: transparent;
     border: none;
     border-radius: 0;
-    overflow: visible;
+    overflow: hidden;
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
     position: relative;
   }
   .box-cover img {
-    position: absolute; inset: 0;
-    width: 100%; height: 100%;
-    object-fit: contain; opacity: 1;
+    position: absolute; inset: -2px;
+    width: calc(100% + 4px); height: calc(100% + 4px);
+    object-fit: cover; opacity: 1;
   }
   .box-title-overlay {
     position: relative; z-index: 1;
@@ -403,11 +403,12 @@ export function generateEscapePreviewHtml(data: EscapeRoomData): string {
     top: 52px; left: 0; right: 0; bottom: 110px;
     pointer-events: none;
     z-index: 25;
-    overflow: hidden;
+    overflow: visible;
   }
   .float-card {
     position: absolute;
-    width: 320px; max-height: calc(100% - 20px);
+    width: clamp(280px, 88vw, 340px);
+    max-height: calc(100vh - 200px);
     background: var(--paper); color: var(--ink);
     border-radius: 4px;
     box-shadow: 0 12px 40px rgba(0,0,0,0.75), 0 1px 0 var(--paper-dark);
@@ -415,6 +416,14 @@ export function generateEscapePreviewHtml(data: EscapeRoomData): string {
     pointer-events: all;
     overflow: hidden;
     background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  }
+  @media (min-width: 900px) {
+    .float-card { width: 360px; }
+  }
+  @media (min-width: 1400px) {
+    .float-card { width: 400px; }
+    .puzzle-panel { max-width: 680px; }
+    #viewer { max-width: 800px; }
   }
   .float-card-titlebar {
     display: flex; align-items: center; gap: 7px;
@@ -539,7 +548,7 @@ export function generateEscapePreviewHtml(data: EscapeRoomData): string {
     max-width: 72px; overflow: hidden;
     text-overflow: ellipsis; white-space: nowrap;
   }
-  .tool-item.locked { opacity: 0.25; pointer-events: none; }
+  .tool-item.locked { opacity: 0.25; cursor: not-allowed; }
   .tool-item.envelope-item .tool-icon { position: relative; }
 
   /* ── Toast ── */
@@ -879,9 +888,11 @@ const state = {
   started: false,
   currentStage: 0,          // 0 = not started, 1..N = current stage
   solvedStages: new Set(),
+  openedStages: new Set(),   // stages that have been opened (envelope clicked)
   solvedPuzzles: new Set(),  // individual puzzle IDs solved
   availableElements: new Set(), // IDs of elements player can access
   activeElementId: null,     // which toolbar element is selected/viewing
+  stageElemId: null,         // elem ID of envelope whose float card shows stage content
   startTime: 0,
   timerInterval: null,
 };
@@ -908,12 +919,17 @@ function openBox() {
     document.getElementById('tabletop').style.display = 'none';
     document.getElementById('game-area').classList.add('active');
 
-    // Reveal stage 0 elements
+    // Reveal stage 0 elements (non-envelope items with stage 0 or undefined)
     GAME.boxElements.forEach(function(elem) {
+      if (elem.type === 'sealed_envelope') return; // envelopes gated by handleEnvelope
       if (elem.stage === 0 || elem.stage === undefined) {
         state.availableElements.add(elem.id);
       }
     });
+    // First envelope (lowest stage number) is always available
+    var envelopes = GAME.boxElements.filter(function(e) { return e.type === 'sealed_envelope'; });
+    envelopes.sort(function(a, b) { return (a.stage || 0) - (b.stage || 0); });
+    if (envelopes.length > 0) state.availableElements.add(envelopes[0].id);
 
     renderToolbar();
     renderStagePips();
@@ -956,9 +972,21 @@ function renderToolbar() {
 }
 
 function clickToolbarItem(elemId) {
-  if (!state.availableElements.has(elemId)) return;
   var elem = GAME.boxElements.find(function(e) { return e.id === elemId; });
   if (!elem) return;
+  if (!state.availableElements.has(elemId)) {
+    var currentStage = GAME.stages.find(function(s) { return s.stageNumber === state.currentStage; });
+    var stageName = currentStage ? currentStage.name : 'the current puzzle';
+    toast('🔒 Solve ' + stageName + ' first to unlock this item.');
+    return;
+  }
+
+  // If there's already a float card for this elem, just focus/restore it
+  var existing = floatState.openCards.get(elem.id);
+  if (existing) {
+    existing.minimized ? restoreCard(elem.id) : bringCardToFront(elem.id);
+    return;
+  }
 
   if (elem.type === 'sealed_envelope') {
     handleEnvelope(elem);
@@ -1096,12 +1124,21 @@ function openFloatCard(elem) {
   var layer = document.getElementById('float-layer');
   if (!layer) return;
 
-  // Stagger position
+  // Stagger position — responsive: spread cards across available width
   var count = floatState.openCards.size;
-  var layerW = layer.offsetWidth || window.innerWidth;
-  var cardW = 320;
-  var startX = Math.max(10, Math.min(layerW - cardW - 10, (layerW - cardW) / 2 + (count * 28) - 28));
-  var startY = Math.max(10, 30 + count * 22);
+  var vw = window.innerWidth;
+  var vh = window.innerHeight;
+  var cardW = vw >= 1400 ? 400 : vw >= 900 ? 360 : Math.min(340, Math.floor(vw * 0.88));
+  var cardH = Math.min(600, vh - 200);
+  // On wide screens, fan cards across; on narrow screens stack near top-left
+  var cols = vw >= 1200 ? 3 : vw >= 800 ? 2 : 1;
+  var col = count % cols;
+  var row = Math.floor(count / cols);
+  var gutter = 12;
+  var totalW = cols * cardW + (cols - 1) * gutter;
+  var originX = Math.max(gutter, Math.floor((vw - totalW) / 2));
+  var startX = originX + col * (cardW + gutter);
+  var startY = Math.max(10, 30 + row * Math.min(cardH + gutter, 240));
 
   var card = document.createElement('div');
   card.className = 'float-card';
@@ -1240,8 +1277,8 @@ function floatDragMove(event) {
   if (!info) return;
   var card = info.dom;
   var layer = document.getElementById('float-layer');
-  var maxX = (layer ? layer.offsetWidth : window.innerWidth) - card.offsetWidth;
-  var maxY = (layer ? layer.offsetHeight : window.innerHeight) - 40;
+  var maxX = window.innerWidth - card.offsetWidth - 4;
+  var maxY = window.innerHeight - 110 - 40;  // leave room for toolbar
   card.style.left = Math.max(0, Math.min(maxX, d.startCX + clientX - d.startMX)) + 'px';
   card.style.top = Math.max(0, Math.min(maxY, d.startCY + clientY - d.startMY)) + 'px';
 }
@@ -1259,16 +1296,17 @@ function floatDragEnd() {
 
 // ── Envelopes ──
 function handleEnvelope(elem) {
-  // Find which stage this envelope belongs to
-  // Envelope with stage=N-1 is the trigger for stageNumber N
-  var stage = GAME.stages.find(function(s) { return s.stageNumber === (elem.stage || 0) + 1; })
-    || GAME.stages.find(function(s) { return s.unlocksElements && s.unlocksElements.indexOf(elem.id) >= 0; })
-    || GAME.stages[state.currentStage - 1];
+  // Find which stage this envelope belongs to — derive from elem.stage
+  // elem.stage = which stage makes this envelope available (0-based open-box or N = stage N unlocks it)
+  // The stage this envelope OPENS has stageNumber = elem.stage + 1
+  var stageNum = (typeof elem.stage === 'number' ? elem.stage : 0) + 1;
+  var stage = GAME.stages.find(function(s) { return s.stageNumber === stageNum; })
+    || GAME.stages.find(function(s) { return s.unlocksElements && s.unlocksElements.indexOf(elem.id) >= 0; });
 
   if (!stage) return;
 
   if (state.solvedStages.has(stage.id)) {
-    toast('This envelope has already been opened.');
+    toast('This envelope has already been solved.');
     return;
   }
 
@@ -1279,13 +1317,56 @@ function handleEnvelope(elem) {
     return;
   }
 
-  // Show the stage card + puzzle
+  state.stageElemId = elem.id;
+
+  // If already opened (float card existed before), just reopen stage content
+  if (state.openedStages.has(stage.id)) {
+    openFloatCard(elem);
+    showStageCard(stage);
+    return;
+  }
+
+  // First time: show sealed envelope presentation — player must break the seal
+  openFloatCard(elem);
+  var sealedHtml = '<div style="text-align:center;padding:1.5rem 1rem">' +
+    '<div style="width:80px;height:80px;border-radius:50%;background:' + (stage.sealColor || '#8B0000') + ';display:inline-flex;align-items:center;justify-content:center;font-size:2.5rem;box-shadow:0 4px 16px rgba(0,0,0,0.6),inset 0 1px 2px rgba(255,255,255,0.15);margin-bottom:1rem">' + (stage.sealIcon || '🔮') + '</div>' +
+    '<h3 style="font-family:\\'Cinzel Decorative\\',serif;font-size:0.9rem;color:#2a1f14;margin-bottom:0.5rem">' + escapeH(stage.name) + '</h3>' +
+    '<p style="font-size:0.85rem;color:#5a3e28;font-style:italic;margin-bottom:1.5rem">This envelope is sealed. Once opened, there is no going back.</p>' +
+    '<button class="puzzle-submit" style="background:#8B0000" onclick="breakSeal(\\'' + escapeH(stage.id) + '\\',\\'' + escapeH(elem.id) + '\\')">🔓 Break the Seal</button>' +
+    '</div>';
+  var info = floatState.openCards.get(elem.id);
+  if (info) info.body.innerHTML = sealedHtml;
+}
+
+function breakSeal(stageId, elemId) {
+  var stage = GAME.stages.find(function(s) { return s.id === stageId; });
+  var elem  = GAME.boxElements.find(function(e) { return e.id === elemId; });
+  if (!stage || !elem) return;
+  state.openedStages.add(stage.id);
+  state.stageElemId = elemId;
   showStageCard(stage);
 }
 
-function showStageCard(stage, fromMidway) {
-  var viewer = document.getElementById('viewer');
+// ── Stage Content Routing ──
+// Stage content (envelope cards) lives in a float card, not the viewer.
+function updateStageContainer(html, animate) {
+  if (state.stageElemId) {
+    var info = floatState.openCards.get(state.stageElemId);
+    if (info) {
+      info.body.innerHTML = html;
+      if (!info.minimized) bringCardToFront(state.stageElemId);
+      if (animate) {
+        var el = info.body.firstElementChild;
+        if (el) { el.style.opacity = '0'; requestAnimationFrame(function() { el.style.transition = 'opacity 0.4s'; el.style.opacity = '1'; }); }
+      }
+      return;
+    }
+  }
+  // Fallback to viewer if no float card (shouldn't normally happen)
+  document.getElementById('viewer').innerHTML = html;
+}
 
+function showStageCard(stage, fromMidway) {
   // Unlock the elements for this stage
   if (stage.unlocksElements) {
     stage.unlocksElements.forEach(function(eid) {
@@ -1343,11 +1424,12 @@ function showStageCard(stage, fromMidway) {
   }
 
   html += '</div>';
-  viewer.innerHTML = html;
+  updateStageContainer(html);
 
   // Trigger typewriter reveal for intro text
-  if (!fromMidway) {
-    var introEl = viewer.querySelector('#stage-intro-text');
+  if (!fromMidway && state.stageElemId) {
+    var info = floatState.openCards.get(state.stageElemId);
+    var introEl = info ? info.body.querySelector('#stage-intro-text') : null;
     if (introEl) revealText(introEl);
   }
 }
@@ -1934,11 +2016,11 @@ function solvePuzzle(puzzleId) {
     state.solvedStages.add(stage.id);
     sealShatter();
 
-    var viewer = document.getElementById('viewer');
     var html = '<div class="card"><h2>✅ ' + escapeH(stage.name) + ' — Complete!</h2>';
     html += '<div id="completion-text" data-reveal="true">' + stage.completionText + '</div></div>';
-    viewer.innerHTML = html;
-    var completionEl = viewer.querySelector('#completion-text');
+    updateStageContainer(html);
+    var stageInfo = state.stageElemId ? floatState.openCards.get(state.stageElemId) : null;
+    var completionEl = stageInfo ? stageInfo.body.querySelector('#completion-text') : null;
     if (completionEl) revealText(completionEl);
 
     toast('🎉 ' + stage.name + ' complete!');
@@ -1946,13 +2028,22 @@ function solvePuzzle(puzzleId) {
     // Advance to next stage
     var nextStage = GAME.stages.find(function(s) { return s.stageNumber === stage.stageNumber + 1; });
     if (nextStage) { state.currentStage = nextStage.stageNumber; }
+    // Reset stageElemId so next envelope gets its own float card
+    state.stageElemId = null;
 
-    // Unlock elements for next stage
+    // Unlock elements for next stage (stage-numbered items) + next envelope
     GAME.boxElements.forEach(function(elem) {
       if (elem.stage === stage.stageNumber && !state.availableElements.has(elem.id)) {
         state.availableElements.add(elem.id);
       }
     });
+    // Also make the next stage's envelope available
+    if (nextStage) {
+      var nextEnvelope = GAME.boxElements.find(function(e) {
+        return e.type === 'sealed_envelope' && !state.availableElements.has(e.id);
+      });
+      if (nextEnvelope) state.availableElements.add(nextEnvelope.id);
+    }
 
     renderToolbar();
     renderStagePips();
@@ -1963,7 +2054,6 @@ function solvePuzzle(puzzleId) {
   } else {
     // Mid-stage puzzle solved — show midway narrative reveal then next puzzle
     var midwayText = (stage.midwayTexts || [])[puzzleIndex] || '';
-    var viewer = document.getElementById('viewer');
     var html = '<div class="card">';
     html += '<h2>' + stage.sealIcon + ' ' + escapeH(stage.name) + '</h2>';
     if (midwayText) {
@@ -1971,9 +2061,9 @@ function solvePuzzle(puzzleId) {
     }
     html += '<div style="text-align:center;margin-top:1rem"><button class="puzzle-submit" onclick="showStageCard(GAME.stages.find(function(s){return s.id===\\'' + stage.id + '\\';}),true)">Continue →</button></div>';
     html += '</div>';
-    viewer.innerHTML = html;
-
-    var midwayEl = viewer.querySelector('#midway-reveal');
+    updateStageContainer(html);
+    var midwayInfo = state.stageElemId ? floatState.openCards.get(state.stageElemId) : null;
+    var midwayEl = midwayInfo ? midwayInfo.body.querySelector('#midway-reveal') : null;
     if (midwayEl) revealText(midwayEl);
 
     toast('✓ Part ' + (puzzleIndex + 1) + ' solved — a new truth surfaces...');
