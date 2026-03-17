@@ -383,6 +383,19 @@ export function generateEscapePreviewHtml(data: EscapeRoomData): string {
     text-align: center; letter-spacing: 2px;
   }
 
+  /* ── Interactive Cipher Wheel ── */
+  .cw-container { text-align: center; margin: 1rem 0; }
+  .cw-container svg { touch-action: none; user-select: none; display: inline-block; cursor: grab; }
+  .cw-container svg:active { cursor: grabbing; }
+  .cw-alignment {
+    text-align: center; font-size: 0.9rem;
+    font-family: 'Special Elite', monospace;
+    color: var(--gold); min-height: 1.5rem; letter-spacing: 1px;
+    margin: 0.25rem 0;
+  }
+  .cw-label { font-size: 0.75rem; color: var(--text-dim); text-align: center; margin-bottom: 4px; font-style: italic; }
+  .cw-hint { font-size: 0.7rem; color: #8a6f2f; text-align: center; margin-top: 6px; }
+
   /* ── Fragment Arrange ── */
   .frag-tray { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin: 1rem 0; }
   .frag {
@@ -909,16 +922,77 @@ function showIntro() {
   viewer.innerHTML = '<div class="card"><h2>' + escapeH(GAME.title) + '</h2>' + GAME.intro + '</div>';
 }
 
+function buildCipherWheelSvg() {
+  var LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  var N = 26;
+  var DEG = 360 / N;
+  var CX = 150, CY = 150, outerR = 122, innerR = 82;
+  var svg = '';
+  // Outer bezel
+  svg += '<circle cx="150" cy="150" r="148" fill="#1a1008" stroke="#c9a84c" stroke-width="3"/>';
+  svg += '<circle cx="150" cy="150" r="136" fill="none" stroke="#8a6f2f" stroke-width="0.5" stroke-dasharray="3,5"/>';
+  // Inner disk background
+  svg += '<circle cx="150" cy="150" r="97" fill="#0e0a06" stroke="#8a6f2f" stroke-width="1.5"/>';
+  // Outer letters + tick marks (fixed)
+  for (var i = 0; i < N; i++) {
+    var ang = (i * DEG - 90) * Math.PI / 180;
+    var ox = (CX + outerR * Math.cos(ang)).toFixed(1);
+    var oy = (CY + outerR * Math.sin(ang)).toFixed(1);
+    var t1x = (CX + 135 * Math.cos(ang)).toFixed(1);
+    var t1y = (CY + 135 * Math.sin(ang)).toFixed(1);
+    var t2x = (CX + 143 * Math.cos(ang)).toFixed(1);
+    var t2y = (CY + 143 * Math.sin(ang)).toFixed(1);
+    svg += '<text x="' + ox + '" y="' + oy + '" dy="0.35em" text-anchor="middle" font-size="13" fill="#c9a84c" font-family="monospace" font-weight="bold">' + LETTERS[i] + '</text>';
+    svg += '<line x1="' + t1x + '" y1="' + t1y + '" x2="' + t2x + '" y2="' + t2y + '" stroke="#8a6f2f" stroke-width="1"/>';
+  }
+  // Inner rotatable ring (letters at innerR)
+  var innerContent = '<circle cx="150" cy="150" r="96" fill="transparent"/>';
+  for (var j = 0; j < N; j++) {
+    var jang = (j * DEG - 90) * Math.PI / 180;
+    var ix = (CX + innerR * Math.cos(jang)).toFixed(1);
+    var iy = (CY + innerR * Math.sin(jang)).toFixed(1);
+    innerContent += '<text x="' + ix + '" y="' + iy + '" dy="0.35em" text-anchor="middle" font-size="11" fill="#e8e0d4" font-family="monospace">' + LETTERS[j] + '</text>';
+  }
+  svg += '<g id="cw-inner" onmousedown="cwDragStart(event)" ontouchstart="cwDragStart(event)">' + innerContent + '</g>';
+  // Center hub
+  svg += '<circle cx="150" cy="150" r="38" fill="#14100e" stroke="#c9a84c" stroke-width="2"/>';
+  svg += '<text x="150" y="143" dy="0.35em" text-anchor="middle" fill="#8a6f2f" font-size="9" font-family="monospace" letter-spacing="1">SHIFT</text>';
+  svg += '<text id="cw-shift-val" x="150" y="161" dy="0.35em" text-anchor="middle" fill="#c9a84c" font-size="22" font-weight="bold" font-family="monospace">0</text>';
+  // Indicator arrow at 12 o\'clock
+  svg += '<polygon points="150,1 144,14 156,14" fill="#c9a84c"/>';
+  return svg;
+}
+
 function showElement(elem) {
   var viewer = document.getElementById('viewer');
   var html = '<div class="card">';
   html += '<h2>' + elem.icon + ' ' + escapeH(elem.name) + '</h2>';
 
-  if (elem.image) {
-    html += '<div style="text-align:center;margin-bottom:1rem"><img src="' + elem.image + '" style="max-width:100%;max-height:300px;border-radius:4px;box-shadow:0 4px 16px rgba(0,0,0,0.3)"></div>';
+  if (elem.image && elem.type !== 'cipher_wheel') {
+    html += '<div style="text-align:center;margin-bottom:1rem"><img src="' + elem.image + '" style="max-width:100%;max-height:260px;border-radius:4px;box-shadow:0 4px 16px rgba(0,0,0,0.3)"></div>';
   }
 
   html += '<div>' + (elem.content || '') + '</div>';
+
+  // Interactive cipher wheel for cipher_wheel items
+  if (elem.type === 'cipher_wheel') {
+    cwState.currentRotation = 0;
+    html += '<div class="cw-container"><svg id="cw-svg" width="300" height="300" viewBox="0 0 300 300">';
+    html += buildCipherWheelSvg();
+    html += '</svg></div>';
+    html += '<div class="cw-alignment" id="cw-alignment">outer A &#x2192; inner A &nbsp;(shift: 0)</div>';
+    html += '<p style="font-size:0.75rem;color:#8a6f2f;text-align:center;margin-bottom:0.75rem">Drag the inner ring to align the letters</p>';
+    var cipherPuzzle = GAME.puzzles.find(function(p) { return p.type === \'cipher\' && p.encodedText; });
+    if (cipherPuzzle) {
+      var enc = cipherPuzzle.encodedText || \'\';
+      html += '<div id="cw-decode-panel" data-encoded="' + escapeH(enc) + '" style="background:#2a1f14;border-radius:4px;padding:0.75rem">';
+      html += '<p class="cw-label">Rotate the wheel to decode:</p>';
+      html += '<div class="cipher-display" style="font-size:0.9rem;margin:0 0 4px">' + escapeH(enc) + '</div>';
+      html += '<div id="cw-decoded" class="cipher-display" style="font-size:0.9rem;margin:0;background:#3a2f24;color:#e8d4a0">' + escapeH(enc) + '</div>';
+      html += '</div>';
+      html += '<p class="cw-hint">Once decoded, open the sealed envelope to submit your answer</p>';
+    }
+  }
 
   // Check if this element is usedWith another available element
   if (elem.usedWith && state.availableElements.has(elem.usedWith)) {
@@ -1734,6 +1808,95 @@ function escapeH(s) {
   var d = document.createElement('div');
   d.textContent = s || '';
   return d.innerHTML;
+}
+
+// ── Cipher Wheel Drag ──
+var cwState = { dragging: false, startMouseAngle: 0, startRotation: 0, currentRotation: 0 };
+
+function cwGetAngle(event) {
+  var svg = document.getElementById('cw-svg');
+  if (!svg) return 0;
+  var rect = svg.getBoundingClientRect();
+  var scaleX = rect.width / 300;
+  var scaleY = rect.height / 300;
+  var clientX = event.touches ? event.touches[0].clientX : event.clientX;
+  var clientY = event.touches ? event.touches[0].clientY : event.clientY;
+  var x = (clientX - rect.left) / scaleX - 150;
+  var y = (clientY - rect.top) / scaleY - 150;
+  return Math.atan2(y, x) * 180 / Math.PI;
+}
+
+function cwDragStart(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  cwState.dragging = true;
+  cwState.startMouseAngle = cwGetAngle(event);
+  cwState.startRotation = cwState.currentRotation;
+  document.addEventListener('mousemove', cwDragMove);
+  document.addEventListener('touchmove', cwDragMove, { passive: false });
+  document.addEventListener('mouseup', cwDragEnd);
+  document.addEventListener('touchend', cwDragEnd);
+}
+
+function cwDragMove(event) {
+  if (!cwState.dragging) return;
+  event.preventDefault();
+  var angle = cwGetAngle(event);
+  var delta = angle - cwState.startMouseAngle;
+  while (delta > 180) delta -= 360;
+  while (delta < -180) delta += 360;
+  cwState.currentRotation = cwState.startRotation + delta;
+  var inner = document.getElementById('cw-inner');
+  if (inner) inner.setAttribute('transform', 'rotate(' + cwState.currentRotation.toFixed(2) + ',150,150)');
+  cwUpdateDisplay(cwState.currentRotation);
+}
+
+function cwDragEnd() {
+  if (!cwState.dragging) return;
+  cwState.dragging = false;
+  document.removeEventListener('mousemove', cwDragMove);
+  document.removeEventListener('touchmove', cwDragMove);
+  document.removeEventListener('mouseup', cwDragEnd);
+  document.removeEventListener('touchend', cwDragEnd);
+  var DEG_PER_LETTER = 360 / 26;
+  var snapped = Math.round(cwState.currentRotation / DEG_PER_LETTER) * DEG_PER_LETTER;
+  cwState.currentRotation = snapped;
+  var inner = document.getElementById('cw-inner');
+  if (!inner) return;
+  var m = (inner.getAttribute('transform') || '').match(/-?\d+\.?\d*/);
+  var from = m ? parseFloat(m[0]) : snapped;
+  var t0 = performance.now();
+  function animSnap(now) {
+    var t = Math.min(1, (now - t0) / 160);
+    var ease = 1 - Math.pow(1 - t, 3);
+    var cur = from + (snapped - from) * ease;
+    inner.setAttribute('transform', 'rotate(' + cur.toFixed(2) + ',150,150)');
+    if (t < 1) { requestAnimationFrame(animSnap); }
+  }
+  requestAnimationFrame(animSnap);
+  cwUpdateDisplay(snapped);
+}
+
+function cwUpdateDisplay(rotation) {
+  var LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  var DEG_PER_LETTER = 360 / 26;
+  // k = encode shift: rotating inner ring counterclockwise by k steps brings inner LETTERS[k] under outer A
+  var k = (Math.round(-rotation / DEG_PER_LETTER) % 26 + 26) % 26;
+  var shiftEl = document.getElementById('cw-shift-val');
+  if (shiftEl) shiftEl.textContent = String(k);
+  var alignEl = document.getElementById('cw-alignment');
+  if (alignEl) alignEl.textContent = 'outer A \u2192 inner ' + LETTERS[k] + '\u00a0\u00a0(shift: ' + k + ')';
+  var panel = document.getElementById('cw-decode-panel');
+  var decodedEl = document.getElementById('cw-decoded');
+  if (panel && decodedEl) {
+    var raw = panel.getAttribute('data-encoded') || '';
+    var decoded = raw.split('').map(function(ch) {
+      if (ch >= 'A' && ch <= 'Z') return LETTERS[((ch.charCodeAt(0) - 65 - k) % 26 + 26) % 26];
+      if (ch >= 'a' && ch <= 'z') return LETTERS[((ch.charCodeAt(0) - 97 - k) % 26 + 26) % 26].toLowerCase();
+      return ch;
+    }).join('');
+    decodedEl.textContent = decoded;
+  }
 }
 
 // ── Start ──

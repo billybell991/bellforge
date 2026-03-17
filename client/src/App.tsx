@@ -707,7 +707,7 @@ export default function App() {
     }
     setBuildId(entry.buildId);
     setApkInfo({ path: '', size: entry.apkSize });
-    setPreviewUrl(`/api/preview/${entry.buildId}`);
+    setPreviewUrl(`/api/preview/${entry.buildId}?t=${Date.now()}`);
     setShowLibrary(false);
     setPage('preview');
   }, []);
