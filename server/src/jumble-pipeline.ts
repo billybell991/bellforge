@@ -1,4 +1,4 @@
-// ── Jumble Pipeline ──
+﻿// â”€â”€ Jumble Pipeline â”€â”€
 // Generates a self-contained HTML "newspaper jumble" puzzle:
 // 4-6 scrambled words, circled letters form a final punchline answer,
 // plus a newspaper-style cartoon illustration via Imagen.
@@ -31,7 +31,7 @@ export interface JumbleResult {
 
 type ProgressCallback = (percent: number, message: string, stage?: string) => void;
 
-// ── Gemini Puzzle Generation ──
+// â”€â”€ Gemini Puzzle Generation â”€â”€
 
 interface GeminiJumbleResponse {
   title: string;
@@ -71,7 +71,7 @@ How a Jumble works:
 Requirements:
 - Exactly ${wordCount} words, all UPPERCASE A-Z only
 - ${difficultyHint}
-- For each word, specify which letter positions (1-based) are "circled" — these letters must combine to spell the final answer
+- For each word, specify which letter positions (1-based) are "circled" â€” these letters must combine to spell the final answer
 - The circled letters from ALL words, taken in order (word 1 circled letters, then word 2, etc.), must spell out the final answer EXACTLY when rearranged
 - The final answer should be a fun pun, wordplay, or clever answer to the cartoon's setup
 - The cartoon scene should be a simple, humorous scenario related to the topic
@@ -80,11 +80,11 @@ Requirements:
 CRITICAL: The circled letters must EXACTLY form the final answer. Count carefully!
 
 Example for topic "Cooking":
-- Word: SPOON (circled positions: [1, 4]) → circled letters: S, O
-- Word: BASTE (circled positions: [2, 5]) → circled letters: A, E  
-- Word: GRILL (circled positions: [3]) → circled letters: I
-- Word: RANCH (circled positions: [3, 5]) → circled letters: N, H
-- Final answer: "OVEN" — wait, that doesn't match. Make sure the circled letters S,O,A,E,I,N,H can be rearranged to spell the final answer!
+- Word: SPOON (circled positions: [1, 4]) â†’ circled letters: S, O
+- Word: BASTE (circled positions: [2, 5]) â†’ circled letters: A, E  
+- Word: GRILL (circled positions: [3]) â†’ circled letters: I
+- Word: RANCH (circled positions: [3, 5]) â†’ circled letters: N, H
+- Final answer: "OVEN" â€” wait, that doesn't match. Make sure the circled letters S,O,A,E,I,N,H can be rearranged to spell the final answer!
 
 Respond in JSON:
 {
@@ -181,7 +181,7 @@ function fallbackPuzzle(category: { id: string; name: string }, wordCount: numbe
   };
 }
 
-// ── Scramble a word (ensuring it's different from the answer) ──
+// â”€â”€ Scramble a word (ensuring it's different from the answer) â”€â”€
 
 function scrambleWord(word: string): string {
   const letters = word.split('');
@@ -199,13 +199,13 @@ function scrambleWord(word: string): string {
   return letters.reverse().join('');
 }
 
-// ── Build the JumbleResult ──
+// â”€â”€ Build the JumbleResult â”€â”€
 
 function buildJumbleResult(puzzle: GeminiJumbleResponse, cartoonBase64: string | null): JumbleResult {
   const words: JumbleWord[] = puzzle.words.map(w => ({
     answer: w.word,
     scrambled: scrambleWord(w.word),
-    circledIndices: w.circledPositions.map(p => p - 1), // convert 1-based → 0-based
+    circledIndices: w.circledPositions.map(p => p - 1), // convert 1-based â†’ 0-based
   }));
 
   return {
@@ -218,7 +218,7 @@ function buildJumbleResult(puzzle: GeminiJumbleResponse, cartoonBase64: string |
   };
 }
 
-// ── Main Pipeline ──
+// â”€â”€ Main Pipeline â”€â”€
 
 export async function runJumblePipeline(
   config: JumbleConfig,
@@ -239,21 +239,21 @@ export async function runJumblePipeline(
       return null;
     }
 
-    onProgress(30, `Got ${puzzle.words.length} words — generating cartoon...`, 'art');
+    onProgress(30, `Got ${puzzle.words.length} words â€” generating cartoon...`, 'art');
 
     // Generate the cartoon illustration via Imagen
     let cartoonBase64: string | null = null;
     try {
-      const artPrompt = `A simple, humorous single-panel newspaper cartoon illustration. Black and white line art style with clean lines, like a classic newspaper comic strip cartoon. The scene: ${puzzle.cartoonScene}. Draw it in a lighthearted, family-friendly editorial cartoon style with slightly exaggerated proportions. No text, no speech bubbles, no captions — just the illustration.`;
+      const artPrompt = `A simple, humorous single-panel newspaper cartoon illustration. Black and white line art style with clean lines, like a classic newspaper comic strip cartoon. The scene: ${puzzle.cartoonScene}. Draw it in a lighthearted, family-friendly editorial cartoon style with slightly exaggerated proportions. No text, no speech bubbles, no captions â€” just the illustration.`;
       cartoonBase64 = await generateImage(artPrompt, '1:1');
       if (cartoonBase64) {
         onProgress(60, 'Cartoon drawn! Building puzzle viewer...', 'engine');
       } else {
-        onProgress(60, 'Cartoon generation skipped — building puzzle viewer...', 'engine');
+        onProgress(60, 'Cartoon generation skipped â€” building puzzle viewer...', 'engine');
       }
     } catch (err) {
       console.warn('Cartoon generation failed:', err);
-      onProgress(60, 'Cartoon generation skipped — building puzzle viewer...', 'engine');
+      onProgress(60, 'Cartoon generation skipped â€” building puzzle viewer...', 'engine');
     }
 
     onProgress(75, 'Assembling jumble viewer...', 'engine');
@@ -267,7 +267,7 @@ export async function runJumblePipeline(
   }
 }
 
-// ── HTML Viewer Generation ──
+// â”€â”€ HTML Viewer Generation â”€â”€
 
 function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -280,9 +280,10 @@ export function generateJumblePreviewHtml(result: JumbleResult, _config: JumbleC
     ? `data:image/png;base64,${result.cartoonBase64}`
     : '';
 
-  // Count final answer letters (excluding spaces)
   const finalLetters = result.finalAnswer.replace(/\s/g, '');
-  const finalWordLengths = result.finalAnswer.split(' ').map(w => w.length);
+  const finalWordLengths = result.finalAnswer.split(' ').map((w: string) => w.length);
+  const finalLengthHint = finalWordLengths.map((l: number) => `${l} letter${l === 1 ? '' : 's'}`).join(', ');
+  const totalCircledLetters = result.words.reduce((sum, w) => sum + w.circledIndices.length, 0);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -313,37 +314,60 @@ export function generateJumblePreviewHtml(result: JumbleResult, _config: JumbleC
     text-align: center;
     font-family: 'Georgia', serif;
   }
-  .subtitle {
-    font-size: 0.85rem;
-    color: #666;
-    margin-bottom: 12px;
-    font-style: italic;
+  /* â”€â”€ How-to-play banner â”€â”€ */
+  .how-to-play {
+    background: #fff8e1;
+    border: 2px solid #f9a825;
+    border-radius: 10px;
+    padding: 12px 20px;
+    margin-bottom: 16px;
+    width: 100%;
+    max-width: 860px;
   }
+  .how-to-play h3 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #e65100;
+    margin-bottom: 6px;
+    font-family: 'Georgia', serif;
+  }
+  .how-to-play ol {
+    margin: 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .how-to-play li {
+    font-size: 0.85rem;
+    color: #555;
+    line-height: 1.4;
+  }
+  .how-to-play li strong { color: #1a1a1a; }
+  /* â”€â”€ Main layout â”€â”€ */
   .main-layout {
     display: flex;
     flex-wrap: wrap;
     gap: 20px;
     justify-content: center;
     width: 100%;
-    max-width: 900px;
+    max-width: 860px;
   }
   .cartoon-panel {
     flex: 0 0 auto;
-    width: min(280px, 90vw);
+    width: min(260px, 90vw);
     background: #fff;
     border: 3px solid #333;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 2px 3px 8px rgba(0,0,0,0.15);
   }
-  .cartoon-panel img {
-    width: 100%;
-    display: block;
-  }
+  .cartoon-panel img { width: 100%; display: block; }
   .cartoon-panel .caption {
     padding: 10px 12px;
     font-family: 'Georgia', serif;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-style: italic;
     color: #333;
     border-top: 2px solid #333;
@@ -351,29 +375,39 @@ export function generateJumblePreviewHtml(result: JumbleResult, _config: JumbleC
     text-align: center;
   }
   .no-cartoon {
-    width: 100%;
-    height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #f0f0f0;
-    color: #999;
-    font-style: italic;
+    width: 100%; height: 180px;
+    display: flex; align-items: center; justify-content: center;
+    background: #f0f0f0; color: #999; font-style: italic;
   }
+  /* â”€â”€ Words panel â”€â”€ */
   .words-panel {
-    flex: 1 1 350px;
+    flex: 1 1 340px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
+  }
+  .step-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #e65100;
+    font-weight: bold;
+    margin-bottom: 2px;
   }
   .word-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .word-main {
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 4px;
   }
-  .word-row .scrambled-label {
+  .scrambled-label {
     font-family: 'Courier New', monospace;
-    font-size: 1.3rem;
+    font-size: 1.2rem;
     font-weight: bold;
     letter-spacing: 4px;
     color: #1a1a1a;
@@ -384,198 +418,237 @@ export function generateJumblePreviewHtml(result: JumbleResult, _config: JumbleC
     flex-wrap: wrap;
   }
   .letter-slot {
-    width: 36px;
-    height: 40px;
+    width: 36px; height: 40px;
     border: 2px solid #888;
     border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     font-family: 'Courier New', monospace;
-    font-size: 1.2rem;
-    font-weight: bold;
-    text-transform: uppercase;
+    font-size: 1.2rem; font-weight: bold;
     background: #fff;
     cursor: text;
     transition: border-color 0.2s, background 0.2s;
   }
   .letter-slot.circled {
-    border-color: #e65100;
-    border-width: 3px;
-    border-radius: 50%;
-    width: 40px;
+    border-color: #e65100; border-width: 3px;
+    border-radius: 50%; width: 40px;
     background: #fff8e1;
   }
-  .letter-slot.correct {
-    background: #c8e6c9;
-    border-color: #388e3c;
-  }
-  .letter-slot.correct.circled {
-    background: #ffe0b2;
-    border-color: #e65100;
-  }
+  .letter-slot.correct { background: #c8e6c9; border-color: #388e3c; }
+  .letter-slot.correct.circled { background: #ffe0b2; border-color: #e65100; }
   .letter-slot input {
-    width: 100%;
-    height: 100%;
-    border: none;
-    background: transparent;
+    width: 100%; height: 100%;
+    border: none; background: transparent;
     text-align: center;
     font-family: 'Courier New', monospace;
-    font-size: 1.2rem;
-    font-weight: bold;
+    font-size: 1.2rem; font-weight: bold;
     text-transform: uppercase;
-    outline: none;
-    color: #1a1a1a;
+    outline: none; color: #1a1a1a;
   }
-  .letter-slot.circled input {
-    color: #e65100;
+  .letter-slot.circled input { color: #e65100; }
+  /* â”€â”€ Shuffle button â”€â”€ */
+  .shuffle-btn {
+    flex-shrink: 0;
+    width: 34px; height: 34px;
+    background: #fff;
+    border: 2px solid #bbb;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, border-color 0.15s, transform 0.15s;
+    title: "Shuffle scrambled letters";
   }
+  .shuffle-btn:hover { background: #f0f0f0; border-color: #888; transform: rotate(20deg); }
+  .shuffle-btn:active { transform: rotate(180deg); }
+  .shuffle-btn:disabled { opacity: 0.35; cursor: default; }
+  /* â”€â”€ Divider â”€â”€ */
   .divider {
-    border: none;
-    border-top: 2px dashed #bbb;
-    margin: 8px 0;
+    border: none; border-top: 2px dashed #bbb;
+    margin: 12px 0; width: 100%; max-width: 860px;
   }
+  /* â”€â”€ Final section â”€â”€ */
   .final-section {
-    width: 100%;
-    max-width: 900px;
-    margin-top: 16px;
+    width: 100%; max-width: 860px;
     text-align: center;
+  }
+  .final-step-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #e65100;
+    font-weight: bold;
+    margin-bottom: 6px;
   }
   .final-clue {
     font-family: 'Georgia', serif;
-    font-size: 1rem;
-    font-style: italic;
-    color: #333;
-    margin-bottom: 12px;
-  }
-  .final-hint {
-    font-size: 0.8rem;
-    color: #888;
+    font-size: 1rem; font-style: italic; color: #333;
     margin-bottom: 8px;
   }
-  .final-slots {
+  .final-hint {
+    font-size: 0.8rem; color: #888; margin-bottom: 6px;
+  }
+  .final-instruction {
+    font-size: 0.8rem; color: #b45309;
+    background: #fef3c7; border: 1px solid #f59e0b;
+    border-radius: 6px; padding: 5px 12px;
+    display: inline-block; margin-bottom: 10px;
+  }
+  .final-controls {
+    display: flex; align-items: center; justify-content: center;
+    gap: 10px; flex-wrap: wrap; margin-bottom: 8px;
+  }
+  .final-slots-wrapper {
     display: flex;
-    gap: 4px;
+    gap: 6px;
     justify-content: center;
     flex-wrap: wrap;
-  }
-  .final-slot {
-    width: 36px;
-    height: 40px;
-    border: 2px solid #e65100;
-    border-radius: 4px;
-    display: flex;
     align-items: center;
-    justify-content: center;
+  }
+  /* â”€â”€ Final draggable tiles â”€â”€ */
+  .final-tile {
+    width: 38px; height: 44px;
+    border: 2px solid #e65100;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
     font-family: 'Courier New', monospace;
-    font-size: 1.2rem;
-    font-weight: bold;
+    font-size: 1.2rem; font-weight: bold;
     text-transform: uppercase;
     background: #fff8e1;
-    cursor: text;
-    transition: background 0.2s;
+    color: #c84b00;
+    cursor: grab;
+    transition: background 0.15s, box-shadow 0.15s, transform 0.15s;
+    position: relative;
   }
-  .final-slot input {
-    width: 100%;
-    height: 100%;
-    border: none;
-    background: transparent;
-    text-align: center;
-    font-family: 'Courier New', monospace;
-    font-size: 1.2rem;
-    font-weight: bold;
-    text-transform: uppercase;
-    outline: none;
-    color: #e65100;
+  .final-tile:active { cursor: grabbing; }
+  .final-tile.dragging { opacity: 0.4; transform: scale(0.95); }
+  .final-tile.drag-over {
+    background: #ffe082;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px #f59e0b55;
+    transform: scale(1.08);
   }
-  .final-slot.correct {
+  .final-tile.locked {
+    background: #c8e6c9 !important;
+    border-color: #388e3c !important;
+    color: #1b5e20 !important;
+    cursor: default !important;
+    box-shadow: none !important;
+  }
+  .final-tile.correct-pos {
     background: #c8e6c9;
     border-color: #388e3c;
+    color: #1b5e20;
   }
-  .word-space {
-    width: 16px;
-    height: 40px;
+  .final-tile.empty-slot {
+    background: transparent;
+    border: 2px dashed #dba96a;
+    color: transparent;
+    cursor: default;
+    animation: waitPulse 2s ease-in-out infinite;
   }
+  .final-tile.empty-slot.all-dropped { animation: none; opacity: 0.35; }
+  .word-boundary { width: 12px; }
+  @keyframes waitPulse {
+    0%, 100% { border-color: #dba96a; }
+    50% { border-color: #e65100; }
+  }
+  @keyframes dropIn {
+    0% { transform: translateY(-30px) scale(0.7); opacity: 0; }
+    60% { transform: translateY(4px) scale(1.05); opacity: 1; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  .drop-anim { animation: dropIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+  /* â”€â”€ Action buttons â”€â”€ */
+  .action-btn {
+    padding: 7px 18px;
+    font-size: 0.82rem;
+    border: 2px solid #aaa;
+    background: #f5f5f5;
+    color: #444;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .action-btn:hover { background: #e8e8e8; }
+  /* â”€â”€ Victory â”€â”€ */
   .victory {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.8);
-    z-index: 100;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 16px;
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.82); z-index: 100;
+    align-items: center; justify-content: center;
+    flex-direction: column; gap: 16px;
     animation: fadeIn 0.5s;
   }
   .victory.show { display: flex; }
-  .victory h2 {
-    font-size: 2rem;
-    color: #ffb300;
-    text-shadow: 0 2px 8px rgba(255,179,0,0.5);
-  }
+  .victory h2 { font-size: 2rem; color: #ffb300; text-shadow: 0 2px 8px rgba(255,179,0,0.5); }
   .victory .answer-reveal {
-    font-size: 1.5rem;
-    color: #fff;
+    font-size: 1.5rem; color: #fff;
     font-family: 'Courier New', monospace;
     letter-spacing: 4px;
     background: rgba(255,179,0,0.15);
-    padding: 12px 24px;
-    border-radius: 8px;
+    padding: 12px 24px; border-radius: 8px;
     border: 2px solid #ffb300;
   }
   .victory button {
-    margin-top: 16px;
-    padding: 12px 32px;
-    font-size: 1rem;
-    border: 2px solid #ffb300;
-    background: transparent;
-    color: #ffb300;
-    border-radius: 8px;
-    cursor: pointer;
+    margin-top: 12px; padding: 12px 32px; font-size: 1rem;
+    border: 2px solid #ffb300; background: transparent;
+    color: #ffb300; border-radius: 8px; cursor: pointer;
   }
-  .hint-btn {
-    margin-top: 8px;
-    padding: 6px 16px;
-    font-size: 0.85rem;
-    border: 1px solid #888;
-    background: #f5f5f5;
-    color: #555;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .hint-btn:hover { background: #e0e0e0; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
   @keyframes pop { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
   .pop { animation: pop 0.3s ease; }
+  @keyframes wrongShake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+  .wrong-shake { animation: wrongShake 0.4s ease; }
 </style>
 </head>
 <body>
 <h1>${escapeHtml(result.title)}</h1>
-<p class="subtitle">Unscramble each word, then use the circled letters to solve the final riddle!</p>
+
+<!-- â”€â”€ How-to-play â”€â”€ -->
+<div class="how-to-play">
+  <h3>ðŸ“‹ How to Play</h3>
+  <ol>
+    <li><strong>Step 1 — Unscramble:</strong> Type the correct word into each row of boxes below. Hit <strong>↺</strong> beside a word to see the scrambled letters in a new order.</li>
+    <li><strong>Step 2 — Watch the magic:</strong> The <span style="color:#e65100;font-weight:bold">⬤ circled</span> letters from each solved word automatically drop into the final answer below.</li>
+    <li><strong>Step 3 — Arrange:</strong> <strong style="color:#1a1a1a">Drag the orange tiles</strong> to spell the answer to the riddle. Use <strong>🔀 Shuffle Answer</strong> for a fresh arrangement. The answer <em>auto-checks</em> when all tiles are in place!</li>
+  </ol>
+</div>
 
 <div class="main-layout">
   <div class="cartoon-panel">
     ${cartoonSrc
       ? `<img src="${cartoonSrc}" alt="Jumble cartoon" />`
-      : `<div class="no-cartoon">🎨 Cartoon unavailable</div>`}
+      : `<div class="no-cartoon">ðŸŽ¨ Cartoon unavailable</div>`}
     <div class="caption">${escapeHtml(result.cartoonCaption)}</div>
   </div>
-  <div class="words-panel" id="wordsPanel"></div>
+  <div class="words-panel">
+    <div class="step-label">Step 1 â€” Unscramble the words</div>
+    <div id="wordsPanel"></div>
+  </div>
 </div>
 
-<hr class="divider" style="width:100%;max-width:900px;margin-top:20px;">
+<hr class="divider">
 
 <div class="final-section">
+  <div class="final-step-label">Step 2 — Arrange the letters to answer the riddle</div>
   <p class="final-clue">${escapeHtml(result.finalClue)}</p>
-  <p class="final-hint">${finalWordLengths.map(l => `${l} letters`).join(', ')}</p>
-  <div class="final-slots" id="finalSlots"></div>
-  <button class="hint-btn" id="hintBtn">💡 Reveal a letter</button>
+  <p class="final-hint">${finalLengthHint}</p>
+  <p class="final-instruction">🖱️ Drag tiles to rearrange &nbsp;|&nbsp; 🔀 Shuffle Answer for a new look &nbsp;|&nbsp; 💡 Reveal a letter if stuck &nbsp;|&nbsp; All correct = auto-wins!</p>
+  <div class="final-controls">
+    <button class="action-btn" id="shuffleFinalBtn">ðŸ”€ Shuffle Answer</button>
+    <button class="action-btn" id="hintBtn">ðŸ’¡ Reveal a letter</button>
+  </div>
+  <div class="final-slots-wrapper" id="finalSlots"></div>
 </div>
 
 <div class="victory" id="victory">
-  <h2>🎉 SOLVED!</h2>
+  <h2>ðŸŽ‰ SOLVED!</h2>
   <div class="answer-reveal" id="answerReveal"></div>
   <button onclick="location.reload()">Play Again</button>
 </div>
@@ -586,151 +659,300 @@ export function generateJumblePreviewHtml(result: JumbleResult, _config: JumbleC
   const finalAnswer = ${finalAnswerJson};
   const finalLetters = finalAnswer.replace(/\\s/g, '');
   const finalWordLengths = ${JSON.stringify(finalWordLengths)};
+  const totalSlots = finalLetters.length;
 
-  const panel = document.getElementById('wordsPanel');
+  const wordsPanel = document.getElementById('wordsPanel');
   const finalSlotsEl = document.getElementById('finalSlots');
   const victoryEl = document.getElementById('victory');
   const answerRevealEl = document.getElementById('answerReveal');
   const hintBtn = document.getElementById('hintBtn');
+  const shuffleFinalBtn = document.getElementById('shuffleFinalBtn');
 
-  const wordInputs = []; // [wordIdx][letterIdx] = input element
-  const finalInputs = []; // flat array of final answer inputs
+  // â”€â”€ State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // slots[i] = letter char ('A'..'Z') or null (empty)
+  const slots = Array(totalSlots).fill(null);
+  // lockedSlots: hinted positions that can't be dragged away
+  const lockedSlots = new Set();
+  let dragSrcIdx = null;
+  const solvedWords = new Set();
+  const wordScrambles = words.map(w => w.scrambled);
+  const wordInputs = []; // wordInputs[wi][li] = <input>
 
-  // Build word rows
-  words.forEach((w, wi) => {
+  // â”€â”€ Build word rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  words.forEach(function(w, wi) {
     const row = document.createElement('div');
     row.className = 'word-row';
 
+    const main = document.createElement('div');
+    main.className = 'word-main';
+
     const label = document.createElement('div');
     label.className = 'scrambled-label';
-    label.textContent = w.scrambled;
-    row.appendChild(label);
+    label.id = 'label-' + wi;
+    label.textContent = wordScrambles[wi];
+    main.appendChild(label);
 
-    const slots = document.createElement('div');
-    slots.className = 'letter-slots';
-
+    const slotsDiv = document.createElement('div');
+    slotsDiv.className = 'letter-slots';
     const inputs = [];
+
     for (let i = 0; i < w.answer.length; i++) {
       const slot = document.createElement('div');
-      slot.className = 'letter-slot' + (w.circledIndices.includes(i) ? ' circled' : '');
-
+      slot.className = 'letter-slot' + (w.circledIndices.indexOf(i) !== -1 ? ' circled' : '');
       const inp = document.createElement('input');
       inp.type = 'text';
       inp.maxLength = 1;
-      inp.setAttribute('data-word', wi);
-      inp.setAttribute('data-letter', i);
       inp.setAttribute('autocomplete', 'off');
       inp.setAttribute('autocapitalize', 'characters');
-
-      inp.addEventListener('input', function() {
-        this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '');
-        if (this.value && i < w.answer.length - 1) {
-          inputs[i + 1].focus();
-        }
-        checkWord(wi);
-      });
-
-      inp.addEventListener('keydown', function(e) {
-        if (e.key === 'Backspace' && !this.value && i > 0) {
-          inputs[i - 1].focus();
-          e.preventDefault();
-        }
-        if (e.key === 'ArrowLeft' && i > 0) { inputs[i - 1].focus(); e.preventDefault(); }
-        if (e.key === 'ArrowRight' && i < inputs.length - 1) { inputs[i + 1].focus(); e.preventDefault(); }
-      });
-
+      (function(ii) {
+        inp.addEventListener('input', function() {
+          this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '');
+          if (this.value && ii < inputs.length - 1) inputs[ii + 1].focus();
+          checkWord(wi);
+        });
+        inp.addEventListener('keydown', function(e) {
+          if (e.key === 'Backspace' && !this.value && ii > 0) { inputs[ii - 1].focus(); e.preventDefault(); }
+          if (e.key === 'ArrowLeft' && ii > 0) { inputs[ii - 1].focus(); e.preventDefault(); }
+          if (e.key === 'ArrowRight' && ii < inputs.length - 1) { inputs[ii + 1].focus(); e.preventDefault(); }
+        });
+      })(i);
       slot.appendChild(inp);
-      slots.appendChild(slot);
+      slotsDiv.appendChild(slot);
       inputs.push(inp);
     }
-
     wordInputs.push(inputs);
-    row.appendChild(slots);
-    panel.appendChild(row);
+    main.appendChild(slotsDiv);
+    row.appendChild(main);
+
+    // Shuffle button for this word
+    const shuffleBtn = document.createElement('button');
+    shuffleBtn.className = 'shuffle-btn';
+    shuffleBtn.textContent = '\u21BA'; // ↺ anticlockwise arrow
+    shuffleBtn.title = 'See scrambled letters in a new order';
+    shuffleBtn.id = 'shuffle-' + wi;
+    (function(wii) {
+      shuffleBtn.addEventListener('click', function() {
+        var letters = wordScrambles[wii].split('');
+        for (var i = letters.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var tmp = letters[i]; letters[i] = letters[j]; letters[j] = tmp;
+        }
+        var newS = letters.join('');
+        if (newS === wordScrambles[wii]) newS = letters.reverse().join('');
+        wordScrambles[wii] = newS;
+        document.getElementById('label-' + wii).textContent = newS;
+        shuffleBtn.style.transform = 'rotate(360deg)';
+        setTimeout(function() { shuffleBtn.style.transform = ''; }, 400);
+      });
+    })(wi);
+    row.appendChild(shuffleBtn);
+
+    wordsPanel.appendChild(row);
   });
 
-  // Build final answer slots
-  let flatIdx = 0;
-  finalWordLengths.forEach((wLen, wIdx) => {
-    for (let i = 0; i < wLen; i++) {
-      const slot = document.createElement('div');
-      slot.className = 'final-slot';
-
-      const inp = document.createElement('input');
-      inp.type = 'text';
-      inp.maxLength = 1;
-      inp.setAttribute('autocomplete', 'off');
-      inp.setAttribute('autocapitalize', 'characters');
-      const myIdx = flatIdx;
-
-      inp.addEventListener('input', function() {
-        this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '');
-        if (this.value && myIdx < finalInputs.length - 1) {
-          finalInputs[myIdx + 1].focus();
-        }
-        checkFinal();
-      });
-
-      inp.addEventListener('keydown', function(e) {
-        if (e.key === 'Backspace' && !this.value && myIdx > 0) {
-          finalInputs[myIdx - 1].focus();
-          e.preventDefault();
-        }
-        if (e.key === 'ArrowLeft' && myIdx > 0) { finalInputs[myIdx - 1].focus(); e.preventDefault(); }
-        if (e.key === 'ArrowRight' && myIdx < finalInputs.length - 1) { finalInputs[myIdx + 1].focus(); e.preventDefault(); }
-      });
-
-      slot.appendChild(inp);
-      finalSlotsEl.appendChild(slot);
-      finalInputs.push(inp);
-      flatIdx++;
-    }
-    // Add space between words
-    if (wIdx < finalWordLengths.length - 1) {
-      const space = document.createElement('div');
-      space.className = 'word-space';
-      finalSlotsEl.appendChild(space);
-    }
-  });
-
-  const solvedWords = new Set();
-
+  // â”€â”€ Word check + circled-letter drop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   function checkWord(wi) {
-    const w = words[wi];
-    const guess = wordInputs[wi].map(inp => inp.value).join('');
+    if (solvedWords.has(wi)) return;
+    var w = words[wi];
+    var guess = wordInputs[wi].map(function(inp) { return inp.value; }).join('');
     if (guess.length === w.answer.length && guess === w.answer) {
       solvedWords.add(wi);
-      wordInputs[wi].forEach((inp, i) => {
+
+      // Mark letter slots correct and lock inputs
+      wordInputs[wi].forEach(function(inp) {
         inp.parentElement.classList.add('correct');
         inp.parentElement.classList.add('pop');
         inp.disabled = true;
       });
-    }
-  }
 
-  function checkFinal() {
-    const guess = finalInputs.map(inp => inp.value).join('');
-    if (guess.length === finalLetters.length && guess === finalLetters) {
-      finalInputs.forEach(inp => {
-        inp.parentElement.classList.add('correct');
-        inp.disabled = true;
+      // Disable that word's shuffle button
+      var sb = document.getElementById('shuffle-' + wi);
+      if (sb) sb.disabled = true;
+
+      // Drop circled letters into random empty final slots
+      var circled = w.circledIndices.map(function(ci) { return w.answer[ci]; });
+      var emptyIdxs = [];
+      for (var i = 0; i < slots.length; i++) { if (slots[i] === null) emptyIdxs.push(i); }
+      // shuffle empty indices
+      for (var i = emptyIdxs.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = emptyIdxs[i]; emptyIdxs[i] = emptyIdxs[j]; emptyIdxs[j] = t;
+      }
+      var newlyFilled = new Set();
+      circled.forEach(function(letter, k) {
+        if (k < emptyIdxs.length) { slots[emptyIdxs[k]] = letter; newlyFilled.add(emptyIdxs[k]); }
       });
-      answerRevealEl.textContent = finalAnswer;
-      victoryEl.classList.add('show');
+
+      renderFinalSlots(newlyFilled);
+      checkFinal();
     }
   }
 
-  // Hint: reveal one unrevealed final letter
-  hintBtn.addEventListener('click', function() {
-    for (let i = 0; i < finalInputs.length; i++) {
-      if (!finalInputs[i].value || finalInputs[i].value !== finalLetters[i]) {
-        finalInputs[i].value = finalLetters[i];
-        finalInputs[i].parentElement.classList.add('pop');
-        checkFinal();
-        return;
+  // â”€â”€ Render final slots â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // newlyFilledSet: a Set of slot indices to animate, or null/false
+  function renderFinalSlots(newlyFilledSet) {
+    finalSlotsEl.innerHTML = '';
+    var allDropped = solvedWords.size === words.length;
+    var flatIdx = 0;
+
+    finalWordLengths.forEach(function(wLen, wIdx) {
+      if (wIdx > 0) {
+        var gap = document.createElement('div');
+        gap.className = 'word-boundary';
+        finalSlotsEl.appendChild(gap);
+      }
+      for (var i = 0; i < wLen; i++) {
+        var tile = document.createElement('div');
+        var slotIdx = flatIdx;
+
+        if (slots[slotIdx] !== null) {
+          var isNew = newlyFilledSet instanceof Set && newlyFilledSet.has(slotIdx);
+          tile.className = 'final-tile' + (isNew ? ' drop-anim' : '');
+          tile.textContent = slots[slotIdx];
+          if (lockedSlots.has(slotIdx)) {
+            tile.className = 'final-tile locked';
+            tile.textContent = slots[slotIdx];
+          }
+          if (!lockedSlots.has(slotIdx)) {
+            tile.setAttribute('draggable', 'true');
+            tile.dataset.idx = slotIdx;
+            tile.addEventListener('dragstart', onDragStart);
+            tile.addEventListener('dragend', onDragEnd);
+          }
+        } else {
+          tile.className = 'final-tile empty-slot' + (allDropped ? ' all-dropped' : '');
+        }
+
+        tile.dataset.idx = slotIdx;
+        tile.addEventListener('dragover', onDragOver);
+        tile.addEventListener('dragleave', onDragLeave);
+        tile.addEventListener('drop', onDrop);
+
+        finalSlotsEl.appendChild(tile);
+        flatIdx++;
+      }
+    });
+  }
+
+  // â”€â”€ HTML5 Drag handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  function onDragStart(e) {
+    dragSrcIdx = parseInt(this.dataset.idx);
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', dragSrcIdx);
+  }
+  function onDragEnd() {
+    this.classList.remove('dragging');
+    // clean up any leftover drag-over classes
+    finalSlotsEl.querySelectorAll('.drag-over').forEach(function(el) {
+      el.classList.remove('drag-over');
+    });
+    dragSrcIdx = null;
+  }
+  function onDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    this.classList.add('drag-over');
+  }
+  function onDragLeave(e) {
+    if (!this.contains(e.relatedTarget)) this.classList.remove('drag-over');
+  }
+  function onDrop(e) {
+    e.preventDefault();
+    this.classList.remove('drag-over');
+    var destIdx = parseInt(this.dataset.idx);
+    if (dragSrcIdx === null || destIdx === dragSrcIdx) return;
+    if (lockedSlots.has(dragSrcIdx) || lockedSlots.has(destIdx)) return;
+    // Swap
+    var tmp = slots[destIdx];
+    slots[destIdx] = slots[dragSrcIdx];
+    slots[dragSrcIdx] = tmp;
+    renderFinalSlots(null);
+    checkFinal();
+  }
+
+  // â”€â”€ Shuffle final tiles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  shuffleFinalBtn.addEventListener('click', function() {
+    var filledIdxs = [];
+    for (var i = 0; i < slots.length; i++) {
+      if (slots[i] !== null && !lockedSlots.has(i)) filledIdxs.push(i);
+    }
+    if (filledIdxs.length < 2) return;
+    var letters = filledIdxs.map(function(i) { return slots[i]; });
+    // Fisher-Yates shuffle (ensure change)
+    var changed = false;
+    for (var attempt = 0; attempt < 10 && !changed; attempt++) {
+      for (var i = letters.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = letters[i]; letters[i] = letters[j]; letters[j] = t;
+      }
+      for (var k = 0; k < letters.length; k++) {
+        if (letters[k] !== slots[filledIdxs[k]]) { changed = true; break; }
       }
     }
+    filledIdxs.forEach(function(slotIdx, k) { slots[slotIdx] = letters[k]; });
+    renderFinalSlots(null);
+    checkFinal();
   });
+
+  // â”€â”€ Hint: reveal one slot â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  hintBtn.addEventListener('click', function() {
+    // Find the first non-locked slot that has the wrong letter (or is empty)
+    for (var i = 0; i < totalSlots; i++) {
+      if (lockedSlots.has(i)) continue;
+      if (slots[i] === finalLetters[i]) continue;
+      // Need to put finalLetters[i] into slot i
+      var correctLetter = finalLetters[i];
+      // Find where correctLetter currently lives (prefer non-locked, non-empty)
+      var srcIdx = -1;
+      for (var j = 0; j < slots.length; j++) {
+        if (j !== i && slots[j] === correctLetter && !lockedSlots.has(j)) {
+          srcIdx = j; break;
+        }
+      }
+      if (srcIdx !== -1) {
+        // Swap src -> i, moving whatever was in i to src
+        var tmp = slots[i];
+        slots[i] = slots[srcIdx];
+        slots[srcIdx] = tmp;
+      } else if (slots[i] === null) {
+        // Letter not placed yet (word not solved) â€” skip
+        return;
+      } else {
+        // Letter just wrong in this slot â€” leave it and just lock
+        slots[i] = correctLetter;
+      }
+      lockedSlots.add(i);
+      renderFinalSlots(null);
+      checkFinal();
+      return;
+    }
+  });
+
+  // â”€â”€ Check final answer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  function checkFinal() {
+    if (slots.some(function(s) { return s === null; })) return;
+    var guess = slots.join('');
+    if (guess === finalLetters) {
+      // Mark all correct
+      finalSlotsEl.querySelectorAll('.final-tile').forEach(function(t) {
+        t.classList.add('correct-pos');
+      });
+      setTimeout(function() {
+        answerRevealEl.textContent = finalAnswer;
+        victoryEl.classList.add('show');
+      }, 600);
+    } else {
+      // Shake to signal wrong arrangement
+      finalSlotsEl.classList.remove('wrong-shake');
+      void finalSlotsEl.offsetWidth;
+      finalSlotsEl.classList.add('wrong-shake');
+    }
+  }
+
+  // Initial render (empty slots)
+  renderFinalSlots(null);
+
 })();
 </script>
 </body>

@@ -462,5 +462,97 @@
     "apkSize": "8008 KB",
     "createdAt": "2026-03-17T20:57:15.394Z",
     "clientId": "a0f626b6-9371-4234-9230-3d7528b37bde"
+  },
+  {
+    "id": "6bc83114-e3f3-47d7-8002-a53825a8e66b",
+    "name": "Nature's Noodlers!",
+    "rating": 0,
+    "entertainmentType": "jumble",
+    "config": {
+      "jumbleCategory": {
+        "id": "nature",
+        "name": "Nature",
+        "icon": "🌿",
+        "description": "Trees, flowers, weather, and the great outdoors — scrambled",
+        "tag": ""
+      },
+      "structure": {
+        "wordCount": 5,
+        "difficulty": "medium"
+      }
+    },
+    "buildId": "73cbf5bd-2ece-41f9-8e6c-c2d394986bf1",
+    "apkSize": "1838 KB",
+    "createdAt": "2026-03-18T05:56:33.959Z",
+    "clientId": "98f89de9-6a69-424c-8917-d574c8190b46"
+  },
+  {
+    "id": "fe4aaaf8-754e-49b5-b4de-f95451cbef69",
+    "name": "Holiday Huddle Jumble",
+    "rating": 0,
+    "entertainmentType": "jumble",
+    "config": {
+      "jumbleCategory": {
+        "id": "holidays",
+        "name": "Holidays & Celebrations",
+        "icon": "🎉",
+        "description": "Festive words from holidays around the world",
+        "tag": ""
+      },
+      "structure": {
+        "wordCount": 5,
+        "difficulty": "medium"
+      }
+    },
+    "buildId": "74474646-2130-4c0f-acbf-3f62ec1103a8",
+    "apkSize": "752 KB",
+    "createdAt": "2026-03-18T06:35:21.851Z",
+    "clientId": "98f89de9-6a69-424c-8917-d574c8190b46"
+  },
+  {
+    "id": "3c52292d-3bbc-432c-8ce1-07b4dd3173fe",
+    "name": "Lights, Camera, Jumble!",
+    "rating": 0,
+    "entertainmentType": "jumble",
+    "config": {
+      "jumbleCategory": {
+        "id": "movies",
+        "name": "Movies & TV",
+        "icon": "🎬",
+        "description": "Hollywood vocabulary and screen culture in a mix",
+        "tag": ""
+      },
+      "structure": {
+        "wordCount": 5,
+        "difficulty": "medium"
+      }
+    },
+    "buildId": "a045d286-4831-4f90-bb89-e7a91443b206",
+    "apkSize": "964 KB",
+    "createdAt": "2026-03-18T06:35:42.334Z",
+    "clientId": "98f89de9-6a69-424c-8917-d574c8190b46"
+  },
+  {
+    "id": "a94ad9c0-9ee2-4677-bd0e-8435678128c2",
+    "name": "Holiday Feast Fiasco",
+    "rating": 0,
+    "entertainmentType": "jumble",
+    "config": {
+      "jumbleCategory": {
+        "id": "holidays",
+        "name": "Holidays & Celebrations",
+        "icon": "🎉",
+        "description": "Festive words from holidays around the world",
+        "tag": ""
+      },
+      "structure": {
+        "wordCount": 5,
+        "difficulty": "medium"
+      }
+    },
+    "buildId": "0567dc1e-1bc4-4df8-8b2f-7559786d9926",
+    "apkSize": "1573 KB",
+    "createdAt": "2026-03-18T06:35:42.622Z",
+    "clientId": "98f89de9-6a69-424c-8917-d574c8190b46"
   }
 ]
