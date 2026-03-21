@@ -1797,6 +1797,14 @@ body {
   max-width: 100vw;
 }
 
+/* Landscape games (escape rooms) fill the entire screen */
+.comic-viewer-frame.comic-viewer-landscape:fullscreen .comic-viewer-screen {
+  width: 100vw;
+  height: 100vh;
+  aspect-ratio: unset;
+  max-width: 100vw;
+}
+
 .fullscreen-hint {
   position: fixed;
   bottom: 20px;
