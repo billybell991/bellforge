@@ -10,6 +10,21 @@ function getClientId(): string {
   return id;
 }
 
+const LOCAL_LIBRARY_KEY = 'bellforge-library';
+
+function loadLocalLibrary(): LibraryEntry[] {
+  try {
+    const raw = localStorage.getItem(LOCAL_LIBRARY_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch { return []; }
+}
+
+function saveLocalLibrary(entries: LibraryEntry[]): void {
+  try {
+    localStorage.setItem(LOCAL_LIBRARY_KEY, JSON.stringify(entries));
+  } catch { /* quota exceeded — best effort */ }
+}
+
 function getEntryType(entry: LibraryEntry): EntertainmentType {
   if (entry.entertainmentType) return entry.entertainmentType;
   if ('cyoaGenre' in entry.config) return 'adventure';
@@ -73,16 +88,39 @@ export function Library({ onBack, onViewPreview, onReForge, onCountChange }: Lib
   const [editName, setEditName] = useState('');
 
   const fetchLibrary = useCallback(async () => {
+    // Show cached entries immediately so library isn't empty after a redeploy
+    const cached = loadLocalLibrary();
+    if (cached.length) {
+      setEntries(cached);
+      onCountChange?.(cached.length);
+    }
+
     try {
       const res = await fetch('/api/library', {
         headers: { 'X-Client-Id': getClientId() },
       });
       const data = await res.json();
-      const list = data.entries || [];
-      setEntries(list);
-      onCountChange?.(list.length);
+      const serverEntries: LibraryEntry[] = data.entries || [];
+
+      // Merge: keep all server entries + any local-only entries the server lost
+      const serverIds = new Set(serverEntries.map((e) => e.id));
+      const localOnly = cached.filter((e) => !serverIds.has(e.id));
+
+      const merged = [...serverEntries, ...localOnly];
+      setEntries(merged);
+      saveLocalLibrary(merged);
+      onCountChange?.(merged.length);
+
+      // Re-sync local-only entries back to server (e.g. after Railway redeploy)
+      if (localOnly.length > 0) {
+        fetch('/api/library/import', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Client-Id': getClientId() },
+          body: JSON.stringify({ entries: localOnly }),
+        }).catch(() => {});
+      }
     } catch {
-      /* server may be down */
+      // Server down — cached entries already displayed above
     } finally {
       setLoading(false);
     }
@@ -98,7 +136,11 @@ export function Library({ onBack, onViewPreview, onReForge, onCountChange }: Lib
       headers: { 'Content-Type': 'application/json', 'X-Client-Id': getClientId() },
       body: JSON.stringify({ rating }),
     });
-    setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, rating } : e)));
+    setEntries((prev) => {
+      const next = prev.map((e) => (e.id === id ? { ...e, rating } : e));
+      saveLocalLibrary(next);
+      return next;
+    });
   };
 
   const handleRename = async (id: string) => {
@@ -108,7 +150,11 @@ export function Library({ onBack, onViewPreview, onReForge, onCountChange }: Lib
       headers: { 'Content-Type': 'application/json', 'X-Client-Id': getClientId() },
       body: JSON.stringify({ name: editName.trim() }),
     });
-    setEntries((prev) => prev.map((e) => (e.id === id ? { ...e, name: editName.trim() } : e)));
+    setEntries((prev) => {
+      const next = prev.map((e) => (e.id === id ? { ...e, name: editName.trim() } : e));
+      saveLocalLibrary(next);
+      return next;
+    });
     setEditingId(null);
   };
 
@@ -116,6 +162,7 @@ export function Library({ onBack, onViewPreview, onReForge, onCountChange }: Lib
     await fetch(`/api/library/${id}`, { method: 'DELETE', headers: { 'X-Client-Id': getClientId() } });
     setEntries((prev) => {
       const next = prev.filter((e) => e.id !== id);
+      saveLocalLibrary(next);
       onCountChange?.(next.length);
       return next;
     });

@@ -532,6 +532,21 @@ app.get('/api/library/:id/thumbnail', (req, res) => {
   res.sendFile(filePath);
 });
 
+// Import entries from client localStorage (re-sync after ephemeral filesystem wipe)
+app.post('/api/library/import', (req, res) => {
+  const incoming: LibraryEntry[] = req.body.entries || [];
+  const clientId = req.headers['x-client-id'] as string | undefined;
+  let added = 0;
+  for (const entry of incoming) {
+    if (!entry.id || !entry.name) continue;
+    if (library.some((e) => e.id === entry.id)) continue;
+    library.push({ ...entry, clientId: clientId || entry.clientId });
+    added++;
+  }
+  if (added > 0) saveLibrary(library);
+  res.json({ imported: added });
+});
+
 // Save a game to library
 app.post('/api/library', (req, res) => {
   const { buildId, name } = req.body;
