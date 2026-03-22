@@ -28,90 +28,129 @@ type ExportState = 'idle' | 'capturing' | 'picking' | 'success' | 'error';
 export function BellPartsExport({ source }: BellPartsExportProps) {
   const [state, setState] = useState<ExportState>('idle');
   const pickTargetRef = useRef<HTMLElement | null>(null);
+  const pickSourceDocRef = useRef<Document | null>(null); // tracks which document the picked element is in
 
   // ── Pick Mode: highlight elements on hover, click to capture ──
+  // Attaches listeners to both the parent document AND any same-origin iframes
   useEffect(() => {
     if (state !== 'picking') return;
 
     let lastHighlighted: HTMLElement | null = null;
+    const cleanups: (() => void)[] = [];
 
-    const handleMouseMove = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      // Don't highlight our buttons, body, or html
-      if (target.closest('.bellparts-export-btn') || target === document.body || target === document.documentElement) return;
+    function attachToDoc(doc: Document) {
+      const handleMouseMove = (e: MouseEvent) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('.bellparts-export-btn') || target === doc.body || target === doc.documentElement) return;
 
-      if (lastHighlighted && lastHighlighted !== target) {
-        lastHighlighted.style.outline = '';
-        lastHighlighted.style.outlineOffset = '';
-      }
-      target.style.outline = '3px solid rgba(184, 134, 11, 0.8)';
-      target.style.outlineOffset = '2px';
-      lastHighlighted = target;
-      pickTargetRef.current = target;
-    };
+        if (lastHighlighted && lastHighlighted !== target) {
+          lastHighlighted.style.outline = '';
+          lastHighlighted.style.outlineOffset = '';
+        }
+        target.style.outline = '3px solid rgba(184, 134, 11, 0.8)';
+        target.style.outlineOffset = '2px';
+        lastHighlighted = target;
+        pickTargetRef.current = target;
+        pickSourceDocRef.current = doc;
+      };
 
-    const handleClick = (e: MouseEvent) => {
-      const clicked = e.target as HTMLElement;
-      // If they clicked one of our buttons, let React handle it — don't capture
-      if (clicked.closest('.bellparts-export-btn')) return;
+      const handleClick = (e: MouseEvent) => {
+        const clicked = e.target as HTMLElement;
+        if (clicked.closest('.bellparts-export-btn')) return;
 
-      e.preventDefault();
-      e.stopPropagation();
+        e.preventDefault();
+        e.stopPropagation();
 
-      // Clean up highlight
-      if (lastHighlighted) {
-        lastHighlighted.style.outline = '';
-        lastHighlighted.style.outlineOffset = '';
-      }
-
-      const target = pickTargetRef.current || clicked;
-      setState('idle');
-      exportElement(target);
-    };
-
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
         if (lastHighlighted) {
           lastHighlighted.style.outline = '';
           lastHighlighted.style.outlineOffset = '';
         }
-        setState('idle');
-      }
-    };
 
-    document.addEventListener('mousemove', handleMouseMove, true);
-    document.addEventListener('click', handleClick, true);
-    document.addEventListener('keydown', handleEscape);
+        const target = pickTargetRef.current || clicked;
+        setState('idle');
+        exportElement(target, pickSourceDocRef.current || doc);
+      };
+
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          if (lastHighlighted) {
+            lastHighlighted.style.outline = '';
+            lastHighlighted.style.outlineOffset = '';
+          }
+          setState('idle');
+        }
+      };
+
+      doc.addEventListener('mousemove', handleMouseMove, true);
+      doc.addEventListener('click', handleClick, true);
+      doc.addEventListener('keydown', handleEscape);
+
+      cleanups.push(() => {
+        if (lastHighlighted) {
+          lastHighlighted.style.outline = '';
+          lastHighlighted.style.outlineOffset = '';
+        }
+        doc.removeEventListener('mousemove', handleMouseMove, true);
+        doc.removeEventListener('click', handleClick, true);
+        doc.removeEventListener('keydown', handleEscape);
+      });
+    }
+
+    // Attach to the parent document
+    attachToDoc(document);
+
+    // Attach to any same-origin iframes (BellForge preview iframe)
+    document.querySelectorAll('iframe').forEach((iframe) => {
+      try {
+        const iframeDoc = iframe.contentDocument;
+        if (iframeDoc) attachToDoc(iframeDoc);
+      } catch {
+        // Cross-origin iframe — skip
+      }
+    });
 
     return () => {
-      if (lastHighlighted) {
-        lastHighlighted.style.outline = '';
-        lastHighlighted.style.outlineOffset = '';
-      }
-      document.removeEventListener('mousemove', handleMouseMove, true);
-      document.removeEventListener('click', handleClick, true);
-      document.removeEventListener('keydown', handleEscape);
+      cleanups.forEach(fn => fn());
     };
   }, [state]);
 
   // ── Export the Full Page ──
+  // If an iframe is present (escape room preview), export the iframe content instead
   async function exportFullPage() {
     setState('capturing');
     try {
+      // Check for a same-origin iframe (BellForge preview)
+      let targetDoc: Document = document;
+      let targetBody: HTMLElement = document.body;
+      let targetRoot: HTMLElement = document.documentElement;
+      const iframe = document.querySelector('iframe') as HTMLIFrameElement | null;
+      if (iframe) {
+        try {
+          const iDoc = iframe.contentDocument;
+          if (iDoc?.body) {
+            targetDoc = iDoc;
+            targetBody = iDoc.body;
+            targetRoot = iDoc.documentElement;
+          }
+        } catch { /* cross-origin, fall back to parent */ }
+      }
+
       // Capture thumbnail
-      const canvas = await html2canvas(document.body, {
+      const canvas = await html2canvas(targetBody, {
         backgroundColor: '#050509',
-        scale: 0.5, // Half-res thumbnail is fine
+        scale: 0.5,
         logging: false,
         useCORS: true,
       });
       const thumbnail = canvas.toDataURL('image/png');
 
-      // Serialize the entire page as self-contained HTML
-      const html = serializePage(document.documentElement);
+      // Serialize the page as self-contained HTML
+      const html = targetDoc === document
+        ? serializePage(targetRoot)
+        : '<!DOCTYPE html>\n' + targetRoot.outerHTML; // iframe already self-contained
 
       // Prompt for a name
-      const name = prompt('Name this BellPart:', document.title || 'Untitled Part');
+      const name = prompt('Name this BellPart:', targetDoc.title || document.title || 'Untitled Part');
       if (!name) {
         setState('idle');
         return;
@@ -140,7 +179,7 @@ export function BellPartsExport({ source }: BellPartsExportProps) {
   }
 
   // ── Export a Specific Element ──
-  async function exportElement(el: HTMLElement) {
+  async function exportElement(el: HTMLElement, sourceDoc: Document) {
     setState('capturing');
     try {
       // Capture thumbnail of just the element
@@ -149,11 +188,14 @@ export function BellPartsExport({ source }: BellPartsExportProps) {
         scale: 0.5,
         logging: false,
         useCORS: true,
+        // html2canvas needs the ownerDocument's window
+        windowWidth: el.ownerDocument.defaultView?.innerWidth,
+        windowHeight: el.ownerDocument.defaultView?.innerHeight,
       });
       const thumbnail = canvas.toDataURL('image/png');
 
       // Serialize just this element with all its computed styles
-      const html = serializeElement(el);
+      const html = serializeElement(el, sourceDoc);
 
       const name = prompt(
         'Name this BellPart:',
@@ -306,17 +348,17 @@ function serializePage(root: HTMLElement): string {
  * Serialize a specific element into a standalone HTML page.
  * Captures its computed styles, children, and any relevant scripts.
  */
-function serializeElement(el: HTMLElement): string {
+function serializeElement(el: HTMLElement, sourceDoc: Document = document): string {
   const clone = el.cloneNode(true) as HTMLElement;
 
   // Gather styles relevant to this element tree
-  const styles = gatherElementStyles(el);
+  const styles = gatherElementStyles(el, sourceDoc);
 
   // Try to capture any inline <script> logic that references this element
-  const scripts = gatherRelevantScripts(el);
+  const scripts = gatherRelevantScripts(el, sourceDoc);
 
-  // Find Google Font links
-  const fontLinks = Array.from(document.querySelectorAll('link[href*="fonts.googleapis.com"], link[href*="fonts.gstatic.com"]'))
+  // Find Google Font links (check both parent and source doc)
+  const fontLinks = Array.from(sourceDoc.querySelectorAll('link[href*="fonts.googleapis.com"], link[href*="fonts.gstatic.com"]'))
     .map(link => link.outerHTML)
     .join('\n');
 
@@ -370,7 +412,7 @@ function gatherAllStyles(): string {
 /**
  * Gather CSS rules that apply to a specific element and its children.
  */
-function gatherElementStyles(el: HTMLElement): string {
+function gatherElementStyles(el: HTMLElement, sourceDoc: Document = document): string {
   let relevantCSS = '';
   const ids = new Set<string>();
   const classes = new Set<string>();
@@ -388,7 +430,8 @@ function gatherElementStyles(el: HTMLElement): string {
   collectSelectors(el);
 
   // Also capture computed inline styles for the root element
-  const computed = window.getComputedStyle(el);
+  const sourceWin = sourceDoc.defaultView || window;
+  const computed = sourceWin.getComputedStyle(el);
   const importantProps = [
     'background', 'backgroundColor', 'backgroundImage',
     'color', 'font', 'fontFamily', 'fontSize',
@@ -401,7 +444,7 @@ function gatherElementStyles(el: HTMLElement): string {
   ];
   // We capture these as a fallback in case stylesheet rules miss something
 
-  for (const sheet of document.styleSheets) {
+  for (const sheet of sourceDoc.styleSheets) {
     try {
       const rules = sheet.cssRules || sheet.rules;
       if (!rules) continue;
@@ -449,11 +492,11 @@ function gatherElementStyles(el: HTMLElement): string {
  * Try to extract script content relevant to an element.
  * Looks for inline scripts that reference the element's ID or classes.
  */
-function gatherRelevantScripts(el: HTMLElement): string {
+function gatherRelevantScripts(el: HTMLElement, sourceDoc: Document = document): string {
   const scripts: string[] = [];
   const markers = [el.id, ...el.classList].filter(Boolean);
 
-  for (const script of document.querySelectorAll('script:not([src])')) {
+  for (const script of sourceDoc.querySelectorAll('script:not([src])')) {
     const content = script.textContent || '';
     if (markers.some(m => content.includes(m))) {
       scripts.push(content);
@@ -461,7 +504,7 @@ function gatherRelevantScripts(el: HTMLElement): string {
   }
 
   // Also look for a GAME data object (common in BellForge escape rooms)
-  for (const script of document.querySelectorAll('script:not([src])')) {
+  for (const script of sourceDoc.querySelectorAll('script:not([src])')) {
     const content = script.textContent || '';
     if (content.includes('const GAME') || content.includes('const gameData')) {
       if (!scripts.includes(content)) {
