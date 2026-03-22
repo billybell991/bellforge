@@ -16,6 +16,7 @@ import { DeployGuide } from './components/DeployGuide';
 import { Library } from './components/Library';
 import { EmberField } from './components/EmberField';
 import { DebugButton } from './components/DebugButton';
+import { BellPartsExport } from './components/BellPartsExport';
 
 // Per-browser identity for scoping the library
 function getClientId(): string {
@@ -842,6 +843,7 @@ export default function App() {
     <div className="app-shell">
       <EmberField />
       <DebugButton page={page} entertainmentType={entertainmentType} buildPercent={buildPercent} buildStageName={buildStageName} />
+      <BellPartsExport source="BellForge" />
 
       <header className="forge-header">
         <div className="forge-header-brand" onClick={handleStartOver}>
