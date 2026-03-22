@@ -27,9 +27,9 @@ type ExportState = 'idle' | 'capturing' | 'picking' | 'success' | 'error';
 
 export function BellPartsExport({ source }: BellPartsExportProps) {
   const [state, setState] = useState<ExportState>('idle');
-  const [pickTarget, setPickTarget] = useState<HTMLElement | null>(null);
+  const pickTargetRef = useRef<HTMLElement | null>(null);
 
-  // ── Pick Mode: highlight elements on hover ──
+  // ── Pick Mode: highlight elements on hover, click to capture ──
   useEffect(() => {
     if (state !== 'picking') return;
 
@@ -37,7 +37,7 @@ export function BellPartsExport({ source }: BellPartsExportProps) {
 
     const handleMouseMove = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      // Don't highlight the export button itself or body/html
+      // Don't highlight our buttons, body, or html
       if (target.closest('.bellparts-export-btn') || target === document.body || target === document.documentElement) return;
 
       if (lastHighlighted && lastHighlighted !== target) {
@@ -47,17 +47,24 @@ export function BellPartsExport({ source }: BellPartsExportProps) {
       target.style.outline = '3px solid rgba(184, 134, 11, 0.8)';
       target.style.outlineOffset = '2px';
       lastHighlighted = target;
-      setPickTarget(target);
+      pickTargetRef.current = target;
     };
 
     const handleClick = (e: MouseEvent) => {
+      const clicked = e.target as HTMLElement;
+      // If they clicked one of our buttons, let React handle it — don't capture
+      if (clicked.closest('.bellparts-export-btn')) return;
+
       e.preventDefault();
       e.stopPropagation();
+
+      // Clean up highlight
       if (lastHighlighted) {
         lastHighlighted.style.outline = '';
         lastHighlighted.style.outlineOffset = '';
       }
-      const target = pickTarget || e.target as HTMLElement;
+
+      const target = pickTargetRef.current || clicked;
       setState('idle');
       exportElement(target);
     };
@@ -85,7 +92,7 @@ export function BellPartsExport({ source }: BellPartsExportProps) {
       document.removeEventListener('click', handleClick, true);
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [state, pickTarget]);
+  }, [state]);
 
   // ── Export the Full Page ──
   async function exportFullPage() {
