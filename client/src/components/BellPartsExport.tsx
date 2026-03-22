@@ -4,8 +4,8 @@
  * Drop this component into BellForge or BellBox.
  * It renders a small puzzle-piece icon (fixed bottom-left, next to the debug camera).
  * 
- * Single click  → exports the ENTIRE current page as a self-contained BellPart
- * Long press    → enters "pick mode" where user clicks a specific element to export just that piece
+ * 🧩 Puzzle button → exports the ENTIRE current page as a self-contained BellPart
+ * 🎯 Bullseye button → enters "pick mode" where user clicks a specific element to export just that piece
  * 
  * Requires: html2canvas (already in BellForge, add to BellBox if needed)
  * 
@@ -14,13 +14,10 @@
  *   <BellPartsExport source="BellBox" />
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import html2canvas from 'html2canvas';
 
 const BELLPARTS_API = 'http://localhost:3141/api/parts';
-
-// How long a press must be held to trigger "pick mode" (ms)
-const LONG_PRESS_MS = 600;
 
 interface BellPartsExportProps {
   source: 'BellForge' | 'BellBox';
@@ -31,28 +28,6 @@ type ExportState = 'idle' | 'capturing' | 'picking' | 'success' | 'error';
 export function BellPartsExport({ source }: BellPartsExportProps) {
   const [state, setState] = useState<ExportState>('idle');
   const [pickTarget, setPickTarget] = useState<HTMLElement | null>(null);
-  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isLongPress = useRef(false);
-
-  // ── Long Press Detection ──
-  const handlePointerDown = useCallback(() => {
-    isLongPress.current = false;
-    pressTimer.current = setTimeout(() => {
-      isLongPress.current = true;
-      setState('picking');
-    }, LONG_PRESS_MS);
-  }, []);
-
-  const handlePointerUp = useCallback(() => {
-    if (pressTimer.current) {
-      clearTimeout(pressTimer.current);
-      pressTimer.current = null;
-    }
-    // If it was a short click (not a long press), export the full page
-    if (!isLongPress.current && state === 'idle') {
-      exportFullPage();
-    }
-  }, [state]);
 
   // ── Pick Mode: highlight elements on hover ──
   useEffect(() => {
@@ -209,63 +184,73 @@ export function BellPartsExport({ source }: BellPartsExportProps) {
     }
   }
 
-  // ── Icon ──
-  const icon = (() => {
-    switch (state) {
-      case 'capturing': return '⏳';
-      case 'picking': return '🎯';
-      case 'success': return '✅';
-      case 'error': return '❌';
-      default: return '🧩';
-    }
-  })();
+  // ── Shared button style ──
+  const btnBase: React.CSSProperties = {
+    position: 'fixed',
+    bottom: '16px',
+    zIndex: 9999,
+    width: '40px',
+    height: '40px',
+    borderRadius: '50%',
+    background: 'rgba(10, 10, 20, 0.75)',
+    backdropFilter: 'blur(8px)',
+    color: '#a09b99',
+    fontSize: '18px',
+    cursor: state === 'capturing' ? 'wait' : 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.2s ease',
+    padding: 0,
+    outline: 'none',
+  };
+
+  const puzzleIcon = state === 'capturing' ? '⏳' : state === 'success' ? '✅' : state === 'error' ? '❌' : '🧩';
 
   return (
-    <button
-      className={`bellparts-export-btn ${state !== 'idle' ? 'bellparts-active' : ''}`}
-      onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={() => {
-        if (pressTimer.current) clearTimeout(pressTimer.current);
-      }}
-      disabled={state === 'capturing'}
-      title={state === 'picking'
-        ? 'Click an element to export it (ESC to cancel)'
-        : 'Click: export page | Hold: pick element'}
-      style={{
-        position: 'fixed',
-        bottom: '16px',
-        left: '64px', // Offset from the debug camera button at left:16px
-        zIndex: 9999,
-        width: '40px',
-        height: '40px',
-        borderRadius: '50%',
-        border: `1px solid ${state === 'picking' ? '#b8860b' : state === 'success' ? '#22c55e' : state === 'error' ? '#ef4444' : 'rgba(255,255,255,0.15)'}`,
-        background: 'rgba(10, 10, 20, 0.75)',
-        backdropFilter: 'blur(8px)',
-        color: '#a09b99',
-        fontSize: '18px',
-        cursor: state === 'capturing' ? 'wait' : 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        transition: 'all 0.2s ease',
-        opacity: state === 'idle' ? 0.5 : 1,
-        boxShadow: state === 'picking'
-          ? '0 0 12px rgba(184, 134, 11, 0.4)'
-          : state === 'success'
-          ? '0 0 16px rgba(34, 197, 94, 0.4)'
-          : state === 'error'
-          ? '0 0 12px rgba(239, 68, 68, 0.4)'
-          : 'none',
-        padding: 0,
-        outline: 'none',
-      }}
-      onMouseEnter={(e) => { (e.target as HTMLElement).style.opacity = '1'; }}
-      onMouseLeave={(e) => { if (state === 'idle') (e.target as HTMLElement).style.opacity = '0.5'; }}
-    >
-      {icon}
-    </button>
+    <>
+      {/* 🧩 Export full page */}
+      <button
+        className="bellparts-export-btn"
+        onClick={() => { if (state === 'idle') exportFullPage(); }}
+        disabled={state === 'capturing' || state === 'picking'}
+        title="Export entire page as a BellPart"
+        style={{
+          ...btnBase,
+          left: '64px',
+          border: `1px solid ${state === 'success' ? '#22c55e' : state === 'error' ? '#ef4444' : 'rgba(255,255,255,0.15)'}`,
+          opacity: state === 'idle' ? 0.5 : 1,
+          boxShadow: state === 'success'
+            ? '0 0 16px rgba(34, 197, 94, 0.4)'
+            : state === 'error'
+            ? '0 0 12px rgba(239, 68, 68, 0.4)'
+            : 'none',
+        }}
+        onMouseEnter={(e) => { (e.target as HTMLElement).style.opacity = '1'; }}
+        onMouseLeave={(e) => { if (state === 'idle') (e.target as HTMLElement).style.opacity = '0.5'; }}
+      >
+        {puzzleIcon}
+      </button>
+
+      {/* 🎯 Pick mode */}
+      <button
+        className="bellparts-export-btn bellparts-pick-btn"
+        onClick={() => setState(state === 'picking' ? 'idle' : 'picking')}
+        disabled={state === 'capturing'}
+        title={state === 'picking' ? 'Cancel pick mode (or press ESC)' : 'Pick a specific element to export'}
+        style={{
+          ...btnBase,
+          left: '112px',
+          border: `1px solid ${state === 'picking' ? '#b8860b' : 'rgba(255,255,255,0.15)'}`,
+          opacity: state === 'picking' ? 1 : 0.5,
+          boxShadow: state === 'picking' ? '0 0 12px rgba(184, 134, 11, 0.4)' : 'none',
+        }}
+        onMouseEnter={(e) => { (e.target as HTMLElement).style.opacity = '1'; }}
+        onMouseLeave={(e) => { if (state !== 'picking') (e.target as HTMLElement).style.opacity = '0.5'; }}
+      >
+        🎯
+      </button>
+    </>
   );
 }
 
