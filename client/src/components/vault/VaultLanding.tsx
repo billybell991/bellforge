@@ -24,8 +24,7 @@ export default function VaultLanding({ onForge, onBack }: Props) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!premise.trim()) return;
-    onForge({ premise: premise.trim(), sinType });
+    onForge({ premise: premise.trim() || `A tale of ${sinType}`, sinType });
   };
 
   return (
@@ -52,13 +51,21 @@ export default function VaultLanding({ onForge, onBack }: Props) {
               <button
                 key={s.id}
                 type="button"
+                data-sin={s.id}
                 className={`vault-sin-btn${sinType === s.id ? ' selected' : ''}`}
                 onClick={() => setSinType(s.id)}
                 onMouseEnter={() => setHoveredSin(s.id)}
                 onMouseLeave={() => setHoveredSin(null)}
                 aria-pressed={sinType === s.id}
               >
-                <span className="vault-sin-icon">{s.icon}</span>
+                <div className="vault-sin-img-wrap">
+                  <img
+                    src={`/card-art/sins/${s.id}.png`}
+                    alt={s.label}
+                    className="vault-sin-img"
+                    draggable={false}
+                  />
+                </div>
                 <span className="vault-sin-name">{s.label}</span>
               </button>
             ))}
@@ -78,19 +85,18 @@ export default function VaultLanding({ onForge, onBack }: Props) {
             className="vault-premise-input"
             value={premise}
             onChange={e => setPremise(e.target.value)}
-            placeholder="A greedy landlord who evicts a widow in a blizzard to build a luxury spa on her land..."
+            placeholder="Optional: A greedy landlord who evicts a widow in a blizzard to build a luxury spa on her land..."
             rows={3}
             maxLength={400}
             aria-describedby="vault-premise-hint"
           />
           <div className="vault-premise-hint" id="vault-premise-hint">
-            {premise.length}/400 — Be specific. The Bellman rewards vivid wickedness.
+            {premise.length}/400 — Optional. Leave blank and The Bellman will choose your sinner’s crime.
           </div>
 
           <button
             type="submit"
             className="vault-forge-btn"
-            disabled={!premise.trim()}
           >
             <span className="vault-forge-icon">⚒️</span>
             Summon The Bellman

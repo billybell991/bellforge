@@ -3,6 +3,18 @@
 /* ── Import EC Comics fonts (Bangers already loaded globally) ── */
 @import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Creepster&display=swap');
 
+/* ── Forge button glow pulse ── */
+@keyframes vaultGlowPulse {
+  0%, 100% { box-shadow: 0 4px 20px rgba(139, 0, 0, 0.45), 0 0 0px rgba(139, 0, 0, 0); }
+  50%       { box-shadow: 0 6px 36px rgba(139, 0, 0, 0.75), 0 0 50px rgba(139, 0, 0, 0.2); }
+}
+
+@keyframes vaultSinSelectFlash {
+  0%   { opacity: 1; }
+  40%  { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
 /* ── Landing Page ── */
 .vault-landing {
   position: relative;
@@ -31,15 +43,16 @@
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 540px;
-  background: linear-gradient(160deg, #100A04 0%, #0A0600 100%);
-  border: 2px solid #3A1A00;
+  max-width: 680px;
+  background: linear-gradient(160deg, #110B05 0%, #0A0600 100%);
+  border: 1.5px solid #2E1600;
   border-radius: 4px;
-  padding: 2.5rem 2rem 2rem;
+  padding: 2.5rem 2.2rem 2rem;
   box-shadow:
-    0 0 60px rgba(139, 0, 0, 0.18),
-    0 0 120px rgba(0, 0, 0, 0.8),
-    inset 0 1px 0 rgba(184, 150, 12, 0.08);
+    0 0 80px rgba(139, 0, 0, 0.15),
+    0 0 160px rgba(0, 0, 0, 0.9),
+    inset 0 1px 0 rgba(184, 150, 12, 0.07),
+    inset 0 0 60px rgba(0, 0, 0, 0.5);
 }
 
 /* Aged paper stain effect */
@@ -100,111 +113,199 @@
 
 /* ── Sections ── */
 .vault-section {
-  margin-bottom: 1.6rem;
+  margin-bottom: 1.8rem;
 }
 
 .vault-section-label {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
   font-family: 'Bangers', cursive;
-  font-size: 0.75rem;
-  letter-spacing: 3px;
+  font-size: 0.78rem;
+  letter-spacing: 4px;
   color: #B8960C;
   text-transform: uppercase;
-  margin-bottom: 0.75rem;
-  opacity: 0.85;
+  margin-bottom: 1rem;
+  opacity: 0.9;
 }
+
+.vault-section-label::before,
+.vault-section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(58, 26, 0, 0.9));
+}
+
+.vault-section-label::after {
+  background: linear-gradient(to left, transparent, rgba(58, 26, 0, 0.9));
+}
+
+/* ── Per-sin color variables ── */
+.vault-sin-btn[data-sin="greed"]     { --sin-color: #D4A017; --sin-glow: rgba(212, 160, 23, 0.5); --sin-bg: rgba(212, 160, 23, 0.06); }
+.vault-sin-btn[data-sin="betrayal"]  { --sin-color: #5B8DB8; --sin-glow: rgba(91, 141, 184, 0.5); --sin-bg: rgba(91, 141, 184, 0.06); }
+.vault-sin-btn[data-sin="cruelty"]   { --sin-color: #CC2222; --sin-glow: rgba(204, 34, 34, 0.5);  --sin-bg: rgba(204, 34, 34, 0.06);  }
+.vault-sin-btn[data-sin="hubris"]    { --sin-color: #9B59B6; --sin-glow: rgba(155, 89, 182, 0.5); --sin-bg: rgba(155, 89, 182, 0.06); }
+.vault-sin-btn[data-sin="lust"]      { --sin-color: #C0396B; --sin-glow: rgba(192, 57, 107, 0.5); --sin-bg: rgba(192, 57, 107, 0.06); }
+.vault-sin-btn[data-sin="cowardice"] { --sin-color: #5A8A5A; --sin-glow: rgba(90, 138, 90, 0.5);  --sin-bg: rgba(90, 138, 90, 0.06);  }
 
 /* ── Sin Picker ── */
 .vault-sin-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 0.6rem;
+  gap: 10px;
+  margin-bottom: 0.9rem;
 }
 
 .vault-sin-btn {
+  --sin-color: #B8960C;
+  --sin-glow: rgba(184, 150, 12, 0.4);
+  --sin-bg: rgba(184, 150, 12, 0.05);
+
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 0.6rem 0.3rem;
-  background: rgba(240, 228, 194, 0.03);
-  border: 1.5px solid #2A1400;
-  border-radius: 3px;
+  padding: 0;
+  background: rgba(8, 5, 1, 0.9);
+  border: 1.5px solid rgba(42, 20, 0, 0.9);
+  border-radius: 5px;
   cursor: pointer;
-  transition: all 0.18s ease;
-  color: rgba(240, 228, 194, 0.5);
+  overflow: hidden;
+  position: relative;
+  transition: border-color 0.22s ease, box-shadow 0.22s ease, background 0.22s ease;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.02);
 }
 
-.vault-sin-btn:hover {
-  border-color: #5A2A00;
-  background: rgba(139, 0, 0, 0.08);
-  color: rgba(240, 228, 194, 0.8);
-  transform: translateY(-1px);
+.vault-sin-img-wrap {
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  position: relative;
 }
 
-.vault-sin-btn.selected {
-  border-color: #8B0000;
-  background: rgba(139, 0, 0, 0.18);
-  color: #F0E4C2;
-  box-shadow: 0 0 12px rgba(139, 0, 0, 0.3), inset 0 1px 0 rgba(184, 150, 12, 0.1);
-}
-
-.vault-sin-icon {
-  font-size: 1.4rem;
-  line-height: 1;
+.vault-sin-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: saturate(0.55) brightness(0.75);
+  transition: filter 0.25s ease, transform 0.25s ease;
 }
 
 .vault-sin-name {
+  padding: 0.45rem 0.25rem;
   font-family: 'Bangers', cursive;
-  font-size: 0.72rem;
-  letter-spacing: 1.5px;
+  font-size: 0.78rem;
+  letter-spacing: 2.5px;
   text-transform: uppercase;
+  color: rgba(240, 228, 194, 0.4);
+  transition: color 0.22s ease;
+  width: 100%;
+  text-align: center;
+}
+
+/* Hover state */
+.vault-sin-btn:hover {
+  border-color: var(--sin-color);
+  background: var(--sin-bg);
+  box-shadow:
+    0 0 18px var(--sin-glow),
+    0 6px 20px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(255,255,255,0.03);
+  transform: translateY(-2px);
+}
+
+.vault-sin-btn:hover .vault-sin-img {
+  filter: saturate(0.85) brightness(0.9);
+  transform: scale(1.03);
+}
+
+.vault-sin-btn:hover .vault-sin-name {
+  color: rgba(240, 228, 194, 0.7);
+}
+
+/* Selected state */
+.vault-sin-btn.selected {
+  border-color: var(--sin-color);
+  background: var(--sin-bg);
+  box-shadow:
+    0 0 28px var(--sin-glow),
+    0 0 6px var(--sin-color),
+    0 6px 24px rgba(0, 0, 0, 0.7),
+    inset 0 0 30px rgba(0, 0, 0, 0.3);
+}
+
+.vault-sin-btn.selected .vault-sin-img {
+  filter: saturate(1) brightness(1);
+}
+
+.vault-sin-btn.selected .vault-sin-name {
+  color: var(--sin-color);
+  text-shadow: 0 0 8px var(--sin-glow);
+}
+
+/* Selected overlay shimmer at top */
+.vault-sin-btn.selected::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--sin-color);
+  opacity: 0.8;
 }
 
 .vault-sin-tagline {
   font-family: 'Special Elite', serif;
-  font-size: 0.72rem;
-  color: rgba(139, 0, 0, 0.75);
+  font-size: 0.78rem;
+  color: rgba(240, 228, 194, 0.5);
   font-style: italic;
   text-align: center;
-  min-height: 1.4em;
-  line-height: 1.4;
+  min-height: 1.6em;
+  line-height: 1.5;
+  padding: 0.4rem 0.6rem;
+  border-left: 2px solid rgba(139, 0, 0, 0.35);
+  background: rgba(0, 0, 0, 0.25);
   transition: color 0.15s;
 }
 
 /* ── Premise Textarea ── */
 .vault-premise-input {
   width: 100%;
-  background: rgba(240, 228, 194, 0.04);
+  background: rgba(30, 18, 6, 0.9);
   border: 1.5px solid #2A1400;
+  border-top: 1.5px solid #3A1E00;
   border-radius: 3px;
-  color: #F0E4C2;
+  color: #E8D8B0;
   font-family: 'Special Elite', serif;
-  font-size: 0.88rem;
-  line-height: 1.5;
-  padding: 0.7rem 0.9rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  padding: 0.8rem 1rem;
   resize: vertical;
-  transition: border-color 0.18s, box-shadow 0.18s;
-  margin-bottom: 0.4rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  margin-bottom: 0.5rem;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.6), inset 0 0 30px rgba(0,0,0,0.3);
 }
 
 .vault-premise-input::placeholder {
-  color: rgba(240, 228, 194, 0.22);
+  color: rgba(240, 228, 194, 0.2);
   font-style: italic;
 }
 
 .vault-premise-input:focus {
   outline: none;
   border-color: #5A2A00;
-  box-shadow: 0 0 0 2px rgba(139, 0, 0, 0.15);
+  border-top-color: #7A3A00;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.6), 0 0 0 2px rgba(139, 0, 0, 0.18);
 }
 
 .vault-premise-hint {
-  font-size: 0.65rem;
-  color: rgba(240, 228, 194, 0.3);
+  font-size: 0.67rem;
+  color: rgba(240, 228, 194, 0.28);
   font-family: 'Special Elite', serif;
-  margin-bottom: 1rem;
+  margin-bottom: 1.1rem;
+  font-style: italic;
 }
 
 /* ── Forge Button ── */
@@ -213,37 +314,48 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.6rem;
-  padding: 0.85rem 1.5rem;
-  background: linear-gradient(160deg, #6B0000 0%, #8B0000 50%, #5A0000 100%);
-  border: 2px solid #B84040;
-  border-radius: 3px;
+  gap: 0.7rem;
+  padding: 1rem 1.5rem;
+  background: linear-gradient(160deg, #700000 0%, #8B0000 45%, #6A0000 100%);
+  border: 1.5px solid #C04040;
+  border-bottom: 1.5px solid #7A2020;
+  border-radius: 4px;
   color: #F0E4C2;
   font-family: 'Bangers', cursive;
-  font-size: 1.15rem;
-  letter-spacing: 3px;
+  font-size: 1.25rem;
+  letter-spacing: 4px;
   text-transform: uppercase;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 20px rgba(139, 0, 0, 0.35);
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+  animation: vaultGlowPulse 3.5s ease-in-out infinite;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+  position: relative;
+  overflow: hidden;
 }
 
-.vault-forge-btn:hover:not(:disabled) {
-  background: linear-gradient(160deg, #8B0000 0%, #AA1010 50%, #8B0000 100%);
+.vault-forge-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.04) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.vault-forge-btn:hover {
+  background: linear-gradient(160deg, #950000 0%, #AA1010 45%, #880000 100%);
   border-color: #D06060;
-  box-shadow: 0 6px 28px rgba(139, 0, 0, 0.5);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  animation: none;
+  box-shadow: 0 8px 36px rgba(139, 0, 0, 0.65), 0 0 60px rgba(139, 0, 0, 0.25);
 }
 
-.vault-forge-btn:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+.vault-forge-btn:active {
+  transform: translateY(0);
 }
 
 .vault-forge-icon {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
+  filter: drop-shadow(0 0 4px rgba(255,200,100,0.5));
 }
 
 /* ── Back button ── */
@@ -253,13 +365,14 @@
   text-align: center;
   background: none;
   border: none;
-  color: rgba(240, 228, 194, 0.25);
+  color: rgba(240, 228, 194, 0.22);
   font-family: 'Special Elite', serif;
   font-size: 0.75rem;
-  padding: 0.6rem;
+  padding: 0.65rem;
   cursor: pointer;
   transition: color 0.18s;
-  margin-top: 0.3rem;
+  margin-top: 0.4rem;
+  letter-spacing: 1px;
 }
 
 .vault-back-btn:hover {
