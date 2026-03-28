@@ -25,7 +25,7 @@ export function BuildProgress({ percent, stageName, detail, error, log, entertai
 
   return (
     <div className="build-screen">
-      <h1 className="build-title"><img src="/bellforge-logo.png" alt="" style={{ width: 28, height: 'auto', verticalAlign: 'middle', marginRight: 8, filter: 'drop-shadow(0 0 6px rgba(255,107,53,0.4))' }} />Forging Your {entertainmentType === 'adventure' ? 'Adventure' : entertainmentType === 'comic' ? 'Comic' : entertainmentType === 'escape' ? 'Escape Room' : entertainmentType === 'puzzle' ? 'Puzzle' : entertainmentType === 'wordsearch' ? 'Word Search' : entertainmentType === 'crossword' ? 'Crossword' : entertainmentType === 'jumble' ? 'Jumble' : 'Game'}</h1>
+      <h1 className="build-title"><img src="/bellforge-logo.png" alt="" style={{ width: 28, height: 'auto', verticalAlign: 'middle', marginRight: 8, filter: 'drop-shadow(0 0 6px rgba(255,107,53,0.4))' }} />Forging Your {entertainmentType === 'adventure' ? 'Adventure' : entertainmentType === 'comic' ? 'Comic' : entertainmentType === 'escape' ? 'Escape Room' : entertainmentType === 'puzzle' ? 'Puzzle' : entertainmentType === 'wordsearch' ? 'Word Search' : entertainmentType === 'crossword' ? 'Crossword' : entertainmentType === 'jumble' ? 'Jumble' : entertainmentType === 'vault' ? 'Tale' : entertainmentType === 'anthology' ? 'Casebook' : 'Game'}</h1>
       <p className="build-subtitle">
         Sit back — the forge is hot and the hammers are swinging.
       </p>

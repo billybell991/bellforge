@@ -247,7 +247,7 @@ export async function runVaultPipeline(
     const pct = 20 + Math.round((i / panelScripts.length) * 65);
     onProgress?.(pct, `🖊️ Drawing panel ${i + 1} of ${panelScripts.length}...`, 'vault_panels');
     const img = await generateImage(buildPanelPrompt(panelScripts[i]), '3:4');
-    panelIllustrations.push(img);
+    panelIllustrations.push(img && img !== 'QUOTA_EXHAUSTED' ? `data:image/png;base64,${img}` : null);
     if (i < panelScripts.length - 1) await sleep(1200);
   }
 
@@ -275,7 +275,7 @@ export async function runVaultPipeline(
     subtitle: scriptData.subtitle || '',
     sinType: config.sinType,
     issueNumber: scriptData.issueNumber || 1,
-    coverIllustration: coverImg || undefined,
+    coverIllustration: (coverImg && coverImg !== 'QUOTA_EXHAUSTED') ? `data:image/png;base64,${coverImg}` : undefined,
     pages,
   };
 }

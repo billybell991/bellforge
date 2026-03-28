@@ -249,7 +249,7 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
               </div>
             </div>
           </div>
-          </div>{/* /desktop-cards-wrapper */
+          </div>{/* /desktop-cards-wrapper */}
         </div>
       )}
 
