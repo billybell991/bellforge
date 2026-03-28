@@ -3075,3 +3075,144 @@ body {
 .landing-type-switch:hover {
   color: var(--cyan);
 }
+
+/* ═══════════════════════════════════════
+   MOBILE — ≤ 480 px
+   Purely additive — zero desktop rules touched.
+   ═══════════════════════════════════════ */
+
+@media (max-width: 480px) {
+
+  /* ── Header ── */
+  .forge-header {
+    padding: 8px 14px;
+  }
+
+  .forge-header-version {
+    display: none;
+  }
+
+  .forge-header-right {
+    gap: 8px;
+  }
+
+  .forge-header-library {
+    padding: 5px 10px;
+    font-size: 0.72rem;
+  }
+
+  .forge-header-building {
+    padding: 4px 10px;
+    font-size: 0.7rem;
+    gap: 5px;
+    letter-spacing: 0;
+  }
+
+  /* ── Landing wrapper — tighter horizontal padding ── */
+  .landing {
+    padding: 16px 14px;
+  }
+
+  /* ── Tagline — disable typing animation, allow wrap ── */
+  .landing-tagline {
+    white-space: normal;
+    border-right: none;
+    animation: none;
+    max-width: 100%;
+    font-size: 0.8rem;
+    text-align: center;
+  }
+
+  .landing-tagline.visible {
+    max-width: 100%;
+  }
+
+  /* ── Card row → horizontal scroll carousel ── */
+  .entertainment-prompt {
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+  }
+
+  .entertainment-cards {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    justify-content: flex-start;
+    /* Remove viewport-height cap — faceplate cards set their own height */
+    height: auto;
+    max-height: none;
+    gap: 10px;
+    padding-bottom: 10px;
+  }
+
+  /* Scrollbar hint on Android — subtle amber stripe */
+  .entertainment-cards::-webkit-scrollbar {
+    height: 3px;
+  }
+  .entertainment-cards::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .entertainment-cards::-webkit-scrollbar-thumb {
+    background: var(--forge-amber);
+    border-radius: 2px;
+  }
+
+  /* All cards: fixed width, no shrink, scroll-snap */
+  .entertainment-card {
+    flex: none;
+    min-width: 78vw;
+    scroll-snap-align: start;
+  }
+
+  /* Faceplate cards: explicit height so art section fills properly */
+  .entertainment-card.faceplate {
+    height: 55vh;
+    min-height: 260px;
+  }
+
+  /* ── Feature cards (post-type-selection) — 2-col grid ── */
+  .landing-features {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .feature-card {
+    padding: 16px 10px;
+  }
+
+  .feature-icon {
+    font-size: 24px;
+    margin-bottom: 6px;
+  }
+
+  .feature-title {
+    font-size: 0.72rem;
+  }
+
+  .feature-desc {
+    font-size: 0.72rem;
+  }
+
+  /* ── Forge buttons — narrower padding for small screens ── */
+  .landing-buttons {
+    gap: 10px;
+  }
+
+  .forge-btn-manual,
+  .forge-btn-auto {
+    font-size: 0.82rem;
+    padding: 12px 20px;
+    letter-spacing: 1px;
+  }
+
+  /* ── Toast — stretch to safe full-width on mobile ── */
+  .ready-toast {
+    bottom: 16px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+
+}
