@@ -188,25 +188,33 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
         <div className="entertainment-selector">
           <h2 className="entertainment-prompt">Pick your puzzle type</h2>
           <div className="entertainment-cards">
-            <div className="entertainment-card" onClick={() => setSelection('puzzle')}>
-              <span className="entertainment-card-icon">🖼️</span>
-              <h3 className="entertainment-card-title">Jigsaw Puzzle</h3>
-              <p className="entertainment-card-desc">A beautiful AI-painted image cut into classic jigsaw pieces — drag, snap, and solve.</p>
+            <div className="entertainment-card faceplate" onClick={() => setSelection('puzzle')}>
+              <div className="faceplate-art" style={{ backgroundImage: 'url(/card-art/jigsaw.png)' }} />
+              <div className="faceplate-body">
+                <h3 className="entertainment-card-title">Jigsaw Puzzle</h3>
+                <p className="entertainment-card-desc">A beautiful AI-painted image cut into classic jigsaw pieces — drag, snap, and solve.</p>
+              </div>
             </div>
-            <div className="entertainment-card" onClick={() => setSelection('wordsearch')}>
-              <span className="entertainment-card-icon">🔤</span>
-              <h3 className="entertainment-card-title">Word Search</h3>
-              <p className="entertainment-card-desc">Find hidden words in a grid — themed by topic, with diagonals and backwards options.</p>
+            <div className="entertainment-card faceplate" onClick={() => setSelection('wordsearch')}>
+              <div className="faceplate-art" style={{ backgroundImage: 'url(/card-art/wordsearch.png)' }} />
+              <div className="faceplate-body">
+                <h3 className="entertainment-card-title">Word Search</h3>
+                <p className="entertainment-card-desc">Find hidden words in a grid — themed by topic, with diagonals and backwards options.</p>
+              </div>
             </div>
-            <div className="entertainment-card" onClick={() => setSelection('crossword')}>
-              <span className="entertainment-card-icon">✏️</span>
-              <h3 className="entertainment-card-title">Crossword</h3>
-              <p className="entertainment-card-desc">AI-written clues on any topic — classic numbered grid with across and down.</p>
+            <div className="entertainment-card faceplate" onClick={() => setSelection('crossword')}>
+              <div className="faceplate-art" style={{ backgroundImage: 'url(/card-art/crossword.png)' }} />
+              <div className="faceplate-body">
+                <h3 className="entertainment-card-title">Crossword</h3>
+                <p className="entertainment-card-desc">AI-written clues on any topic — classic numbered grid with across and down.</p>
+              </div>
             </div>
-            <div className="entertainment-card" onClick={() => setSelection('jumble')}>
-              <span className="entertainment-card-icon">🔀</span>
-              <h3 className="entertainment-card-title">Jumble</h3>
-              <p className="entertainment-card-desc">Unscramble words, find the circled letters, solve the punchline — with a cartoon!</p>
+            <div className="entertainment-card faceplate" onClick={() => setSelection('jumble')}>
+              <div className="faceplate-art" style={{ backgroundImage: 'url(/card-art/jumble.png)' }} />
+              <div className="faceplate-body">
+                <h3 className="entertainment-card-title">Jumble</h3>
+                <p className="entertainment-card-desc">Unscramble words, find the circled letters, solve the punchline — with a cartoon!</p>
+              </div>
             </div>
           </div>
           <div className="landing-buttons" style={{ marginTop: 16 }}>
