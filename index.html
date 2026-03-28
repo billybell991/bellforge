@@ -10,8 +10,20 @@
     <!-- BellAnthologies fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
     <link rel="icon" type="image/png" href="/bellforge-logo.png" />
-    <script type="module" crossorigin src="/assets/index-CH5xwEzq.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-DqZca-5y.css">
+    <!-- Preload landing card art so images are ready before React renders -->
+    <link rel="preload" as="image" href="/card-art/adventure.png" />
+    <link rel="preload" as="image" href="/card-art/comic.png" />
+    <link rel="preload" as="image" href="/card-art/escape.png" />
+    <link rel="preload" as="image" href="/card-art/puzzles.png" />
+    <link rel="preload" as="image" href="/card-art/casebook.png" />
+    <link rel="preload" as="image" href="/card-art/vault.png" />
+    <!-- Puzzle sub-menu (lower priority — only shown after user taps Puzzles) -->
+    <link rel="preload" as="image" href="/card-art/jigsaw.png" fetchpriority="low" />
+    <link rel="preload" as="image" href="/card-art/wordsearch.png" fetchpriority="low" />
+    <link rel="preload" as="image" href="/card-art/crossword.png" fetchpriority="low" />
+    <link rel="preload" as="image" href="/card-art/jumble.png" fetchpriority="low" />
+    <script type="module" crossorigin src="/assets/index-CM7cLr0T.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DmCR5av3.css">
   </head>
   <body>
     <div id="root"></div>
