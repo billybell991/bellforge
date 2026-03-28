@@ -1762,6 +1762,42 @@ function waitForClient(buildId: string, timeoutMs: number): Promise<void> {
   });
 }
 
+// ── BellAnthologies Proxy ──
+// Forwards /api/anthology/* → BellAnthologies FastAPI server on :5001
+// Runs as a sidecar process in dev; same pattern applies in prod.
+
+const ANTHOLOGY_ORIGIN = process.env.ANTHOLOGY_URL || 'http://localhost:5001';
+
+app.post('/api/anthology/generate/investigator', async (req, res) => {
+  try {
+    const upstream = await fetch(`${ANTHOLOGY_ORIGIN}/generate/investigator`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body),
+    });
+    const data = await upstream.json();
+    res.status(upstream.status).json(data);
+  } catch (err) {
+    console.error('[anthology proxy] generate error:', err);
+    res.status(502).json({ detail: 'BellAnthologies server unreachable. Is it running on port 5001?' });
+  }
+});
+
+app.post('/api/anthology/grade/investigator', async (req, res) => {
+  try {
+    const upstream = await fetch(`${ANTHOLOGY_ORIGIN}/grade/investigator`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req.body),
+    });
+    const data = await upstream.json();
+    res.status(upstream.status).json(data);
+  } catch (err) {
+    console.error('[anthology proxy] grade error:', err);
+    res.status(502).json({ detail: 'BellAnthologies server unreachable. Is it running on port 5001?' });
+  }
+});
+
 // In production, catch-all serves the SPA for client-side routing
 if (process.env.NODE_ENV === 'production') {
   const clientDist = join(process.cwd(), '..', 'client', 'dist');

@@ -17,6 +17,7 @@ import { Library } from './components/Library';
 import { EmberField } from './components/EmberField';
 import { DebugButton } from './components/DebugButton';
 import { BellPartsExport } from './components/BellPartsExport';
+import InvestigatorApp from './components/anthology/InvestigatorApp';
 
 // Per-browser identity for scoping the library
 function getClientId(): string {
@@ -168,6 +169,8 @@ interface BuildLogEntry {
 
 export default function App() {
   const [page, setPage] = useState<AppPage>('landing');
+  // Keep pageRef in sync so WS handlers can read current page without stale closures
+  useEffect(() => { pageRef.current = page; }, [page]);
   const [entertainmentType, setEntertainmentType] = useState<EntertainmentType>('game');
   const [genre, setGenre] = useState<GenreOption | null>(null);
   const [theme, setTheme] = useState<ThemeOption | null>(null);
@@ -216,6 +219,11 @@ export default function App() {
   const buildCompletedRef = useRef(false);
   // Track what page we came from when navigating away from build
   const preNavPageRef = useRef<AppPage | null>(null);
+  // Ref that always holds current page — safe to read inside WS closures
+  const pageRef = useRef<AppPage>('landing');
+  // "Ready" toast shown when a build finishes while the user is on a different page
+  const [readyToast, setReadyToast] = useState<{ title: string; type: EntertainmentType } | null>(null);
+  const [libraryBadgePulse, setLibraryBadgePulse] = useState(false);
 
   // Library count for badge display
   const [libraryCount, setLibraryCount] = useState(0);
@@ -364,10 +372,18 @@ export default function App() {
             // Refresh library count (server auto-saved this game)
             fetchLibraryCount();
 
-            // Navigate to preview after a brief pause
-            setTimeout(() => {
-              setPage('preview');
-            }, 1500);
+            if (pageRef.current === 'building') {
+              // User is watching — navigate straight to the result
+              setTimeout(() => {
+                setPage('preview');
+              }, 1500);
+            } else {
+              // User navigated away — show a toast and pulse the library badge
+              const title = (msg.qaReport?.config as Record<string, unknown> | undefined)?.title as string | undefined;
+              setReadyToast({ title: title || 'Your creation', type: entertainmentType });
+              setLibraryBadgePulse(true);
+              setTimeout(() => setLibraryBadgePulse(false), 3000);
+            }
           }
 
           if (data.type === 'error') {
@@ -403,6 +419,10 @@ export default function App() {
 
   const handleStartForging = useCallback((type: EntertainmentType) => {
     setEntertainmentType(type);
+    if (type === 'anthology') {
+      setPage('anthology');
+      return;
+    }
     setPage('wizard');
   }, []);
 
@@ -862,13 +882,16 @@ export default function App() {
             </button>
           )}
           <button className="forge-header-library" onClick={handleGoToLibrary}>
-            📚 Library{libraryCount > 0 && <span className="library-badge">{libraryCount}</span>}
+            📚 Library{libraryCount > 0 && <span className={`library-badge${libraryBadgePulse ? ' library-badge-pulse' : ''}`}>{libraryCount}</span>}
           </button>
           <div className="forge-header-version">v1.0.0</div>
         </div>
       </header>
 
       <div className="has-header">
+        {page === 'anthology' && (
+          <InvestigatorApp onBack={handleStartOver} />
+        )}
         {page === 'landing' && (
           <Landing onStart={handleStartForging} onAutoForge={handleAutoForge} onLibrary={handleGoToLibrary} libraryCount={libraryCount} />
         )}
@@ -1044,6 +1067,21 @@ export default function App() {
               onReForge={handleReForgeFromLibrary}
               onCountChange={setLibraryCount}
             />
+          </div>
+        </div>
+      )}
+
+      {/* Background-build ready toast */}
+      {readyToast && (
+        <div className="ready-toast" role="alert">
+          <span className="ready-toast-icon">🎉</span>
+          <div className="ready-toast-body">
+            <div className="ready-toast-title">"{readyToast.title}" is ready!</div>
+            <div className="ready-toast-sub">Saved to your Library</div>
+          </div>
+          <div className="ready-toast-actions">
+            <button className="ready-toast-view" onClick={() => { setReadyToast(null); setPage('preview'); }}>View</button>
+            <button className="ready-toast-close" onClick={() => setReadyToast(null)} aria-label="Dismiss">✕</button>
           </div>
         </div>
       )}

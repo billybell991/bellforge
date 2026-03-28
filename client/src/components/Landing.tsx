@@ -157,6 +157,11 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
               <h3 className="entertainment-card-title">Puzzles</h3>
               <p className="entertainment-card-desc">Jigsaw puzzles, word searches, crosswords, and jumbles — AI-generated brain teasers.</p>
             </div>
+            <div className="entertainment-card" onClick={() => onStart('anthology')}>
+              <span className="entertainment-card-icon">🔍</span>
+              <h3 className="entertainment-card-title">Anthologies</h3>
+              <p className="entertainment-card-desc">Logic-puzzle mysteries across noir, fantasy, sci-fi, and horror — find the flaw before the detective does.</p>
+            </div>
           </div>
         </div>
       )}

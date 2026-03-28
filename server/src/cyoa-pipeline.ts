@@ -652,13 +652,31 @@ export async function runAdventurePipeline(
 ): Promise<AdventurePipelineResult | null> {
   const t0 = Date.now();
 
+  // Descriptive rotating messages for Phase 1 — each fires every ~3s while Gemini thinks
+  const CONCEPT_HEARTBEATS = [
+    `📖 Inventing a ${config.cyoaGenre.name} premise that grabs you on page one`,
+    `🌿 Mapping ${config.structure.pageCount} pages of branching choices`,
+    `🎭 Giving the characters secrets worth discovering`,
+    `🗝️ Designing items that feel like real discoveries, not just keys`,
+    `⚖️ Balancing good endings vs. deadly dead-ends (${config.structure.deadliness} deadliness)`,
+    `🌐 Weaving the choice tree so every path feels different`,
+    `✍️ Crafting the opening hook — the line that makes you lean in`,
+    `🧩 Placing item gates on paths that make sense to earn`,
+    `💀 Writing bad endings that are haunting, not just "you die"`,
+    `🎲 Seeding the ${config.theme.name} atmosphere through every branch`,
+    `🏁 Counting endings — good, bad, and the ones that make you think`,
+    `🔍 Double-checking every page is reachable from page one`,
+  ];
+  let heartbeatIdx = 0;
+
   // Phase 1: Concept — with heartbeat so progress doesn't freeze
-  sendProgress(5, `Designing a ${config.cyoaGenre.name} story with ${config.structure.pageCount} pages`, 'concept');
+  sendProgress(5, `📖 Planning a ${config.cyoaGenre.name} adventure — ${config.structure.pageCount} pages, ${config.structure.deadliness} deadliness`, 'concept');
   let conceptPct = 5;
   const conceptHeartbeat = setInterval(() => {
     conceptPct = Math.min(conceptPct + 1, 14);
-    const dots = '.'.repeat((conceptPct % 3) + 1);
-    sendProgress(conceptPct, `Gemini is designing the story outline${dots}`, 'outline');
+    const msg = CONCEPT_HEARTBEATS[heartbeatIdx % CONCEPT_HEARTBEATS.length];
+    heartbeatIdx++;
+    sendProgress(conceptPct, msg, 'outline');
   }, 3000);
   const concept = await phaseConcept(config, (msg) => sendProgress(10, msg, 'outline'));
   clearInterval(conceptHeartbeat);
@@ -668,34 +686,46 @@ export async function runAdventurePipeline(
   }
 
   const elapsed1 = Math.floor((Date.now() - t0) / 1000);
-  sendProgress(15, `Concept ready (${elapsed1}s): "${concept.title}" — ${concept.page_map.length} pages, ${concept.characters.length} characters`, 'outline');
+  const goodEndings = concept.page_map.filter(p => p.is_ending && p.ending_type === 'good').length;
+  const badEndings = concept.page_map.filter(p => p.is_ending && p.ending_type === 'bad').length;
+  sendProgress(15, `✅ Outline ready (${elapsed1}s) — "${concept.title}": ${concept.page_map.length} pages, ${concept.characters.length} characters, ${goodEndings} good / ${badEndings} bad endings`, 'outline');
 
   // Phase 2: Prose — smooth progress across chunks
   const totalChunks = Math.ceil(concept.page_map.length / 5);
   let chunksDone = 0;
-  sendProgress(18, `Writing vivid prose for ${concept.page_map.length} pages`, 'prose');
+  sendProgress(18, `✍️ Writing vivid second-person prose for ${concept.page_map.length} pages (${totalChunks} batches)`, 'prose');
   const prose = await phaseProse(concept, config, (msg) => {
     // Track chunk completion from the message
     const chunkMatch = msg.match(/chunk (\d+)\/(\d+)/);
     if (chunkMatch) {
       chunksDone = parseInt(chunkMatch[1]) - 1;
+      const done = parseInt(chunkMatch[1]);
+      const total = parseInt(chunkMatch[2]);
+      const startPage = (done - 1) * 5 + 1;
+      const endPage = Math.min(done * 5, concept.page_map.length);
+      const descriptive = `✍️ Writing pages ${startPage}–${endPage} of ${concept.page_map.length} — laying down the ${config.theme.name} atmosphere`;
+      const proseProgress = 18 + Math.floor((chunksDone / totalChunks) * 32);
+      const stageId = proseProgress < 30 ? 'prose' : proseProgress < 42 ? 'prose_mid' : 'prose_final';
+      sendProgress(Math.min(proseProgress, 50), descriptive, stageId);
+    } else {
+      const proseProgress = 18 + Math.floor((chunksDone / totalChunks) * 32);
+      const stageId = proseProgress < 30 ? 'prose' : proseProgress < 42 ? 'prose_mid' : 'prose_final';
+      sendProgress(Math.min(proseProgress, 50), msg, stageId);
     }
-    // Smooth progress: 18% to 50% over all chunks
-    const proseProgress = 18 + Math.floor((chunksDone / totalChunks) * 32);
-    const stageId = proseProgress < 30 ? 'prose' : proseProgress < 42 ? 'prose_mid' : 'prose_final';
-    sendProgress(Math.min(proseProgress, 50), msg, stageId);
   });
   const elapsed2 = Math.floor((Date.now() - t0) / 1000);
-  sendProgress(50, `Prose complete (${elapsed2}s): ${Object.keys(prose).length} pages of narrative written`, 'prose_final');
+  sendProgress(50, `✅ All ${Object.keys(prose).length} pages written (${elapsed2}s) — "${concept.title}" has its voice`, 'prose_final');
 
   // Phase 3: Assembly
-  sendProgress(55, 'Assembling story graph', 'assembly');
+  sendProgress(55, `🔗 Stitching the ${concept.page_map.length}-page choice graph together`, 'assembly');
   const story = assembleStory(concept, prose, config);
   const endings = Object.values(story.pages).filter(p => p.isEnding).length;
-  sendProgress(60, `Story assembled: ${story.totalPages} pages, ${endings} endings`, 'assembly');
+  const goodEndCount = Object.values(story.pages).filter(p => p.isEnding && p.endingType === 'good').length;
+  const badEndCount  = Object.values(story.pages).filter(p => p.isEnding && p.endingType === 'bad').length;
+  sendProgress(60, `✅ Graph assembled — ${story.totalPages} pages, ${endings} endings (${goodEndCount} good, ${badEndCount} bad, ${endings - goodEndCount - badEndCount} neutral)`, 'assembly');
 
   // Phase 4: Imagen illustrations for key pages
-  sendProgress(62, 'Generating illustrations with Imagen', 'illustrations');
+  sendProgress(62, `🎨 Sending ${story.totalPages + 1} illustration requests to Imagen`, 'illustrations');
   const artPrefix = getArtStylePrefix(config.artStyle.id);
   const themeAtmo: Record<string, string> = {
     horror: 'dark eerie atmosphere, shadows, dim flickering light',
@@ -715,7 +745,7 @@ export async function runAdventurePipeline(
   const totalImages = toIllustrate.length + 1; // +1 for cover
 
   // Cover illustration
-  sendProgress(63, `Painting cover illustration (1/${totalImages})`, 'illustrations');
+  sendProgress(63, `🖼️ Painting the cover for "${concept.title}"`, 'illustrations');
   const coverPrompt = `${artPrefix} book cover illustration, ${concept.premise}, ${themeStr}, dramatic cinematic composition, ${ANTI_IMG_TEXT}`;
   const coverImg = await generateImage(coverPrompt, '3:4');
   if (coverImg) {
@@ -733,7 +763,9 @@ export async function runAdventurePipeline(
     const pageEntry = concept.page_map.find(p => String(p.id) === pid);
     const setting = pageEntry?.setting || 'a mysterious scene';
     const summary = pageEntry?.summary || '';
-    sendProgress(pct, `Illustrating page ${pid}/${toIllustrate.length}: ${setting.substring(0, 40)}...`, 'illustrations');
+    const isEnding = pageEntry?.is_ending;
+    const endingLabel = isEnding ? ` (${pageEntry?.ending_type ?? 'neutral'} ending)` : '';
+    sendProgress(pct, `🖼️ Illustrating page ${pid}/${toIllustrate.length}${endingLabel}: ${setting.substring(0, 50)}`, 'illustrations');
 
     const prompt = `${artPrefix} interior book illustration, scene: ${setting}, ${summary}, ${themeStr}, atmospheric scenery, ${ANTI_IMG_TEXT}`;
     const img = await generateImage(prompt, '4:3');
@@ -743,23 +775,24 @@ export async function runAdventurePipeline(
       imgSuccess++;
     }
   }
-  sendProgress(88, `Illustrations complete: ${imgSuccess}/${totalImages} images generated`, 'illustrations');
+  sendProgress(88, `✅ Illustrations done — ${imgSuccess} of ${totalImages} painted`, 'illustrations');
 
   // Phase 5: QA & auto-fix
-  sendProgress(89, 'Checking graph integrity', 'qa_graph');
+  sendProgress(89, '🔍 Tracing every path from page 1 — checking for orphan pages and broken links', 'qa_graph');
   const fixedStory = await phaseQA(story, concept, (msg) => {
     if (msg.includes('item gates')) {
-      sendProgress(93, msg, 'qa_items');
+      sendProgress(93, `🔑 ${msg} — removing gates the player can never earn`, 'qa_items');
     } else {
-      sendProgress(91, msg, 'qa_graph');
+      sendProgress(91, `🔍 ${msg}`, 'qa_graph');
     }
   });
 
-  sendProgress(95, `QA complete — verifying endings`, 'qa_endings');
-  sendProgress(96, 'Building interactive viewer', 'viewer');
+  const endingPages = Object.values(fixedStory.pages).filter(p => p.isEnding);
+  sendProgress(95, `✅ QA passed — ${endingPages.filter(p => p.endingType === 'good').length} good endings confirmed reachable`, 'qa_endings');
+  sendProgress(96, '📱 Compiling the interactive book viewer', 'viewer');
 
   const elapsed = Math.floor((Date.now() - t0) / 1000);
-  sendProgress(98, `Forge complete in ${elapsed}s: "${fixedStory.title}" — ${fixedStory.totalPages} pages, ${endings} endings`, 'complete');
+  sendProgress(98, `🎉 "${fixedStory.title}" is ready — ${fixedStory.totalPages} pages forged in ${elapsed}s`, 'complete');
 
   return { story: fixedStory, concept };
 }

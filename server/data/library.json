@@ -554,5 +554,134 @@
     "apkSize": "1573 KB",
     "createdAt": "2026-03-18T06:35:42.622Z",
     "clientId": "98f89de9-6a69-424c-8917-d574c8190b46"
+  },
+  {
+    "id": "b77ceaa7-f370-4268-9816-fbbb57717ce0",
+    "name": "Orient Express Betrayal",
+    "rating": 0,
+    "entertainmentType": "escape",
+    "config": {
+      "escapeTheme": {
+        "id": "detective",
+        "name": "Cold Case",
+        "icon": "🔎",
+        "description": "A case was closed too soon — buried evidence, conflicting alibis, one night to find the truth",
+        "tag": "POPULAR"
+      },
+      "theme": {
+        "id": "mystery",
+        "name": "Mystery / Detective",
+        "icon": "🔎",
+        "description": "Crime scenes, clues, and whodunits",
+        "color": "#ffa726"
+      },
+      "artStyle": {
+        "id": "noir",
+        "name": "Noir / Black & White",
+        "icon": "🎬",
+        "description": "High contrast, dramatic shadows"
+      },
+      "structure": {
+        "envelopeCount": 4,
+        "difficulty": "standard",
+        "duration": 45
+      },
+      "story": {
+        "title": "Orient Express Betrayal",
+        "characterName": "Dubois",
+        "setting": "A luxurious, snowbound passenger train stopped in the desolate, mountainous Balkans.",
+        "description": "A priceless jewel was stolen and the train ground to a halt. Interview eccentric passengers through clues, find the artifact, and deduce the culprit."
+      }
+    },
+    "buildId": "ed6fbafc-6f6b-41fe-8cff-b9d625847eb5",
+    "apkSize": "87 KB",
+    "createdAt": "2026-03-20T20:40:25.436Z",
+    "clientId": "9915cac8-e201-4ec2-8b5a-9d5dfd234dcc"
+  },
+  {
+    "id": "a1dfc590-8b19-4842-b270-f910c05885af",
+    "name": "The Empathy Architect",
+    "rating": 0,
+    "entertainmentType": "escape",
+    "config": {
+      "escapeTheme": {
+        "id": "detective",
+        "name": "Cold Case",
+        "icon": "🔎",
+        "description": "A case was closed too soon — buried evidence, conflicting alibis, one night to find the truth",
+        "tag": "POPULAR"
+      },
+      "theme": {
+        "id": "mystery",
+        "name": "Mystery / Detective",
+        "icon": "🔎",
+        "description": "Crime scenes, clues, and whodunits",
+        "color": "#ffa726"
+      },
+      "artStyle": {
+        "id": "noir",
+        "name": "Noir / Black & White",
+        "icon": "🎬",
+        "description": "High contrast, dramatic shadows"
+      },
+      "structure": {
+        "envelopeCount": 3,
+        "difficulty": "standard",
+        "duration": 30
+      },
+      "story": {
+        "title": "The Empathy Architect",
+        "characterName": "Veridian Quill",
+        "setting": "A labyrinthine, fog-shrouded municipal archive where every floor is connected by precarious catwalks strung over a cavernous central atrium that echoes with whispers of forgotten truths.",
+        "description": "Veridian Quill, a peculiar archivist whose 'synesthesia of empathy' allows her to perceive the emotional residue clinging to physical objects and texts, is tasked with 'reading' the cold case of a vanished bridge architect. As she meticulously reconstructs the emotional landscape of the past through fragmented documents and forgotten personal effects, the line between observer and participant blurs, forcing her to confront a chilling possibility: the lingering emotions of the disappeared are not just echoes, but active influences. "
+      }
+    },
+    "buildId": "5f3ea4cc-adc2-4201-8297-5a347495d62d",
+    "apkSize": "17642 KB",
+    "createdAt": "2026-03-20T20:49:19.400Z",
+    "clientId": "9915cac8-e201-4ec2-8b5a-9d5dfd234dcc"
+  },
+  {
+    "id": "1173de66-29b0-4810-86e9-dd1b05041ffe",
+    "name": "The Palate of Peril",
+    "rating": 0,
+    "entertainmentType": "escape",
+    "config": {
+      "escapeTheme": {
+        "id": "detective",
+        "name": "Cold Case",
+        "icon": "🔎",
+        "description": "A case was closed too soon — buried evidence, conflicting alibis, one night to find the truth",
+        "tag": "POPULAR"
+      },
+      "theme": {
+        "id": "mystery",
+        "name": "Mystery / Detective",
+        "icon": "🔎",
+        "description": "Crime scenes, clues, and whodunits",
+        "color": "#ffa726"
+      },
+      "artStyle": {
+        "id": "noir",
+        "name": "Noir / Black & White",
+        "icon": "🎬",
+        "description": "High contrast, dramatic shadows"
+      },
+      "structure": {
+        "envelopeCount": 4,
+        "difficulty": "standard",
+        "duration": 45
+      },
+      "story": {
+        "title": "The Palate of Peril",
+        "characterName": "Elias Culin",
+        "setting": "A forgotten, dust-choked atelier, where canvases depicting the city's underbelly hang like silent, watchful eyes, each brushstroke a potential clue.",
+        "description": "Elias Culin, a retired culinary detective whose unique gift allows him to taste the 'emotional residue' of past events in any food item, is drawn back into the world of shadows by a series of unsettlingly bland yet deeply unsettling dishes. The only remaining evidence from a decades-old cold case — a half-eaten dessert found at a crime scene — now inexplicably calls to him, its missing ingredients a cryptic message, and its taste hinting at a secret Elias himself might have forgotten."
+      }
+    },
+    "buildId": "cf564c8c-0072-404f-b558-2382a814d69d",
+    "apkSize": "27362 KB",
+    "createdAt": "2026-03-21T10:31:41.745Z",
+    "clientId": "9915cac8-e201-4ec2-8b5a-9d5dfd234dcc"
   }
 ]

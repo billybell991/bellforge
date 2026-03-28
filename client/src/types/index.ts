@@ -4,7 +4,7 @@
 
 // ── Entertainment Type ──
 
-export type EntertainmentType = 'game' | 'adventure' | 'comic' | 'escape' | 'puzzle' | 'wordsearch' | 'crossword' | 'jumble';
+export type EntertainmentType = 'game' | 'adventure' | 'comic' | 'escape' | 'puzzle' | 'wordsearch' | 'crossword' | 'jumble' | 'anthology';
 
 export interface GameConfig {
   genre: GenreOption;
@@ -500,7 +500,7 @@ export const JUMBLE_BUILD_STAGES: BuildStage[] = [
 
 // ── App Page State ──
 
-export type AppPage = 'landing' | 'wizard' | 'building' | 'preview' | 'deploy';
+export type AppPage = 'landing' | 'wizard' | 'building' | 'preview' | 'deploy' | 'anthology';
 
 // ── Library ──
 
