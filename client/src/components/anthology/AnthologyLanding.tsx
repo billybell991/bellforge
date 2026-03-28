@@ -30,7 +30,7 @@ export default function AnthologyLanding({ onGenerate, onBack }: Props) {
 
       <div className="landing-card">
         <div className="brand">
-          <h1 className="brand-title">BellAnthologies</h1>
+          <h1 className="brand-title">The Casebook</h1>
           <div className="brand-rule" aria-hidden="true" />
           <h2 className="brand-subtitle">The Investigator</h2>
           <p className="brand-tagline">

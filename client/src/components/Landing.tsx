@@ -159,7 +159,7 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
             </div>
             <div className="entertainment-card" onClick={() => onStart('anthology')}>
               <span className="entertainment-card-icon">🔍</span>
-              <h3 className="entertainment-card-title">Anthologies</h3>
+              <h3 className="entertainment-card-title">The Casebook</h3>
               <p className="entertainment-card-desc">Logic-puzzle mysteries across noir, fantasy, sci-fi, and horror — find the flaw before the detective does.</p>
             </div>
           </div>
