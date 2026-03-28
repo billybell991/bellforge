@@ -137,30 +137,40 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
         <div className="entertainment-selector">
           <h2 className="entertainment-prompt">The forge is hot. What are we making?</h2>
           <div className="entertainment-cards">
-            <div className="entertainment-card" onClick={() => setSelection('adventure')}>
-              <span className="entertainment-card-icon">📚</span>
-              <h3 className="entertainment-card-title">Adventure</h3>
-              <p className="entertainment-card-desc">A branching illustrated storybook — you make the choices.</p>
+            <div className="entertainment-card faceplate" onClick={() => setSelection('adventure')}>
+              <div className="faceplate-art" style={{ backgroundImage: 'url(/card-art/adventure.png)' }} />
+              <div className="faceplate-body">
+                <h3 className="entertainment-card-title">Adventure</h3>
+                <p className="entertainment-card-desc">A branching illustrated storybook — you make the choices.</p>
+              </div>
             </div>
-            <div className="entertainment-card" onClick={() => setSelection('comic')}>
-              <span className="entertainment-card-icon">💥</span>
-              <h3 className="entertainment-card-title">Comic</h3>
-              <p className="entertainment-card-desc">A full comic book — every panel AI-drawn, dialogue auto-placed.</p>
+            <div className="entertainment-card faceplate" onClick={() => setSelection('comic')}>
+              <div className="faceplate-art" style={{ backgroundImage: 'url(/card-art/comic.png)' }} />
+              <div className="faceplate-body">
+                <h3 className="entertainment-card-title">Comic</h3>
+                <p className="entertainment-card-desc">A full comic book — every panel AI-drawn, dialogue auto-placed.</p>
+              </div>
             </div>
-            <div className="entertainment-card" onClick={() => setSelection('escape')}>
-              <span className="entertainment-card-icon">🔐</span>
-              <h3 className="entertainment-card-title">Escape Room</h3>
-              <p className="entertainment-card-desc">Locked in with puzzles, codes, and clues — solve your way out before time runs out.</p>
+            <div className="entertainment-card faceplate" onClick={() => setSelection('escape')}>
+              <div className="faceplate-art" style={{ backgroundImage: 'url(/card-art/escape.png)' }} />
+              <div className="faceplate-body">
+                <h3 className="entertainment-card-title">Escape Room</h3>
+                <p className="entertainment-card-desc">Locked in with puzzles, codes, and clues — solve your way out before time runs out.</p>
+              </div>
             </div>
-            <div className="entertainment-card" onClick={() => setSelection('puzzles')}>
-              <span className="entertainment-card-icon">🧩</span>
-              <h3 className="entertainment-card-title">Puzzles</h3>
-              <p className="entertainment-card-desc">Jigsaw puzzles, word searches, crosswords, and jumbles — AI-generated brain teasers.</p>
+            <div className="entertainment-card faceplate" onClick={() => setSelection('puzzles')}>
+              <div className="faceplate-art" style={{ backgroundImage: 'url(/card-art/puzzles.png)' }} />
+              <div className="faceplate-body">
+                <h3 className="entertainment-card-title">Puzzles</h3>
+                <p className="entertainment-card-desc">Jigsaw puzzles, word searches, crosswords, and jumbles — AI-generated brain teasers.</p>
+              </div>
             </div>
-            <div className="entertainment-card" onClick={() => onStart('anthology')}>
-              <span className="entertainment-card-icon">🔍</span>
-              <h3 className="entertainment-card-title">The Casebook</h3>
-              <p className="entertainment-card-desc">Logic-puzzle mysteries across noir, fantasy, sci-fi, and horror — find the flaw before the detective does.</p>
+            <div className="entertainment-card faceplate" onClick={() => onStart('anthology')}>
+              <div className="faceplate-art" style={{ backgroundImage: 'url(/card-art/casebook.png)' }} />
+              <div className="faceplate-body">
+                <h3 className="entertainment-card-title">The Casebook</h3>
+                <p className="entertainment-card-desc">Logic-puzzle mysteries across noir, fantasy, sci-fi, and horror — find the flaw before the detective does.</p>
+              </div>
             </div>
           </div>
         </div>
