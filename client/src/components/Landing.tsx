@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { EntertainmentType } from '../types';
 
 // 'puzzles' is the sub-menu — not a real entertainment type
@@ -73,6 +73,25 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
   const [selection, setSelection] = useState<LandingSelection>(null);
   const [featureNudge, setFeatureNudge] = useState<string | null>(null);
 
+  // Carousel tracking (mobile) — dots follow scroll position
+  const mainCardsRef = useRef<HTMLDivElement>(null);
+  const puzzleCardsRef = useRef<HTMLDivElement>(null);
+  const [mainActiveIdx, setMainActiveIdx] = useState(0);
+  const [puzzleActiveIdx, setPuzzleActiveIdx] = useState(0);
+
+  // Reset dot position whenever the visible menu changes
+  useEffect(() => { setMainActiveIdx(0); setPuzzleActiveIdx(0); }, [selection]);
+
+  const handleCardsScroll = (el: HTMLDivElement, count: number, setIdx: (i: number) => void) => {
+    const cardWidth = (el.firstElementChild as HTMLElement)?.offsetWidth ?? el.clientWidth;
+    setIdx(Math.min(count - 1, Math.round(el.scrollLeft / (cardWidth + 10))));
+  };
+
+  const scrollToCard = (el: HTMLDivElement | null, idx: number) => {
+    if (!el) return;
+    (el.children[idx] as HTMLElement)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  };
+
   // The actual entertainment type (null when at top level or in puzzles sub-menu)
   const entertainmentType: EntertainmentType | null =
     selection && selection !== 'puzzles' ? selection : null;
@@ -136,7 +155,7 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
       {!selection && (
         <div className="entertainment-selector">
           <h2 className="entertainment-prompt">The forge is hot. What are we making?</h2>
-          <div className="entertainment-cards">
+          <div className="entertainment-cards" ref={mainCardsRef} onScroll={() => mainCardsRef.current && handleCardsScroll(mainCardsRef.current, 6, setMainActiveIdx)}>
             <div className="entertainment-card faceplate" onClick={() => setSelection('adventure')}>
               <div className="faceplate-art" style={{ backgroundImage: 'url(/card-art/adventure.png)' }} />
               <div className="faceplate-body">
@@ -180,6 +199,11 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
               </div>
             </div>
           </div>
+          <div className="carousel-dots">
+            {Array.from({ length: 6 }, (_, i) => (
+              <button key={i} className={`carousel-dot${mainActiveIdx === i ? ' active' : ''}`} onClick={() => scrollToCard(mainCardsRef.current, i)} aria-label={`Go to card ${i + 1}`} />
+            ))}
+          </div>
         </div>
       )}
 
@@ -187,7 +211,7 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
       {selection === 'puzzles' && (
         <div className="entertainment-selector">
           <h2 className="entertainment-prompt">Pick your puzzle type</h2>
-          <div className="entertainment-cards">
+          <div className="entertainment-cards" ref={puzzleCardsRef} onScroll={() => puzzleCardsRef.current && handleCardsScroll(puzzleCardsRef.current, 4, setPuzzleActiveIdx)}>
             <div className="entertainment-card faceplate" onClick={() => setSelection('puzzle')}>
               <div className="faceplate-art" style={{ backgroundImage: 'url(/card-art/jigsaw.png)' }} />
               <div className="faceplate-body">
@@ -216,6 +240,11 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
                 <p className="entertainment-card-desc">Unscramble words, find the circled letters, solve the punchline — with a cartoon!</p>
               </div>
             </div>
+          </div>
+          <div className="carousel-dots">
+            {Array.from({ length: 4 }, (_, i) => (
+              <button key={i} className={`carousel-dot${puzzleActiveIdx === i ? ' active' : ''}`} onClick={() => scrollToCard(puzzleCardsRef.current, i)} aria-label={`Go to card ${i + 1}`} />
+            ))}
           </div>
           <div className="landing-buttons" style={{ marginTop: 16 }}>
             <div className="landing-btn-wrapper">

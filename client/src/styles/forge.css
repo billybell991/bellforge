@@ -3076,6 +3076,11 @@ body {
   color: var(--cyan);
 }
 
+/* Carousel dot indicators — rendered always, visible only on mobile */
+.carousel-dots {
+  display: none;
+}
+
 /* ═══════════════════════════════════════
    MOBILE — ≤ 480 px
    Purely additive — zero desktop rules touched.
@@ -3146,23 +3151,19 @@ body {
     padding-bottom: 10px;
   }
 
-  /* Scrollbar hint on Android — subtle amber stripe */
+  /* Hide native scrollbar — dots replace it */
+  .entertainment-cards {
+    scrollbar-width: none;
+  }
   .entertainment-cards::-webkit-scrollbar {
-    height: 3px;
-  }
-  .entertainment-cards::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .entertainment-cards::-webkit-scrollbar-thumb {
-    background: var(--forge-amber);
-    border-radius: 2px;
+    display: none;
   }
 
-  /* All cards: fixed width, no shrink, scroll-snap */
+  /* All cards: fixed width, centre-snap */
   .entertainment-card {
     flex: none;
-    min-width: 78vw;
-    scroll-snap-align: start;
+    min-width: 80vw;
+    scroll-snap-align: center;
   }
 
   /* Faceplate cards: explicit height so art section fills properly */
@@ -3213,6 +3214,32 @@ body {
     right: 10px;
     left: 10px;
     max-width: none;
+  }
+
+  /* ── Carousel dot indicators ── */
+  .carousel-dots {
+    display: flex;
+    gap: 7px;
+    justify-content: center;
+    margin-top: 10px;
+  }
+
+  .carousel-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.18);
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .carousel-dot.active {
+    background: var(--forge-amber);
+    transform: scale(1.4);
+    box-shadow: 0 0 7px rgba(255, 160, 40, 0.65);
   }
 
 }
