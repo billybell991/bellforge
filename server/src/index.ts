@@ -105,12 +105,11 @@ let library = loadLibrary();
 if (!existsSync(PREVIEWS_DIR)) mkdirSync(PREVIEWS_DIR, { recursive: true });
 if (!existsSync(THUMBNAILS_DIR)) mkdirSync(THUMBNAILS_DIR, { recursive: true });
 
-function saveThumbnail(buildId: string, base64: string): string {
-  const filename = `${buildId}.png`;
-  // Strip data URI prefix if present
-  const raw = base64.replace(/^data:image\/\w+;base64,/, '');
-  writeFileSync(join(THUMBNAILS_DIR, filename), Buffer.from(raw, 'base64'));
-  return filename;
+function saveThumbnail(_buildId: string, base64: string): string {
+  // Return a normalized data URI — stored directly in the library entry so it
+  // survives Railway's ephemeral filesystem across redeploys.
+  if (base64.startsWith('data:')) return base64;
+  return `data:image/png;base64,${base64}`;
 }
 
 function savePreviewHtml(buildId: string, html: string): void {
@@ -515,21 +514,33 @@ app.get('/api/library', (req, res) => {
   res.json({ entries: filtered });
 });
 
-// Serve thumbnail images
+// Serve thumbnail images — thumbnail is stored as a data URI in the library entry
 app.get('/api/library/:id/thumbnail', (req, res) => {
   const entry = library.find((e) => e.id === req.params.id);
   if (!entry?.thumbnail) {
     res.status(404).send('No thumbnail');
     return;
   }
-  const filePath = join(THUMBNAILS_DIR, entry.thumbnail);
-  if (!existsSync(filePath)) {
-    res.status(404).send('Thumbnail file not found');
+  // thumbnail is a data URI: decode and stream it
+  const dataUri = entry.thumbnail;
+  const match = dataUri.match(/^data:(image\/\w+);base64,(.+)$/);
+  if (!match) {
+    // Legacy: might be a bare filename — try disk fallback
+    const filePath = join(THUMBNAILS_DIR, dataUri);
+    if (existsSync(filePath)) {
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.sendFile(filePath);
+    } else {
+      res.status(404).send('Thumbnail not found');
+    }
     return;
   }
-  res.setHeader('Content-Type', 'image/png');
+  const [, mimeType, b64] = match;
+  const buf = Buffer.from(b64, 'base64');
+  res.setHeader('Content-Type', mimeType);
   res.setHeader('Cache-Control', 'public, max-age=86400');
-  res.sendFile(filePath);
+  res.end(buf);
 });
 
 // Import entries from client localStorage (re-sync after ephemeral filesystem wipe)
