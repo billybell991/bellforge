@@ -3081,6 +3081,11 @@ body {
   display: none;
 }
 
+/* ── Vertical Wheel Picker (mobile only) ── */
+/* Base: hidden on desktop */
+.wheel-outer   { display: none; }
+.desktop-cards-wrapper { display: block; }
+
 /* ═══════════════════════════════════════
    MOBILE — ≤ 480 px
    Purely additive — zero desktop rules touched.
@@ -3132,36 +3137,140 @@ body {
     max-width: 100%;
   }
 
-  /* ── Card row → horizontal scroll carousel ── */
-  .entertainment-prompt {
-    font-size: 0.9rem;
-    margin-bottom: 10px;
+  /* ── Mobile: hide desktop card grid, show wheel drum ── */
+  .desktop-cards-wrapper { display: none; }
+
+  .wheel-outer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    position: relative;
+    /* Drum sits at top, desc + button below */
   }
 
-  .entertainment-cards {
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    overscroll-behavior-x: contain;
+  .wheel-drum {
+    width: 100%;
+    height: calc(3 * 148px);   /* 444px — exactly 3 slots */
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scroll-snap-type: y mandatory;
+    scroll-snap-stop: always;
+    overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
-    justify-content: flex-start;
-    height: auto;
-    max-height: none;
-    gap: 10px;
-    padding-bottom: 10px;
-    /* Hide native scrollbar — dots replace it */
     scrollbar-width: none;
   }
-  .entertainment-cards::-webkit-scrollbar {
-    display: none;
-  }
+  .wheel-drum::-webkit-scrollbar { display: none; }
 
-  /* All cards: fixed width, hard-snap (no coast-through) */
-  .entertainment-card {
-    flex: none;
-    min-width: 80vw;
+  .wheel-item {
+    height: 148px;
     scroll-snap-align: center;
     scroll-snap-stop: always;
+    background-size: cover;
+    background-position: center 20%;
+    position: relative;
+    border-radius: 14px;
+    margin: 2px 16px;
+    overflow: hidden;
+    cursor: pointer;
+    opacity: 0.3;
+    transform: scaleX(0.91);
+    transition: opacity 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .wheel-item.wheel-near {
+    opacity: 0.58;
+    transform: scaleX(0.95);
+  }
+
+  .wheel-item.wheel-active {
+    opacity: 1;
+    transform: scaleX(1);
+    box-shadow: 0 0 0 2px var(--forge-amber), 0 0 24px rgba(255, 160, 40, 0.22);
+  }
+
+  .wheel-item.wheel-far {
+    opacity: 0.1;
+    transform: scaleX(0.86);
+  }
+
+  .wheel-item-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px 14px 10px;
+    background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, transparent 100%);
+    font-family: 'Orbitron', monospace;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.85);
+    letter-spacing: 0.5px;
+    pointer-events: none;
+  }
+
+  .wheel-item.wheel-active .wheel-item-label {
+    color: var(--forge-amber);
+  }
+
+  /* Gradient fades — top and bottom thirds of the drum */
+  .wheel-fade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 148px;
+    pointer-events: none;
+    z-index: 4;
+  }
+  .wheel-fade-top {
+    top: 0;
+    background: linear-gradient(to bottom, rgba(5,5,9,0.9) 0%, transparent 100%);
+  }
+  .wheel-fade-bot {
+    top: calc(2 * 148px);
+    background: linear-gradient(to top, rgba(5,5,9,0.9) 0%, transparent 100%);
+  }
+
+  /* Amber selection ring centred on the middle slot */
+  .wheel-ring {
+    position: absolute;
+    top: 148px;
+    left: 16px;
+    right: 16px;
+    height: 148px;
+    border: 1.5px solid rgba(255, 160, 40, 0.45);
+    border-radius: 14px;
+    pointer-events: none;
+    z-index: 5;
+    box-shadow: inset 0 0 0 1px rgba(255, 160, 40, 0.1);
+  }
+
+  /* Description text — updates as drum spins */
+  .wheel-desc {
+    font-size: 0.76rem;
+    color: var(--text-secondary);
+    text-align: center;
+    margin: 10px 24px 6px;
+    line-height: 1.45;
+    min-height: 2.2em;   /* prevent layout jump as desc changes */
+  }
+
+  /* SELECT button */
+  .wheel-select-btn {
+    padding: 11px 44px;
+    background: linear-gradient(135deg, var(--forge-orange), #e65100);
+    color: #fff;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    border: none;
+    border-radius: 28px;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgba(255, 107, 53, 0.4);
+    -webkit-tap-highlight-color: transparent;
+    margin-bottom: 4px;
   }
 
   /* Faceplate cards: explicit height so art section fills properly */

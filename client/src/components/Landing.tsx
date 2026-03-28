@@ -1,5 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
 import type { EntertainmentType } from '../types';
+import { WheelPicker } from './WheelPicker';
+import type { WheelItem } from './WheelPicker';
+
+// ── Wheel picker item definitions (mobile vertical drum) ──
+const MAIN_WHEEL_ITEMS: WheelItem[] = [
+  { id: 'adventure', title: 'Adventure',         image: '/card-art/adventure.png', desc: 'A branching illustrated storybook — you make the choices.' },
+  { id: 'comic',     title: 'Comic',             image: '/card-art/comic.png',     desc: 'A full comic book — every panel AI-drawn, dialogue auto-placed.' },
+  { id: 'escape',    title: 'Escape Room',        image: '/card-art/escape.png',    desc: 'Locked in with puzzles, codes, and clues — solve your way out before time runs out.' },
+  { id: 'puzzles',   title: 'Puzzles',            image: '/card-art/puzzles.png',   desc: 'Jigsaw puzzles, word searches, crosswords, and jumbles — AI-generated brain teasers.' },
+  { id: 'anthology', title: 'The Casebook',       image: '/card-art/casebook.png',  desc: 'Logic-puzzle mysteries across noir, fantasy, sci-fi, and horror.' },
+  { id: 'vault',     title: 'Tales From The Forge',image: '/card-art/vault.png',    desc: 'EC Comics horror anthology — sin, escalation, and perfect poetic justice.' },
+];
+
+const PUZZLE_WHEEL_ITEMS: WheelItem[] = [
+  { id: 'puzzle',     title: 'Jigsaw Puzzle', image: '/card-art/jigsaw.png',    desc: 'A beautiful AI-painted image cut into classic jigsaw pieces — drag, snap, and solve.' },
+  { id: 'wordsearch', title: 'Word Search',   image: '/card-art/wordsearch.png', desc: 'Find hidden words in a grid — themed by topic, with diagonals and backwards options.' },
+  { id: 'crossword',  title: 'Crossword',     image: '/card-art/crossword.png', desc: 'AI-written clues on any topic — classic numbered grid with across and down.' },
+  { id: 'jumble',     title: 'Jumble',        image: '/card-art/jumble.png',    desc: 'Unscramble words, find the circled letters, solve the punchline — with a cartoon!' },
+];
 
 // 'puzzles' is the sub-menu — not a real entertainment type
 type LandingSelection = EntertainmentType | 'puzzles' | null;
@@ -67,6 +86,28 @@ const JUMBLE_FEATURES = [
   { icon: '🤖', title: 'AI-Crafted Puzzles', desc: 'Gemini writes the words, clues, and cartoon scene — every puzzle is unique.' },
 ];
 
+function handleWheelScroll(el: HTMLDivElement, _count: number, setIdx: (i: number) => void) {
+  // Desktop shows all cards at once — no vertical scroll, skip wheel effects
+  if (el.scrollHeight <= el.clientHeight + 2) return;
+  const center = el.scrollTop + el.clientHeight / 2;
+  let closestIdx = 0;
+  let closestDist = Infinity;
+  Array.from(el.children).forEach((child, i) => {
+    const card = child as HTMLElement;
+    const cardMid = card.offsetTop + card.offsetHeight / 2;
+    const distPx = cardMid - center;
+    const distNorm = distPx / (card.offsetHeight + 12);
+    const opacity = Math.max(0.22, 1 - Math.abs(distNorm) * 0.72);
+    const scale = Math.max(0.84, 1 - Math.abs(distNorm) * 0.13);
+    card.style.opacity = opacity.toFixed(3);
+    card.style.transform = `scale(${scale.toFixed(4)})`;
+    const absDist = Math.abs(distPx);
+    card.classList.toggle('wheel-active', absDist < card.offsetHeight * 0.35);
+    if (absDist < closestDist) { closestDist = absDist; closestIdx = i; }
+  });
+  setIdx(closestIdx);
+}
+
 export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: LandingProps) {
   const [taglineVisible, setTaglineVisible] = useState(false);
   const [geminiStatus, setGeminiStatus] = useState<{ available: boolean; hint: string } | null>(null);
@@ -79,18 +120,15 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
   const [mainActiveIdx, setMainActiveIdx] = useState(0);
   const [puzzleActiveIdx, setPuzzleActiveIdx] = useState(0);
 
-  // Reset dot position whenever the visible menu changes
-  useEffect(() => { setMainActiveIdx(0); setPuzzleActiveIdx(0); }, [selection]);
-
-  const handleCardsScroll = (el: HTMLDivElement, count: number, setIdx: (i: number) => void) => {
-    const cardWidth = (el.firstElementChild as HTMLElement)?.offsetWidth ?? el.clientWidth;
-    setIdx(Math.min(count - 1, Math.round(el.scrollLeft / (cardWidth + 10))));
-  };
-
-  const scrollToCard = (el: HTMLDivElement | null, idx: number) => {
-    if (!el) return;
-    (el.children[idx] as HTMLElement)?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  };
+  // Reset + initialize wheel state whenever active selection panel changes
+  useEffect(() => {
+    setMainActiveIdx(0);
+    setPuzzleActiveIdx(0);
+    requestAnimationFrame(() => {
+      if (mainCardsRef.current) handleWheelScroll(mainCardsRef.current, 6, setMainActiveIdx);
+      if (puzzleCardsRef.current) handleWheelScroll(puzzleCardsRef.current, 4, setPuzzleActiveIdx);
+    });
+  }, [selection]);
 
   // The actual entertainment type (null when at top level or in puzzles sub-menu)
   const entertainmentType: EntertainmentType | null =
@@ -155,7 +193,19 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
       {!selection && (
         <div className="entertainment-selector">
           <h2 className="entertainment-prompt">The forge is hot. What are we making?</h2>
-          <div className="entertainment-cards" ref={mainCardsRef} onScroll={() => mainCardsRef.current && handleCardsScroll(mainCardsRef.current, 6, setMainActiveIdx)}>
+
+          {/* Mobile: vertical wheel drum (hidden on desktop via CSS) */}
+          <WheelPicker
+            items={MAIN_WHEEL_ITEMS}
+            onSelect={(id) => {
+              if (id === 'anthology' || id === 'vault') onStart(id as EntertainmentType);
+              else setSelection(id as LandingSelection);
+            }}
+          />
+
+          {/* Desktop: horizontal faceplate cards (hidden on mobile via CSS) */}
+          <div className="desktop-cards-wrapper">
+          <div className="entertainment-cards" ref={mainCardsRef}>
             <div className="entertainment-card faceplate" onClick={() => setSelection('adventure')}>
               <div className="faceplate-art" style={{ backgroundImage: 'url(/card-art/adventure.png)' }} />
               <div className="faceplate-body">
@@ -199,11 +249,7 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
               </div>
             </div>
           </div>
-          <div className="carousel-dots">
-            {Array.from({ length: 6 }, (_, i) => (
-              <button key={i} className={`carousel-dot${mainActiveIdx === i ? ' active' : ''}`} onClick={() => scrollToCard(mainCardsRef.current, i)} aria-label={`Go to card ${i + 1}`} />
-            ))}
-          </div>
+          </div>{/* /desktop-cards-wrapper */
         </div>
       )}
 
@@ -211,7 +257,16 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
       {selection === 'puzzles' && (
         <div className="entertainment-selector">
           <h2 className="entertainment-prompt">Pick your puzzle type</h2>
-          <div className="entertainment-cards" ref={puzzleCardsRef} onScroll={() => puzzleCardsRef.current && handleCardsScroll(puzzleCardsRef.current, 4, setPuzzleActiveIdx)}>
+
+          {/* Mobile: vertical wheel drum */}
+          <WheelPicker
+            items={PUZZLE_WHEEL_ITEMS}
+            onSelect={(id) => setSelection(id as LandingSelection)}
+          />
+
+          {/* Desktop: horizontal faceplate cards */}
+          <div className="desktop-cards-wrapper">
+          <div className="entertainment-cards" ref={puzzleCardsRef}>
             <div className="entertainment-card faceplate" onClick={() => setSelection('puzzle')}>
               <div className="faceplate-art" style={{ backgroundImage: 'url(/card-art/jigsaw.png)' }} />
               <div className="faceplate-body">
@@ -241,11 +296,7 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
               </div>
             </div>
           </div>
-          <div className="carousel-dots">
-            {Array.from({ length: 4 }, (_, i) => (
-              <button key={i} className={`carousel-dot${puzzleActiveIdx === i ? ' active' : ''}`} onClick={() => scrollToCard(puzzleCardsRef.current, i)} aria-label={`Go to card ${i + 1}`} />
-            ))}
-          </div>
+          </div>{/* /desktop-cards-wrapper */}
           <div className="landing-buttons" style={{ marginTop: 16 }}>
             <div className="landing-btn-wrapper">
               <button className="forge-btn forge-btn-auto" onClick={() => {
