@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import type { AppPage, GameConfig, AdventureConfig, ComicConfig, EscapeConfig, PuzzleConfig, WordSearchConfig, CrosswordConfig, JumbleConfig, EntertainmentType, GenreOption, ThemeOption, ArtStyleOption, StructureConfig, StoryConfig, CYOAGenreOption, CYOAStructureConfig, ComicGenreOption, ComicStructureConfig, EscapeThemeOption, EscapeStructureConfig, PuzzleSubjectOption, PuzzleStructureConfig, WordSearchCategoryOption, WordSearchStructureConfig, CrosswordCategoryOption, CrosswordStructureConfig, JumbleCategoryOption, JumbleStructureConfig, LibraryEntry, WSProgressMessage, WSCompleteMessage, QAReport } from './types';
+import type { AppPage, GameConfig, AdventureConfig, ComicConfig, EscapeConfig, PuzzleConfig, WordSearchConfig, CrosswordConfig, JumbleConfig, EntertainmentType, GenreOption, ThemeOption, ArtStyleOption, StructureConfig, StoryConfig, CYOAGenreOption, CYOAStructureConfig, ComicGenreOption, ComicStructureConfig, EscapeThemeOption, EscapeStructureConfig, PuzzleSubjectOption, PuzzleStructureConfig, WordSearchCategoryOption, WordSearchStructureConfig, CrosswordCategoryOption, CrosswordStructureConfig, JumbleCategoryOption, JumbleStructureConfig, LibraryEntry, WSProgressMessage, WSCompleteMessage, QAReport, VaultConfig } from './types';
 import { GENRES, THEMES, ART_STYLES, CYOA_GENRES, COMIC_GENRES, ESCAPE_THEMES, PUZZLE_SUBJECTS, WORDSEARCH_CATEGORIES, CROSSWORD_CATEGORIES, JUMBLE_CATEGORIES } from './types';
 import { Landing } from './components/Landing';
+import VaultLanding from './components/vault/VaultLanding';
 import { WizardContainer } from './components/WizardContainer';
 import { CYOAWizardContainer } from './components/CYOAWizardContainer';
 import { ComicWizardContainer } from './components/ComicWizardContainer';
@@ -98,6 +99,11 @@ function friendlyPhaseLabel(stage: string): string {
     crossword: 'Generating crossword...',
     jumble: 'Generating jumble...',
     art: 'Drawing the cartoon...',
+    // Vault (Tales From The Forge)
+    vault_concept: 'The Bellman is scribing your tale...',
+    vault_cover: 'Painting the cover in blood and shadow...',
+    vault_panels: 'Drawing the panels of doom...',
+    vault_assemble: 'Binding the pages of the damned...',
     // Shared
     viewer: 'Assembling the viewer...',
     complete: 'Putting on finishing touches...',
@@ -198,6 +204,8 @@ export default function App() {
   // Jumble-specific state
   const [jumbleCategory, setJumbleCategory] = useState<JumbleCategoryOption | null>(null);
   const [jumbleStructure, setJumbleStructure] = useState<JumbleStructureConfig>(defaultJumbleStructure);
+  // Vault-specific state
+  const [vaultConfig, setVaultConfig] = useState<VaultConfig | null>(null);
   const [buildId, setBuildId] = useState<string | null>(null);
   const [apkInfo, setApkInfo] = useState<{ path: string; size: string } | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -423,8 +431,38 @@ export default function App() {
       setPage('anthology');
       return;
     }
+    if (type === 'vault') {
+      setPage('vault');
+      return;
+    }
     setPage('wizard');
   }, []);
+
+  const handleVaultForge = useCallback(async (cfg: VaultConfig) => {
+    setVaultConfig(cfg);
+    setEntertainmentType('vault');
+    try {
+      const res = await fetch('/api/forge/vault', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Client-Id': getClientId() },
+        body: JSON.stringify(cfg),
+      });
+      const data = await res.json();
+      const newBuildId = data.buildId;
+      setBuildId(newBuildId);
+      setBuildPercent(0);
+      setBuildStageName('The Bellman awaits...');
+      setBuildDetail('');
+      setBuildError(null);
+      setBuildLog([]);
+      setBuildActive(true);
+      buildCompletedRef.current = false;
+      connectWs(newBuildId);
+      setPage('building');
+    } catch {
+      alert('The forge server is not running. Please start the server locally.');
+    }
+  }, [connectWs]);
 
   const handleAutoForge = useCallback(async (type: EntertainmentType) => {
     setEntertainmentType(type);
@@ -829,6 +867,7 @@ export default function App() {
     setCrosswordStructure(defaultCrosswordStructure);
     setJumbleCategory(null);
     setJumbleStructure(defaultJumbleStructure);
+    setVaultConfig(null);
     setApkInfo(null);
     setPreviewUrl(null);
     setQaReport(null);
@@ -891,6 +930,9 @@ export default function App() {
       <div className="has-header">
         {page === 'anthology' && (
           <InvestigatorApp onBack={handleStartOver} />
+        )}
+        {page === 'vault' && (
+          <VaultLanding onForge={handleVaultForge} onBack={handleStartOver} />
         )}
         {page === 'landing' && (
           <Landing onStart={handleStartForging} onAutoForge={handleAutoForge} onLibrary={handleGoToLibrary} libraryCount={libraryCount} />

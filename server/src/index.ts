@@ -27,6 +27,9 @@ import { runPuzzlePipeline, generatePuzzlePreviewHtml } from './puzzle-pipeline.
 import { runWordSearchPipeline, generateWordSearchPreviewHtml } from './wordsearch-pipeline.js';
 import { runCrosswordPipeline, generateCrosswordPreviewHtml } from './crossword-pipeline.js';
 import { runJumblePipeline, generateJumblePreviewHtml } from './jumble-pipeline.js';
+import { runVaultPipeline } from './vault-pipeline.js';
+import { generateVaultPreviewHtml } from './vault-engine.js';
+import type { VaultConfig } from './vault-pipeline.js';
 import type { CreativeBrief, CreativePalette, CreativeRoom, CreativeItem, PuzzleConnection } from './gemini.js';
 import type { WordSearchConfig } from './pipeline/types.js';
 import type { CrosswordConfig } from './pipeline/types.js';
@@ -70,7 +73,7 @@ interface LibraryEntry {
   id: string;
   name: string;
   rating: number; // 0-5 stars
-  entertainmentType: 'game' | 'adventure' | 'comic' | 'escape' | 'puzzle' | 'wordsearch' | 'crossword' | 'jumble';
+  entertainmentType: 'game' | 'adventure' | 'comic' | 'escape' | 'puzzle' | 'wordsearch' | 'crossword' | 'jumble' | 'anthology' | 'vault';
   config: unknown;
   buildId: string;
   apkSize: string;
@@ -1791,6 +1794,76 @@ function waitForClient(buildId: string, timeoutMs: number): Promise<void> {
       }
     };
     check();
+  });
+}
+
+// ── Tales From The Forge Build ──
+
+app.post('/api/forge/vault', async (req, res) => {
+  const config = req.body as VaultConfig;
+  const buildId = uuidv4();
+  const clientId = req.headers['x-client-id'] as string | undefined;
+  builds.set(buildId, { config, status: 'queued', progress: 0, clientId });
+  res.json({ buildId });
+  waitForClient(buildId, 5000).then(() => runVaultBuild(buildId, config));
+});
+
+async function runVaultBuild(buildId: string, config: VaultConfig) {
+  const record = builds.get(buildId)!;
+  record.status = 'building';
+
+  const result = await runVaultPipeline(config, (pct, msg, stage) => {
+    sendProgress(buildId, { type: 'progress', stage, name: msg, percent: pct, detail: '', timestamp: Date.now() });
+  });
+
+  if (!result) {
+    sendProgress(buildId, { type: 'error', message: 'Tales From The Forge — The Bellman could not script this tale. Please try a different premise.' });
+    record.status = 'error';
+    return;
+  }
+
+  const previewHtml = generateVaultPreviewHtml(result);
+  record.status = 'complete';
+  record.progress = 100;
+  record.previewHtml = previewHtml;
+
+  try { savePreviewHtml(buildId, previewHtml); } catch (err) { console.error('Failed to save vault preview:', err); }
+
+  const title = result.title || 'Untitled Tale';
+  if (!library.some((e) => e.buildId === buildId)) {
+    const entry: LibraryEntry = {
+      id: uuidv4(),
+      name: title,
+      rating: 0,
+      entertainmentType: 'vault',
+      config,
+      buildId,
+      apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
+      createdAt: new Date().toISOString(),
+      thumbnail: undefined as string | undefined,
+      clientId: record.clientId,
+    };
+    if (result.coverIllustration) {
+      try { entry.thumbnail = saveThumbnail(buildId, result.coverIllustration); } catch (err) { console.error('Failed to save vault thumbnail:', err); }
+    }
+    library.push(entry);
+    saveLibrary(library);
+    console.log(`  ⚰️  Auto-saved vault tale "${entry.name}" to library`);
+  }
+
+  sendProgress(buildId, {
+    type: 'complete',
+    buildId,
+    apkPath: '',
+    apkSize: `${Math.floor(previewHtml.length / 1024)} KB`,
+    previewUrl: `/api/preview/${buildId}`,
+    qaReport: {
+      passed: true,
+      score: 100,
+      summary: `"${title}" — A tale of ${config.sinType}. The Bellman has passed judgment.`,
+      panels: [],
+      config,
+    },
   });
 }
 

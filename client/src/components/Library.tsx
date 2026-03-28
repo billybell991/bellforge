@@ -41,6 +41,8 @@ const TYPE_BADGES: Record<EntertainmentType, { icon: string; label: string; colo
   wordsearch: { icon: '🔍', label: 'Word Search', color: '#29b6f6' },
   crossword: { icon: '✏️', label: 'Crossword', color: '#ef5350' },
   jumble: { icon: '🔀', label: 'Jumble', color: '#ffa726' },
+  anthology: { icon: '🔍', label: 'The Casebook', color: '#c9a84c' },
+  vault: { icon: '⚰️', label: 'Tales From The Forge', color: '#8B0000' },
 };
 
 function getEntryGenreDisplay(entry: LibraryEntry): { icon: string; name: string } {

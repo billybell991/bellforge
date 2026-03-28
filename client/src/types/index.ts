@@ -4,7 +4,7 @@
 
 // ── Entertainment Type ──
 
-export type EntertainmentType = 'game' | 'adventure' | 'comic' | 'escape' | 'puzzle' | 'wordsearch' | 'crossword' | 'jumble' | 'anthology';
+export type EntertainmentType = 'game' | 'adventure' | 'comic' | 'escape' | 'puzzle' | 'wordsearch' | 'crossword' | 'jumble' | 'anthology' | 'vault';
 
 export interface GameConfig {
   genre: GenreOption;
@@ -500,7 +500,16 @@ export const JUMBLE_BUILD_STAGES: BuildStage[] = [
 
 // ── App Page State ──
 
-export type AppPage = 'landing' | 'wizard' | 'building' | 'preview' | 'deploy' | 'anthology';
+export type AppPage = 'landing' | 'wizard' | 'building' | 'preview' | 'deploy' | 'anthology' | 'vault';
+
+// ── Vault (Tales From The Forge) Config ──
+
+export type SinType = 'greed' | 'betrayal' | 'cruelty' | 'hubris' | 'lust' | 'cowardice';
+
+export interface VaultConfig {
+  premise: string;
+  sinType: SinType;
+}
 
 // ── Library ──
 
