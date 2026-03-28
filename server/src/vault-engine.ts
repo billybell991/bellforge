@@ -298,61 +298,76 @@ export function generateVaultPreviewHtml(story: VaultStory): string {
     object-fit: cover;
   }
 
-  /* Dialogue overlay */
+  /* Dialogue overlay — captions at top, speech at bottom, faces stay clear */
   .dialogue-layer {
     position: absolute;
     inset: 0;
     z-index: 2;
     display: flex;
     flex-direction: column;
-    gap: 3px;
-    padding: 5px;
     pointer-events: none;
   }
-  .bubble-zone-top { align-self: stretch; }
-  .bubble-zone-left { align-self: flex-start; max-width: 58%; }
-  .bubble-zone-right { align-self: flex-end; max-width: 58%; }
-  .bubble-zone-center { align-self: center; max-width: 65%; }
+  .dialogue-captions {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 4px 4px 0;
+  }
+  .dialogue-speech {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 4px 4px;
+  }
 
   .bubble {
-    padding: 4px 7px;
-    border-radius: 8px;
+    padding: 3px 6px;
+    border-radius: 6px;
     font-family: 'Special Elite', serif;
-    font-size: 0.62rem;
+    font-size: 0.58rem;
     line-height: 1.25;
     word-wrap: break-word;
-    opacity: 0.93;
+    opacity: 0.95;
+  }
+  .bubble-speaker {
+    display: block;
+    font-family: 'Bangers', cursive;
+    font-size: 0.5rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    opacity: 0.65;
+    margin-bottom: 1px;
   }
   .bubble-speech {
     background: var(--bubble-bg);
-    border: 2px solid var(--bubble-border);
+    border: 1.5px solid var(--bubble-border);
     font-weight: 700;
     color: #1A0800;
   }
   .bubble-thought {
     background: var(--thought-bg);
-    border: 2px dashed var(--thought-border);
+    border: 1.5px dashed var(--thought-border);
     font-style: italic;
-    border-radius: 18px;
+    border-radius: 14px;
     color: #2A2A5A;
   }
-  /* Standard narration: aged paper */
+  /* Standard narration: aged paper caption box */
   .bubble-narration {
     background: var(--narration-bg);
     border: 1px solid var(--narration-border);
     font-style: italic;
-    font-size: 0.58rem;
+    font-size: 0.56rem;
     border-radius: 1px;
-    text-align: left;
     color: #4A3000;
   }
-  /* Bellman narration: sickly green crypt-voice */
+  /* Bellman narration: sickly green crypt-voice caption box */
   .bubble-bellman {
     background: var(--bellman-box-bg);
-    border: 2px solid var(--bellman-box-border);
+    border: 1.5px solid var(--bellman-box-border);
     font-family: 'Special Elite', serif;
     font-style: italic;
-    font-size: 0.6rem;
+    font-size: 0.56rem;
     border-radius: 1px;
     color: #C8E8B0;
     text-shadow: 0 0 4px rgba(100, 200, 80, 0.3);
@@ -556,22 +571,31 @@ export function generateVaultPreviewHtml(story: VaultStory): string {
         html += '<div class="panel-art">' + escapeHTML(panel.artDirection ? panel.artDirection.slice(0, 80) + '...' : 'Panel ' + panel.panelNumber) + '</div>';
       }
 
-      // Dialogue overlay — always rendered on top of art
+      // Dialogue overlay — captions at top, speech at bottom, faces stay clear
       if (panel.dialogue && panel.dialogue.length > 0) {
+        var captions = panel.dialogue.filter(function(d) { return d.type === 'narration'; });
+        var speeches = panel.dialogue.filter(function(d) { return d.type !== 'narration'; });
         html += '<div class="dialogue-layer">';
-        for (var d = 0; d < panel.dialogue.length; d++) {
-          var dlg = panel.dialogue[d];
-          var isBellman = panel.isHostPanel && dlg.type === 'narration';
-          var bubbleClass = isBellman
-            ? 'bubble-bellman'
-            : dlg.type === 'thought'
-              ? 'bubble-thought'
-              : dlg.type === 'narration'
-                ? 'bubble-narration'
-                : 'bubble-speech';
-          var zoneClass = dlg.type === 'narration' || isBellman ? 'bubble-zone-top' : (d % 2 === 0 ? 'bubble-zone-left' : 'bubble-zone-right');
-          html += '<div class="bubble ' + bubbleClass + ' ' + zoneClass + '">';
-          html += escapeHTML(dlg.text);
+        if (captions.length > 0) {
+          html += '<div class="dialogue-captions">';
+          for (var d = 0; d < captions.length; d++) {
+            var dlg = captions[d];
+            var isBellman = panel.isHostPanel;
+            html += '<div class="bubble ' + (isBellman ? 'bubble-bellman' : 'bubble-narration') + '">' + escapeHTML(dlg.text) + '</div>';
+          }
+          html += '</div>';
+        }
+        if (speeches.length > 0) {
+          html += '<div class="dialogue-speech">';
+          for (var d = 0; d < speeches.length; d++) {
+            var dlg = speeches[d];
+            var bubClass = dlg.type === 'thought' ? 'bubble-thought' : 'bubble-speech';
+            html += '<div class="bubble ' + bubClass + '">';
+            if (dlg.speaker && dlg.speaker.toUpperCase() !== 'NARRATOR') {
+              html += '<span class="bubble-speaker">' + escapeHTML(dlg.speaker) + '</span>';
+            }
+            html += escapeHTML(dlg.text) + '</div>';
+          }
           html += '</div>';
         }
         html += '</div>';
