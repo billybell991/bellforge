@@ -17,6 +17,7 @@ interface GamePreviewProps {
 export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeploy, onStartOver, onReForge, qaReport, entertainmentType = 'game' }: GamePreviewProps) {
   const [fullscreen, setFullscreen] = useState(false);
   const [qaDismissed, setQaDismissed] = useState(false);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
   const viewerRef = useRef<HTMLDivElement>(null);
   const isAdventure = entertainmentType === 'adventure';
   const isComic = entertainmentType === 'comic';
@@ -115,12 +116,19 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
       </div>
 
       {/* Wide viewer — no phone emulator for any type */}
-      <div ref={viewerRef} className={`comic-viewer-frame ${isEscape ? 'comic-viewer-landscape' : ''} ${fullscreen ? 'comic-viewer-fullscreen' : ''}`}>
+      <div ref={viewerRef} className={`comic-viewer-frame ${isEscape ? 'comic-viewer-landscape' : ''} ${fullscreen ? 'comic-viewer-fullscreen' : ''}`} style={{ position: 'relative' }}>
+        {!iframeLoaded && (
+          <div className="iframe-loading-overlay">
+            <div className="iframe-loading-spinner" />
+            <div className="iframe-loading-text">Loading your {isVault ? 'tale' : isComic ? 'comic' : isAdventure ? 'adventure' : isEscape ? 'escape room' : isPuzzle ? 'puzzle' : isWordSearch ? 'word search' : isCrossword ? 'crossword' : isJumble ? 'jumble' : 'game'}…</div>
+          </div>
+        )}
         <iframe
           src={previewUrl}
           className="comic-viewer-screen"
           title={`${titleLabel.replace(/^\S+\s/, '')} Preview`}
           sandbox="allow-scripts allow-same-origin"
+          onLoad={() => setIframeLoaded(true)}
         />
       </div>
 
