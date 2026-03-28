@@ -1,6 +1,7 @@
 /**
- * WheelPicker — vertical infinite drum picker (mobile only).
- * Shows 3 cards at a time; center card is selected with amber ring.
+ * WheelPicker — horizontal infinite drum picker (mobile only).
+ * Shows 1 full card in center + partial peeks on each side; center card is selected with amber ring.
+ * Tap center card to select; tap a peeking card to scroll it into focus.
  * Wraps infinitely using a 5× repeated list + silent recentering.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -17,13 +18,15 @@ interface Props {
   onSelect: (id: string) => void;
 }
 
-const ITEM_H = 148;   // px — height of each drum slot
-const REPEAT  = 5;    // repeat array 5× so user can't scroll to the edge
+const ITEM_W = 220;              // px — width of each drum card
+const GAP    = 12;               // px — gap between cards
+const SNAP   = ITEM_W + GAP;    // total horizontal scroll step per card
+const REPEAT = 5;                // repeat array 5× so user can't scroll to the edge
 
 export function WheelPicker({ items, onSelect }: Props) {
-  const count      = items.length;
-  const repeated   = Array.from({ length: REPEAT }, () => items).flat();
-  const midRep     = Math.floor(REPEAT / 2); // 2
+  const count    = items.length;
+  const repeated = Array.from({ length: REPEAT }, () => items).flat();
+  const midRep   = Math.floor(REPEAT / 2); // 2
 
   const [activeIdx, setActiveIdx] = useState(0);
   const drumRef   = useRef<HTMLDivElement>(null);
@@ -34,14 +37,14 @@ export function WheelPicker({ items, onSelect }: Props) {
   useEffect(() => {
     const el = drumRef.current;
     if (!el) return;
-    el.scrollTop = midRep * count * ITEM_H;
+    el.scrollLeft = midRep * count * SNAP;
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleScroll = useCallback(() => {
     const el = drumRef.current;
     if (!el || doJump.current) return;
 
-    const raw  = Math.round(el.scrollTop / ITEM_H);
+    const raw  = Math.round(el.scrollLeft / SNAP);
     const real = ((raw % count) + count) % count;
     setActiveIdx(real);
 
@@ -49,22 +52,22 @@ export function WheelPicker({ items, onSelect }: Props) {
     clearTimeout(jumpTimer.current);
     jumpTimer.current = setTimeout(() => {
       doJump.current = true;
-      el.scrollTop = (midRep * count + real) * ITEM_H;
+      el.scrollLeft = (midRep * count + real) * SNAP;
       setTimeout(() => { doJump.current = false; }, 40);
     }, 180);
   }, [count, midRep]);
 
-  const scrollTo = (idx: number) => {
-    drumRef.current?.scrollTo({ top: idx * ITEM_H, behavior: 'smooth' });
+  const scrollTo = (absIdx: number) => {
+    drumRef.current?.scrollTo({ left: absIdx * SNAP, behavior: 'smooth' });
   };
 
   return (
     <div className="wheel-outer">
-      {/* Top + bottom fade for drum depth illusion */}
+      {/* Left + right fades for depth illusion */}
       <div className="wheel-fade wheel-fade-top" />
       <div className="wheel-fade wheel-fade-bot" />
 
-      {/* Amber selection ring sits over the center slot */}
+      {/* Amber selection ring sits over the center card */}
       <div className="wheel-ring" />
 
       <div ref={drumRef} className="wheel-drum" onScroll={handleScroll}>
@@ -88,15 +91,8 @@ export function WheelPicker({ items, onSelect }: Props) {
         })}
       </div>
 
-      {/* Description + CTA live outside the drum so text is always readable */}
+      {/* Description lives outside the drum so text is always readable */}
       <p className="wheel-desc">{items[activeIdx].desc}</p>
-
-      <button
-        className="wheel-select-btn"
-        onClick={() => onSelect(items[activeIdx].id)}
-      >
-        ▶&nbsp;SELECT
-      </button>
     </div>
   );
 }

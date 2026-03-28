@@ -3118,9 +3118,23 @@ body {
     letter-spacing: 0;
   }
 
-  /* ── Landing wrapper — tighter horizontal padding ── */
+  /* ── Landing wrapper — tighter all-round padding, top-aligned ── */
   .landing {
-    padding: 16px 14px;
+    padding: 10px 12px 12px;
+    justify-content: flex-start;
+    min-height: auto;   /* kill 100vh so flex doesn't center relative to a giant container */
+  }
+
+  /* ── Title — smaller on phone ── */
+  .landing-title {
+    font-size: 1.55rem;
+    gap: 8px;
+    margin-bottom: 2px;
+    letter-spacing: 2px;
+  }
+
+  .landing-title-logo {
+    width: 20px;
   }
 
   /* ── Tagline — disable typing animation, allow wrap ── */
@@ -3129,70 +3143,96 @@ body {
     border-right: none;
     animation: none;
     max-width: 100%;
-    font-size: 0.8rem;
+    font-size: 0.72rem;
     text-align: center;
+    margin-bottom: 4px;
   }
 
   .landing-tagline.visible {
     max-width: 100%;
   }
 
+  /* ── Gemini status pill — more compact ── */
+  .gemini-status {
+    padding: 3px 10px;
+    font-size: 0.68rem;
+    margin-bottom: 4px;
+  }
+
+  /* ── Entertainment prompt heading — tighter ── */
+  .entertainment-prompt {
+    font-size: 0.82rem;
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Selector section — minimal top margin ── */
+  .entertainment-selector {
+    margin: 2px 0 0;
+  }
+
   /* ── Mobile: hide desktop card grid, show wheel drum ── */
   .desktop-cards-wrapper { display: none; }
 
+  /* ── Horizontal Drum — the core container ── */
   .wheel-outer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    display: block;
     width: 100%;
     position: relative;
-    /* Drum sits at top, desc + button below */
+    margin: 6px 0 0;
   }
 
   .wheel-drum {
+    display: flex;
+    flex-direction: row;
     width: 100%;
-    height: calc(3 * 148px);   /* 444px — exactly 3 slots */
-    overflow-y: scroll;
-    overflow-x: hidden;
-    scroll-snap-type: y mandatory;
+    height: 176px;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
     scroll-snap-stop: always;
-    overscroll-behavior-y: contain;
+    overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    /* Center the 220px card: padding = (50vw - 110px) on each side */
+    padding: 0 calc(50% - 110px);
+    gap: 12px;
+    align-items: center;
   }
   .wheel-drum::-webkit-scrollbar { display: none; }
 
   .wheel-item {
-    height: 148px;
+    flex-shrink: 0;
+    width: 220px;
+    height: 164px;
     scroll-snap-align: center;
     scroll-snap-stop: always;
     background-size: cover;
     background-position: center 20%;
     position: relative;
     border-radius: 14px;
-    margin: 2px 16px;
     overflow: hidden;
     cursor: pointer;
-    opacity: 0.3;
-    transform: scaleX(0.91);
+    opacity: 0.28;
+    transform: scale(0.88);
     transition: opacity 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
     -webkit-tap-highlight-color: transparent;
   }
 
   .wheel-item.wheel-near {
-    opacity: 0.58;
-    transform: scaleX(0.95);
+    opacity: 0.55;
+    transform: scale(0.93);
   }
 
   .wheel-item.wheel-active {
     opacity: 1;
-    transform: scaleX(1);
+    transform: scale(1);
     box-shadow: 0 0 0 2px var(--forge-amber), 0 0 24px rgba(255, 160, 40, 0.22);
   }
 
   .wheel-item.wheel-far {
     opacity: 0.1;
-    transform: scaleX(0.86);
+    transform: scale(0.82);
   }
 
   .wheel-item-label {
@@ -3200,10 +3240,10 @@ body {
     bottom: 0;
     left: 0;
     right: 0;
-    padding: 10px 14px 10px;
+    padding: 8px 12px 9px;
     background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, transparent 100%);
     font-family: 'Orbitron', monospace;
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     font-weight: 700;
     color: rgba(255, 255, 255, 0.85);
     letter-spacing: 0.5px;
@@ -3214,63 +3254,63 @@ body {
     color: var(--forge-amber);
   }
 
-  /* Gradient fades — top and bottom thirds of the drum */
+  /* Left / right gradient fades for depth illusion */
   .wheel-fade {
     position: absolute;
-    left: 0;
-    right: 0;
-    height: 148px;
+    top: 0;
+    height: 176px;
+    width: 64px;
     pointer-events: none;
     z-index: 4;
   }
   .wheel-fade-top {
-    top: 0;
-    background: linear-gradient(to bottom, rgba(5,5,9,0.9) 0%, transparent 100%);
+    left: 0;
+    background: linear-gradient(to right, rgba(5,5,9,0.94) 0%, transparent 100%);
   }
   .wheel-fade-bot {
-    top: calc(2 * 148px);
-    background: linear-gradient(to top, rgba(5,5,9,0.9) 0%, transparent 100%);
+    right: 0;
+    background: linear-gradient(to left, rgba(5,5,9,0.94) 0%, transparent 100%);
   }
 
-  /* Amber selection ring centred on the middle slot */
+  /* Amber selection ring centred over the middle card */
   .wheel-ring {
     position: absolute;
-    top: 148px;
-    left: 16px;
-    right: 16px;
-    height: 148px;
-    border: 1.5px solid rgba(255, 160, 40, 0.45);
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 220px;
+    height: 164px;
+    border: 1.5px solid rgba(255, 160, 40, 0.5);
     border-radius: 14px;
     pointer-events: none;
     z-index: 5;
-    box-shadow: inset 0 0 0 1px rgba(255, 160, 40, 0.1);
+    box-shadow: inset 0 0 0 1px rgba(255, 160, 40, 0.12),
+                0 0 16px rgba(255, 160, 40, 0.15);
+  }
+
+  /* Swipe hint — subtle label below ring */
+  .wheel-ring::after {
+    content: '← swipe →';
+    position: absolute;
+    bottom: -20px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 0.6rem;
+    letter-spacing: 1.5px;
+    color: rgba(255, 160, 40, 0.4);
+    font-family: 'JetBrains Mono', monospace;
+    pointer-events: none;
   }
 
   /* Description text — updates as drum spins */
   .wheel-desc {
-    font-size: 0.76rem;
+    font-size: 0.72rem;
     color: var(--text-secondary);
     text-align: center;
-    margin: 10px 24px 6px;
+    margin: 26px 20px 0;
     line-height: 1.45;
-    min-height: 2.2em;   /* prevent layout jump as desc changes */
-  }
-
-  /* SELECT button */
-  .wheel-select-btn {
-    padding: 11px 44px;
-    background: linear-gradient(135deg, var(--forge-orange), #e65100);
-    color: #fff;
-    font-family: 'Orbitron', monospace;
-    font-size: 0.82rem;
-    font-weight: 700;
-    letter-spacing: 2px;
-    border: none;
-    border-radius: 28px;
-    cursor: pointer;
-    box-shadow: 0 4px 18px rgba(255, 107, 53, 0.4);
-    -webkit-tap-highlight-color: transparent;
-    margin-bottom: 4px;
+    min-height: 2.1em;
   }
 
   /* Faceplate cards: explicit height so art section fills properly */
@@ -3279,40 +3319,55 @@ body {
     min-height: 260px;
   }
 
-  /* ── Feature cards (post-type-selection) — 2-col grid ── */
+  /* ── Feature cards (post-type-selection) — 2-col grid, condensed ── */
   .landing-features {
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 16px;
+    gap: 8px;
+    margin-bottom: 10px;
   }
 
   .feature-card {
-    padding: 16px 10px;
+    padding: 10px 8px;
   }
 
   .feature-icon {
-    font-size: 24px;
-    margin-bottom: 6px;
+    font-size: 18px;
+    margin-bottom: 3px;
   }
 
   .feature-title {
-    font-size: 0.72rem;
+    font-size: 0.68rem;
   }
 
   .feature-desc {
-    font-size: 0.72rem;
+    font-size: 0.66rem;
+    line-height: 1.3;
   }
 
-  /* ── Forge buttons — narrower padding for small screens ── */
+  /* ── Forge buttons — more compact ── */
   .landing-buttons {
-    gap: 10px;
+    gap: 8px;
   }
 
   .forge-btn-manual,
   .forge-btn-auto {
-    font-size: 0.82rem;
-    padding: 12px 20px;
+    font-size: 0.78rem;
+    padding: 10px 16px;
     letter-spacing: 1px;
+  }
+
+  /* ── Back link — tighter ── */
+  .landing-type-switch {
+    font-size: 0.75rem;
+    padding: 4px 12px;
+    margin-top: 6px;
+  }
+
+  /* ── Library link — tighter ── */
+  .landing-library-link {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    padding: 8px 16px;
   }
 
   /* ── Toast — stretch to safe full-width on mobile ── */
