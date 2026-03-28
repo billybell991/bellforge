@@ -173,9 +173,9 @@ export function Landing({ onStart, onAutoForge, onLibrary, libraryCount }: Landi
               </div>
             </div>
             <div className="entertainment-card faceplate" onClick={() => onStart('vault')}>
-              <div className="faceplate-art" style={{ backgroundImage: 'url(/card-art/vault.png)', background: 'linear-gradient(160deg, #1A0800 0%, #0A0400 100%)' }} />
-              <div className="faceplate-body" style={{ background: 'linear-gradient(to bottom, rgba(139,0,0,0.15), rgba(10,4,0,0.95))' }}>
-                <h3 className="entertainment-card-title" style={{ color: '#C04040' }}>Tales From The Forge</h3>
+              <div className="faceplate-art" style={{ backgroundImage: 'url(/card-art/vault.png)' }} />
+              <div className="faceplate-body">
+                <h3 className="entertainment-card-title">Tales From The Forge</h3>
                 <p className="entertainment-card-desc">EC Comics horror anthology — sin, escalation, and perfect poetic justice. The Bellman judges all.</p>
               </div>
             </div>
