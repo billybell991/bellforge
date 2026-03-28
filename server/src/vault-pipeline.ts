@@ -115,22 +115,24 @@ const SIN_PUNISHMENT_GUIDE: Record<SinType, string> = {
 // ── Prompt builder ──
 
 function buildScriptPrompt(config: VaultConfig): string {
-  return `You are scripting a 10-panel horror comic story for "Tales From The Forge" — an EC Comics-style horror anthology in the tradition of Tales from the Crypt and Vault of Horror. Every story ends with brutal poetic justice: the protagonist's moral sin is turned against them in the most fitting, ironic, and gruesome way imaginable.
+  return `You are scripting a 20-panel horror comic story for "Tales From The Forge" — an EC Comics-style horror anthology in the tradition of Tales from the Crypt and Vault of Horror. Every story ends with brutal poetic justice: the protagonist's moral sin is turned against them in the most fitting, ironic, and gruesome way imaginable.
 
 THE BELLMAN (HOST):
 ${THE_BELLMAN_VISUAL}
 
-NARRATIVE STRUCTURE — EXACTLY 10 PANELS, IN THIS ORDER:
+NARRATIVE STRUCTURE — EXACTLY 20 PANELS, IN THIS ORDER:
 
 PANEL 1 — THE BELLMAN OPENS: The Bellman addresses the reader directly from his crypt-forge. He introduces today's tale with theatrical dark relish, using slightly archaic formal language. Must end on a hook that makes the reader lean in. He is amused, superior, and savoring what is about to happen.
 
-PANELS 2-3 — ESTABLISH THE SIN: Introduce the protagonist. Show their sin of "${config.sinType}" through visceral action and revealing dialogue. Not cartoony — real, recognizable, and morally ugly. We must feel the weight of what they are choosing to do.
+PANELS 2-6 — ESTABLISH THE SIN: Introduce the protagonist fully. Show their sin of "${config.sinType}" through visceral action, revealing dialogue, and concrete consequences on others. These 5 panels must make us understand exactly who this person is and what they are willing to do. Not cartoony — real, recognizable, and morally ugly. We must feel the weight of what they are choosing.
 
-PANELS 4-7 — THE DESCENT: The protagonist's sin escalates. Things begin going wrong in ways directly tied to their moral failing. Plant the seeds of the punishment without revealing it yet. The atmosphere must darken with each panel. Build mounting, inescapable dread.
+PANELS 7-11 — THE DESCENT BEGINS: The protagonist's sin escalates further. They double down. Each panel shows the sin compounding — they hurt more people, dig deeper, grow more brazen. The first hairline cracks appear: something is subtly wrong, a warning they dismiss. Build creeping unease without revealing the punishment yet.
 
-PANELS 8-9 — THE PUNISHMENT: Horrific, ironic, poetic justice. The punishment DIRECTLY MIRRORS the sin. It must feel inevitable, deeply unsettling, and deeply fitting. The protagonist gets exactly what their choices earned them. No mercy. No escape. No redemption.
+PANELS 12-16 — THE RECKONING: The horror closes in. The cracks become chasms. Every choice is now coming back — mirrored, magnified, inescapable. The protagonist begins to realize the trap but cannot stop it. Atmosphere of mounting, suffocating dread. Each panel darker and more desperate than the last.
 
-PANEL 10 — THE BELLMAN CLOSES: The Bellman delivers his verdict with grim theatrical satisfaction. He addresses the reader directly and invites them back for another tale. Sign off in character — archaic, smug, relishing the outcome.
+PANELS 17-19 — THE PUNISHMENT: Horrific, ironic, poetic justice in full. The punishment DIRECTLY MIRRORS the sin — the same mechanism, the same dynamic, only now they are on the receiving end and there is no escape. It must feel inevitable, deeply unsettling, and deeply fitting. No mercy. No escape. No redemption. The punishment should feel grotesque and perfect in equal measure.
+
+PANEL 20 — THE BELLMAN CLOSES: The Bellman delivers his verdict with grim theatrical satisfaction from his crypt-forge. He addresses the reader directly, pronounces judgment on the sinner, and invites them back for another tale. Sign off in character — archaic, smug, and utterly delighted by what just happened.
 
 PREMISE: ${config.premise}
 SIN TYPE: ${config.sinType}
@@ -148,7 +150,7 @@ TONE REQUIREMENTS:
 ART DIRECTION REQUIREMENTS:
 - Each panel's artDirection must be a vivid, detailed paragraph describing the exact visual composition for an image AI
 - EC Comics art style: ${EC_COMICS_STYLE}
-- For Bellman panels (1 and 10), always show him in his crypt-forge setting with full detail
+- For Bellman panels (1 and 20), always show him in his crypt-forge setting with full detail
 - Specify: character expressions (exaggerated for horror impact), lighting (always dramatic chiaroscuro), spatial relationships, camera angle (use extreme angles for horror: low-angle authority, high-angle vulnerability, extreme close-ups for terror)
 - Make the visuals carry maximum horror: things lurking at panel edges, deep oppressive shadows, faces showing the full weight of dread
 
@@ -218,9 +220,9 @@ export async function runVaultPipeline(
     return null;
   }
 
-  // Ensure exactly 10 panels
-  const panelScripts = scriptData.panels.slice(0, 10);
-  while (panelScripts.length < 10) {
+  // Ensure exactly 20 panels
+  const panelScripts = scriptData.panels.slice(0, 20);
+  while (panelScripts.length < 20) {
     panelScripts.push({
       panelNumber: panelScripts.length + 1,
       isHostPanel: false,
@@ -229,9 +231,9 @@ export async function runVaultPipeline(
     });
   }
 
-  // Force host panel flags on panels 1 and 10
+  // Force host panel flags on panels 1 and 20
   panelScripts[0].isHostPanel = true;
-  panelScripts[9].isHostPanel = true;
+  panelScripts[19].isHostPanel = true;
 
   // Step 2: Cover art
   onProgress?.(12, '🎨 Painting the cover in blood and shadow...', 'vault_cover');
@@ -256,16 +258,18 @@ export async function runVaultPipeline(
   // Step 4: Assemble story
   const panels: VaultPanel[] = panelScripts.map((ps, i) => ({
     panelNumber: ps.panelNumber,
-    isHostPanel: ps.isHostPanel || i === 0 || i === 9,
+    isHostPanel: ps.isHostPanel || i === 0 || i === 19,
     artDirection: ps.artDirection,
     illustration: panelIllustrations[i],
     dialogue: ps.dialogue || [],
   }));
 
-  // 2 pages: page 1 = panels 0-4, page 2 = panels 5-9
+  // 4 pages: 5 panels each
   const pages: VaultPage[] = [
     { pageNumber: 1, panels: panels.slice(0, 5) },
     { pageNumber: 2, panels: panels.slice(5, 10) },
+    { pageNumber: 3, panels: panels.slice(10, 15) },
+    { pageNumber: 4, panels: panels.slice(15, 20) },
   ];
 
   onProgress?.(95, '⚰️ Sealing the vault...', 'vault_assemble');

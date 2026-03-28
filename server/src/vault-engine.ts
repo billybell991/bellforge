@@ -238,7 +238,7 @@ export function generateVaultPreviewHtml(story: VaultStory): string {
   }
 
   /* ── Panel Grid ── */
-  /* Page 1: panel 0 spans full width, panels 1-4 in 2x2 */
+  /* Pages 1 & 2: panel 0 spans full width (wide opener), panels 1-4 in 2x2 */
   .panel-grid {
     display: grid;
     gap: 5px;
@@ -247,19 +247,19 @@ export function generateVaultPreviewHtml(story: VaultStory): string {
     z-index: 1;
     min-height: 0;
   }
-  .panel-grid.page-1 {
+  .panel-grid.page-open {
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1.6fr 1fr 1fr;
   }
-  .panel-grid.page-1 .panel:first-child {
+  .panel-grid.page-open .panel:first-child {
     grid-column: 1 / -1;
   }
-  /* Page 2: panels 0-3 in 2x2, panel 4 spans full width */
-  .panel-grid.page-2 {
+  /* Pages 3 & 4: panels 0-3 in 2x2, panel 4 spans full width (wide closer) */
+  .panel-grid.page-close {
     grid-template-columns: 1fr 1fr;
     grid-template-rows: 1fr 1fr 1.6fr;
   }
-  .panel-grid.page-2 .panel:last-child {
+  .panel-grid.page-close .panel:last-child {
     grid-column: 1 / -1;
   }
 
@@ -532,7 +532,7 @@ export function generateVaultPreviewHtml(story: VaultStory): string {
     if (idx < 0 || idx >= STORY.pages.length) return;
     currentIndex = idx;
     var page = STORY.pages[idx];
-    var gridClass = idx === 0 ? 'page-1' : 'page-2';
+    var gridClass = idx < 2 ? 'page-open' : 'page-close';
 
     var html = '<div class="vault-page">';
 
@@ -556,8 +556,8 @@ export function generateVaultPreviewHtml(story: VaultStory): string {
         html += '<div class="panel-art">' + escapeHTML(panel.artDirection ? panel.artDirection.slice(0, 80) + '...' : 'Panel ' + panel.panelNumber) + '</div>';
       }
 
-      // Dialogue overlay — only when no illustration (dialogue is baked into art)
-      if (!panel.illustration && panel.dialogue && panel.dialogue.length > 0) {
+      // Dialogue overlay — always rendered on top of art
+      if (panel.dialogue && panel.dialogue.length > 0) {
         html += '<div class="dialogue-layer">';
         for (var d = 0; d < panel.dialogue.length; d++) {
           var dlg = panel.dialogue[d];

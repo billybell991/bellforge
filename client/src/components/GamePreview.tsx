@@ -25,6 +25,7 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
   const isWordSearch = entertainmentType === 'wordsearch';
   const isCrossword = entertainmentType === 'crossword';
   const isJumble = entertainmentType === 'jumble';
+  const isVault = entertainmentType === 'vault';
 
   const titleLabel = isAdventure ? '📚 Your Adventure is Ready!'
     : isComic ? '💥 Your Comic is Ready!'
@@ -33,6 +34,7 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
     : isWordSearch ? '🔍 Your Word Search is Ready!'
     : isCrossword ? '✏️ Your Crossword is Ready!'
     : isJumble ? '🔀 Your Jumble is Ready!'
+    : isVault ? '⚰️ Your Tale is Ready!'
     : '🎮 Your Game is Ready!';
 
   const subtitleLabel = isAdventure ? 'Your adventure book awaits — dive in and explore every path.'
@@ -42,6 +44,7 @@ export function GamePreview({ previewUrl, apkPath, apkSize, orientation, onDeplo
     : isWordSearch ? 'Find all the hidden words!'
     : isCrossword ? 'Fill in the grid — one clue at a time.'
     : isJumble ? 'Unscramble the words and solve the puzzle!'
+    : isVault ? 'The Bellman has sealed his verdict — open the vault and read.'
     : 'Review the report, then play-test it right here.';
 
   // Sync fullscreen state with browser Fullscreen API events
