@@ -12,6 +12,7 @@ import { generatePreviewHtml } from './pipeline/preview-gen.js';
 import type { GameImages } from './pipeline/preview-gen.js';
 import { generateStory, generateAutoConfig, generateCreativeBrief, generateBriefPalette, generateBriefRooms, generateBriefItems, generateBriefHints, qaCreativeBrief, qaGameCode, qaScoredReport, qaContentReport, isGeminiAvailable } from './gemini.js';
 import { generateGameImages } from './imagen.js';
+import { generateImage } from './imagen.js';
 import type { GameConfig } from './pipeline/types.js';
 import type { AdventureConfig } from './pipeline/types.js';
 import type { ComicConfig } from './pipeline/types.js';
@@ -1336,6 +1337,10 @@ async function runEscapeBuild(buildId: string, config: EscapeConfig) {
       createdAt: new Date().toISOString(),
       clientId: record.clientId,
     };
+    // Use the box cover image Imagen already generated as our thumbnail
+    if (result.data?.boxCoverImage) {
+      try { entry.thumbnail = saveThumbnail(buildId, result.data.boxCoverImage); } catch (err) { console.error('Failed to save escape thumbnail:', err); }
+    }
     if (existing >= 0) {
       library[existing] = entry;
       console.log(`  📚 Updated escape room "${entry.name}" in library (replaced previous build)`);
@@ -1527,6 +1532,12 @@ async function runWordSearchBuild(buildId: string, config: WordSearchConfig) {
       createdAt: new Date().toISOString(),
       clientId: record.clientId,
     };
+    // Generate a thematic thumbnail with Imagen
+    try {
+      const wsThumbPrompt = `flat cartoon illustration, ${config.wordSearchCategory.name} theme, colorful and cheerful, word search puzzle book cover art, absolutely no text no letters no words no grid`;
+      const wsThumbB64 = await generateImage(wsThumbPrompt, '1:1');
+      if (wsThumbB64) entry.thumbnail = saveThumbnail(buildId, wsThumbB64);
+    } catch (err) { console.error('Failed to generate word search thumbnail:', err); }
     if (existing >= 0) {
       library[existing] = entry;
       console.log(`  \ud83d\udcda Updated word search "${entry.name}" in library (replaced previous build)`);
@@ -1618,6 +1629,12 @@ async function runCrosswordBuild(buildId: string, config: CrosswordConfig) {
       createdAt: new Date().toISOString(),
       clientId: record.clientId,
     };
+    // Generate a thematic thumbnail with Imagen
+    try {
+      const xwThumbPrompt = `flat cartoon illustration, ${config.crosswordCategory.name} theme, colorful, crossword puzzle book cover art, absolutely no text no letters no words no grid`;
+      const xwThumbB64 = await generateImage(xwThumbPrompt, '1:1');
+      if (xwThumbB64) entry.thumbnail = saveThumbnail(buildId, xwThumbB64);
+    } catch (err) { console.error('Failed to generate crossword thumbnail:', err); }
     if (existing >= 0) {
       library[existing] = entry;
       console.log(`  \ud83d\udcda Updated crossword "${entry.name}" in library (replaced previous build)`);
@@ -1708,6 +1725,10 @@ async function runJumbleBuild(buildId: string, config: JumbleConfig) {
       createdAt: new Date().toISOString(),
       clientId: record.clientId,
     };
+    // Use the cartoon illustration Imagen already generated as our thumbnail
+    if (result.cartoonBase64) {
+      try { entry.thumbnail = saveThumbnail(buildId, result.cartoonBase64); } catch (err) { console.error('Failed to save jumble thumbnail:', err); }
+    }
     if (existing >= 0) {
       library[existing] = entry;
       console.log(`  \ud83d\udcda Updated jumble "${entry.name}" in library (replaced previous build)`);
