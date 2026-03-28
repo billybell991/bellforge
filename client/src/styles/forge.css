@@ -258,7 +258,7 @@ body {
 
 .landing-title {
   font-family: 'Orbitron', monospace;
-  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-size: clamp(2rem, 5vw, 3.5rem);
   font-weight: 900;
   letter-spacing: 4px;
   background: linear-gradient(135deg, #ff6b35 0%, #ffa726 30%, #fff 50%, #ffa726 70%, #ff6b35 100%);
@@ -267,14 +267,14 @@ body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   animation: shimmer 4s ease-in-out infinite;
-  margin-bottom: 12px;
+  margin-bottom: 6px;
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
 }
 
 .landing-title-logo {
-  width: clamp(48px, 8vw, 80px);
+  width: clamp(36px, 6vw, 60px);
   height: auto;
   filter: drop-shadow(0 0 15px rgba(255, 107, 53, 0.5));
   animation: anvil-pulse 3s ease-in-out infinite;
@@ -291,9 +291,9 @@ body {
 
 .landing-tagline {
   font-family: 'JetBrains Mono', monospace;
-  font-size: clamp(1rem, 2vw, 1.3rem);
+  font-size: clamp(0.85rem, 1.5vw, 1.1rem);
   color: var(--text-secondary);
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   overflow: hidden;
   white-space: nowrap;
   border-right: 2px solid var(--cyan);
@@ -2959,31 +2959,37 @@ body {
 
 .entertainment-selector {
   text-align: center;
-  margin: 16px 0 8px;
+  margin: 8px 0 4px;
+  width: 100%;
 }
 
 .entertainment-prompt {
   font-family: 'Orbitron', monospace;
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   font-weight: 600;
   color: var(--text-primary);
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   letter-spacing: 1px;
 }
 
 .entertainment-cards {
   display: flex;
-  gap: 24px;
+  gap: 14px;
   justify-content: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 .entertainment-card {
   background: var(--bg-card);
   border: 1px solid var(--border-card);
   border-radius: var(--radius);
-  padding: 32px 28px;
-  width: 260px;
+  padding: 20px 14px;
+  flex: 1;
+  min-width: 0;
+  max-width: 220px;
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
@@ -2993,28 +2999,28 @@ body {
   border-color: var(--forge-amber);
   background: rgba(255, 107, 53, 0.06);
   box-shadow: 0 0 20px rgba(255, 107, 53, 0.15);
-  transform: translateY(-4px);
+  transform: translateY(-3px);
 }
 
 .entertainment-card-icon {
-  font-size: 3rem;
+  font-size: 2.2rem;
   display: block;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .entertainment-card-title {
   font-family: 'Orbitron', monospace;
-  font-size: 1rem;
+  font-size: 0.85rem;
   font-weight: 600;
   color: var(--forge-amber);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   letter-spacing: 0.5px;
 }
 
 .entertainment-card-desc {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   color: var(--text-muted);
-  line-height: 1.4;
+  line-height: 1.35;
 }
 
 .landing-type-switch {
